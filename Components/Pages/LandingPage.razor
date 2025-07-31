@@ -1,0 +1,1085 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<div class="arcane-landing">
+    <!-- Split Background -->
+    <div class="split-bg">
+        <div class="zaun-side">
+            <div class="zaun-bg-image"></div>
+            <div class="zaun-atmosphere"></div>
+            <div class="shimmer-particles"></div>
+        </div>
+        <div class="piltover-side">
+            <div class="piltover-bg-image"></div>
+            <div class="piltover-atmosphere"></div>
+            <div class="hextech-particles"></div>
+        </div>
+        <div class="center-divider"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Title -->
+        <div class="title-section">
+            <h1 class="arcane-title">
+                <span class="arcane-word">ARCANE</span>
+                <span class="subtitle-line">ESCAPE ROOM ADVENTURE</span>
+            </h1>
+            <div class="cooperation-badge">
+                <span class="badge-icon">⚡</span>
+                <span>COOPERATIVE PUZZLE EXPERIENCE</span>
+            </div>
+        </div>
+
+        <!-- Character Selection -->
+        <div class="character-selection">
+            <div class="selection-header">
+                <h2>Choose Your Alliance</h2>
+                <p>Two cities divided by more than distance. Which path will you walk?</p>
+            </div>
+
+            <div class="cities-grid">
+                <!-- Zaun Side -->
+                <div class="city-panel zaun-panel" @onclick="() => SelectCity(City.Zaun)">
+                    <div class="city-header">
+                        <h3 class="city-name zaun-name">ZAUN</h3>
+                        <p class="city-motto">"The Underground Fights Back"</p>
+                    </div>
+
+                    <div class="characters-section">
+                        <h4>Your Allies</h4>
+                        <div class="character-cards">
+                            <div class="character-card vi-card">
+                                <div class="character-portrait">
+                                    <img src="/images/Vi.jpeg" alt="Vi" class="portrait-image vi-portrait" />
+                                </div>
+                                <div class="character-info">
+                                    <h5>Vi</h5>
+                                    <p>The Enforcer from Below</p>
+                                </div>
+                            </div>
+                            <div class="character-card caitlyn-card">
+                                <div class="character-portrait">
+                                    <img src="/images/Cait.jpeg" alt="Caitlyn" class="portrait-image caitlyn-portrait" />
+                                </div>
+                                <div class="character-info">
+                                    <h5>Caitlyn</h5>
+                                    <p>The Sheriff</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mission-brief">
+                        <h4>Your Mission</h4>
+                        <p>Navigate the chaotic undercity networks. Decode Shimmer-corrupted data streams and expose the conspiracy from within the shadows.</p>
+                        <div class="abilities">
+                            <span class="ability">🔍 Data Mining</span>
+                            <span class="ability">⚡ System Sabotage</span>
+                            <span class="ability">🕸️ Network Infiltration</span>
+                        </div>
+                    </div>
+
+                    <div class="villain-tease">
+                        <div class="villain-shadow silco-shadow">
+                            <span>The Chem-Barons pull strings from the shadows...</span>
+                        </div>
+                    </div>
+
+                    <button class="enter-city-btn zaun-btn">
+                        <span>Enter the Underground</span>
+                        <div class="btn-shimmer"></div>
+                    </button>
+                </div>
+
+                <!-- Central Divider -->
+                <div class="center-divide">
+                    <div class="divide-line"></div>
+                    <div class="hexgate-symbol">
+                        <div class="hexgate-core"></div>
+                        <div class="hexgate-rings"></div>
+                    </div>
+                    <div class="vs-text">VS</div>
+                </div>
+
+                <!-- Piltover Side -->
+                <div class="city-panel piltover-panel" @onclick="() => SelectCity(City.Piltover)">
+                    <div class="city-header">
+                        <h3 class="city-name piltover-name">PILTOVER</h3>
+                        <p class="city-motto">"Progress Through Innovation"</p>
+                    </div>
+
+                    <div class="characters-section">
+                        <h4>Your Allies</h4>
+                        <div class="character-cards">
+                            <div class="character-card jayce-card">
+                                <div class="character-portrait">
+                                    <img src="/images/Jayce.jpeg" alt="Jayce" class="portrait-image jayce-portrait" />
+                                </div>
+                                <div class="character-info">
+                                    <h5>Jayce</h5>
+                                    <p>The Man of Progress</p>
+                                </div>
+                            </div>
+                            <div class="character-card viktor-card">
+                                <div class="character-portrait">
+                                    <img src="/images/Viktor.jpeg" alt="Viktor" class="portrait-image viktor-portrait" />
+                                </div>
+                                <div class="character-info">
+                                    <h5>Viktor</h5>
+                                    <p>The Machine Herald</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mission-brief">
+                        <h4>Your Mission</h4>
+                        <p>Master the Hextech networks from gleaming towers. Analyze quantum systems and maintain the delicate balance of progress.</p>
+                        <div class="abilities">
+                            <span class="ability">🔷 Hextech Analysis</span>
+                            <span class="ability">⚙️ System Optimization</span>
+                            <span class="ability">📊 Network Control</span>
+                        </div>
+                    </div>
+
+                    <div class="villain-tease">
+                        <div class="villain-shadow caitlyn-shadow">
+                            <span>Trust no one, even allies may have secrets...</span>
+                        </div>
+                    </div>
+
+                    <button class="enter-city-btn piltover-btn">
+                        <span>Ascend to Progress</span>
+                        <div class="btn-hextech"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Info -->
+        <div class="game-info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">🎭</div>
+                    <h4>Immersive Storytelling</h4>
+                    <p>Experience the tension between the cities through visual novel sequences with full voice acting and atmospheric music.</p>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">🧩</div>
+                    <h4>Asymmetric Cooperation</h4>
+                    <p>Each player sees different information but must work together. Zaun uncovers the problems, Piltover provides the solutions.</p>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">⏱️</div>
+                    <h4>60 Minutes of Chaos</h4>
+                    <p>Race against time as the Hextech crisis escalates. Every decision brings you closer to salvation or destruction.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Toggle -->
+    <div class="audio-controls">
+        <button class="audio-toggle" @onclick="ToggleAudio">
+            <span class="audio-icon">@(isAudioEnabled ? "🔊" : "🔇")</span>
+        </button>
+    </div>
+</div>
+
+<style>
+    @@font-face {
+        font-family: 'Arcane Nine';
+        src: url('/fonts/Arcane Nine.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    :root {
+        --zaun-primary: #0f3427;
+        --zaun-secondary: #1e5f47;
+        --zaun-accent: #00d4aa;
+        --zaun-glow: #00ffc8;
+        --zaun-dark: #0a1e16;
+        --shimmer-pink: #ff007f;
+        --piltover-primary: #2c1810;
+        --piltover-secondary: #5c3317;
+        --piltover-accent: #c8aa6e;
+        --piltover-glow: #ffd700;
+        --piltover-light: #f5e6a3;
+        --hextech-blue: #0596aa;
+        --arcane-blue: #0596aa;
+        --arcane-light-blue: #00d4ff;
+        --arcane-sky-blue: #4da6ff;
+        --arcane-pale-blue: #b8d4ff;
+        --neutral-dark: #000a0f;
+        --neutral-light: #f0f8ff;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .arcane-landing {
+        position: relative;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Rajdhani', sans-serif;
+        color: var(--neutral-light);
+    }
+
+    /* Split Background */
+    .split-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+
+    .zaun-side, .piltover-side {
+        position: absolute;
+        top: 0;
+        width: 50%;
+        height: 100%;
+    }
+
+    .zaun-side {
+        left: 0;
+        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--zaun-primary) 40%, var(--zaun-secondary) 100%);
+    }
+
+    .piltover-side {
+        right: 0;
+        background: linear-gradient(135deg, var(--piltover-primary) 0%, var(--piltover-secondary) 40%, var(--piltover-accent) 100%);
+    }
+
+    .zaun-bg-image, .piltover-bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        opacity: 0.4;
+    }
+
+    .zaun-bg-image {
+        background: radial-gradient(circle at 20% 80%, rgba(0, 212, 170, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 0, 127, 0.1) 0%, transparent 50%), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="zaun" patternUnits="userSpaceOnUse" width="20" height="20"><path d="M0,20 L20,0 M-5,5 L5,-5 M15,25 L25,15" stroke="%2300d4aa" stroke-width="0.5" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="url(%23zaun)"/></svg>');
+    }
+
+    .piltover-bg-image {
+        background: radial-gradient(circle at 80% 80%, rgba(200, 170, 110, 0.1) 0%, transparent 50%), radial-gradient(circle at 20% 20%, rgba(5, 150, 170, 0.1) 0%, transparent 50%), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="piltover" patternUnits="userSpaceOnUse" width="30" height="30"><polygon points="15,2 28,8 28,22 15,28 2,22 2,8" fill="none" stroke="%23c8aa6e" stroke-width="0.5" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23piltover)"/></svg>');
+    }
+
+    .zaun-atmosphere {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at 30% 70%, rgba(0, 255, 200, 0.1) 0%, transparent 70%), radial-gradient(ellipse at 70% 30%, rgba(255, 0, 127, 0.08) 0%, transparent 60%);
+        animation: shimmerFlow 8s ease-in-out infinite alternate;
+    }
+
+    .piltover-atmosphere {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at 70% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 70%), radial-gradient(ellipse at 30% 70%, rgba(5, 150, 170, 0.08) 0%, transparent 60%);
+        animation: hextechFlow 6s ease-in-out infinite alternate;
+    }
+
+    /* Hexcrystal Runic Effects */
+    .piltover-side::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 20% 20%, rgba(0, 150, 255, 0.15) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(100, 200, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 60% 40%, rgba(50, 150, 255, 0.08) 0%, transparent 30%);
+        animation: runicPulse 8s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @@keyframes runicPulse {
+        0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+    }
+
+    /* Steam/Industrial Effects for Zaun */
+    .zaun-side::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent 30%, rgba(0, 212, 170, 0.1) 45%, transparent 55%), linear-gradient(-45deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%), radial-gradient(ellipse at 30% 90%, rgba(200, 200, 200, 0.08) 0%, transparent 60%);
+        animation: steamFlow 12s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @@keyframes steamFlow {
+        0% {
+            transform: translateY(20px) rotate(0deg);
+            opacity: 0.4;
+        }
+
+        50% {
+            transform: translateY(-10px) rotate(2deg);
+            opacity: 0.7;
+        }
+
+        100% {
+            transform: translateY(-30px) rotate(-1deg);
+            opacity: 0.3;
+        }
+    }
+
+    @@keyframes shimmerFlow {
+        0% {
+            opacity: 0.6;
+            transform: translateY(0px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(-20px);
+        }
+    }
+
+    @@keyframes hextechFlow {
+        0% {
+            opacity: 0.8;
+            transform: translateY(0px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(-10px);
+        }
+    }
+
+    .shimmer-particles, .hextech-particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.6;
+    }
+
+    .shimmer-particles {
+        background: radial-gradient(2px 2px at 20px 30px, var(--zaun-glow), transparent), radial-gradient(2px 2px at 40px 70px, var(--shimmer-pink), transparent), radial-gradient(1px 1px at 90px 40px, var(--zaun-accent), transparent);
+        background-size: 200px 200px, 300px 300px, 150px 150px;
+        animation: floatUp 15s infinite linear;
+    }
+
+    .hextech-particles {
+        background: radial-gradient(2px 2px at 60px 80px, var(--piltover-glow), transparent), radial-gradient(1px 1px at 80px 20px, var(--hextech-blue), transparent), radial-gradient(2px 2px at 120px 60px, var(--piltover-accent), transparent);
+        background-size: 250px 250px, 180px 180px, 220px 220px;
+        animation: floatUp 12s infinite linear;
+    }
+
+    @@keyframes floatUp {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+        }
+
+        100% {
+            transform: translateY(-100px) rotate(360deg);
+        }
+    }
+
+    .center-divider {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--zaun-glow), var(--piltover-glow));
+        transform: translateX(-50%);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 0.8;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        50% {
+            opacity: 1;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+    }
+
+    /* Main Content */
+    .main-content {
+        position: relative;
+        z-index: 10;
+        padding: 2rem;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* Title Section */
+    .title-section {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-top: 2rem;
+    }
+
+    .arcane-title {
+        font-family: 'Arcane Nine', 'Cinzel', serif;
+        margin-bottom: 2rem;
+    }
+
+    .arcane-word {
+        display: block;
+        font-size: clamp(5.4rem, 13.5vw, 10.8rem);
+        font-weight: 700;
+        background: linear-gradient(90deg, #C9AA71 0%, #F4E4BC 50%, #C9AA71 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        letter-spacing: 0.4em;
+        margin-left: 51px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .subtitle-line {
+        display: block;
+        font-size: clamp(1.3rem, 3.2vw, 2.2rem);
+        font-weight: 500;
+        background: linear-gradient(90deg, #C9AA71 0%, #F4E4BC 50%, #C9AA71 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 0.4em;
+        margin-top: 1.5rem;
+        margin-left: -61px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+
+
+    .cooperation-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    .badge-icon {
+        font-size: 1.5rem;
+        animation: spark 2.5s ease-in-out infinite;
+    }
+
+    @@keyframes spark {
+        0%, 100% {
+            transform: scale(1) rotate(0deg);
+        }
+
+        50% {
+            transform: scale(1.2) rotate(180deg);
+        }
+    }
+
+    /* Character Selection */
+    .character-selection {
+        margin-bottom: 4rem;
+    }
+
+    .selection-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 10;
+    }
+
+        .selection-header h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            position: relative;
+            display: inline-block;
+            padding: 1rem 3rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+            .selection-header h2::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(44, 24, 16, 0.7) 50%, rgba(0, 0, 0, 0.8) 100%);
+                border-radius: 25px;
+                border: 1px solid rgba(201, 170, 113, 0.3);
+                backdrop-filter: blur(8px);
+                z-index: -1;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+
+            .selection-header h2::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: calc(100% + 10px);
+                height: calc(100% + 10px);
+                background: linear-gradient(45deg, transparent, rgba(201, 170, 113, 0.1), transparent);
+                border-radius: 30px;
+                z-index: -2;
+                animation: headerGlow 4s ease-in-out infinite;
+            }
+
+    @@keyframes headerGlow {
+        0%, 100% {
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.02);
+        }
+    }
+
+    .selection-header p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        font-style: italic;
+        color: #F4E4BC;
+        text-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
+        background: rgba(0, 0, 0, 0.6);
+        padding: 0.8rem 2.5rem;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(218, 165, 32, 0.3);
+        display: inline-block;
+        margin-top: 1rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .cities-grid {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 3rem;
+        align-items: start;
+    }
+
+    .city-panel {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 20px;
+        padding: 2.5rem;
+        backdrop-filter: blur(15px);
+        cursor: pointer;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 700px;
+    }
+
+        .city-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+    .zaun-panel {
+        border: 2px solid var(--zaun-accent);
+        background: linear-gradient(135deg, rgba(15, 52, 39, 0.9), rgba(0, 0, 0, 0.8));
+    }
+
+    .piltover-panel {
+        border: 2px solid var(--piltover-accent);
+        background: linear-gradient(135deg, rgba(44, 24, 16, 0.9), rgba(0, 0, 0, 0.8));
+    }
+
+    .city-panel:hover {
+        transform: translateY(-15px) scale(1.02);
+    }
+
+    .zaun-panel:hover {
+        box-shadow: 0 25px 50px rgba(0, 212, 170, 0.3);
+    }
+
+    .piltover-panel:hover {
+        box-shadow: 0 25px 50px rgba(200, 170, 110, 0.3);
+    }
+
+    .city-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .city-name {
+        font-family: 'Orbitron', monospace;
+        font-size: 2.2rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.1em;
+    }
+
+    .zaun-name {
+        color: var(--zaun-glow);
+        text-shadow: 0 0 20px var(--zaun-glow);
+    }
+
+    .piltover-name {
+        color: var(--piltover-glow);
+        text-shadow: 0 0 20px var(--piltover-glow);
+    }
+
+    .city-motto {
+        font-style: italic;
+        opacity: 0.8;
+        font-size: 1.1rem;
+    }
+
+    .characters-section {
+        margin-bottom: 2rem;
+    }
+
+        .characters-section h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--neutral-light);
+            text-align: center;
+        }
+
+    .character-cards {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .character-card {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .character-portrait {
+        margin-bottom: 1rem;
+    }
+
+    .portrait-placeholder {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+    }
+
+    .portrait-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .portrait-image:hover {
+        transform: scale(1.1);
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .vi-portrait, .caitlyn-portrait {
+        border-color: var(--zaun-accent);
+        box-shadow: 0 0 15px rgba(0, 212, 170, 0.3);
+    }
+
+    .jayce-portrait, .viktor-portrait {
+        border-color: var(--piltover-accent);
+        box-shadow: 0 0 15px rgba(200, 170, 110, 0.3);
+    }
+
+    .vi-portrait:hover, .caitlyn-portrait:hover {
+        border-color: var(--zaun-glow);
+        box-shadow: 0 0 25px rgba(0, 255, 200, 0.5);
+    }
+
+    .jayce-portrait:hover, .viktor-portrait:hover {
+        border-color: var(--piltover-glow);
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+    }
+
+    .character-info h5 {
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+    }
+
+    .character-info p {
+        font-size: 0.9rem;
+        opacity: 0.7;
+    }
+
+    .mission-brief {
+        margin-bottom: 2rem;
+    }
+
+        .mission-brief h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .mission-brief p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+    .abilities {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .ability {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .villain-tease {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .villain-shadow {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 0, 0, 0.3);
+        font-style: italic;
+        opacity: 0.8;
+        font-size: 0.9rem;
+    }
+
+    .enter-city-btn {
+        width: 100%;
+        padding: 1.2rem 2rem;
+        border: none;
+        border-radius: 30px;
+        font-family: 'Orbitron', monospace;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .zaun-btn {
+        background: linear-gradient(135deg, var(--zaun-glow), var(--zaun-accent));
+        color: var(--zaun-dark);
+    }
+
+    .piltover-btn {
+        background: linear-gradient(135deg, var(--piltover-glow), var(--piltover-accent));
+        color: var(--piltover-primary);
+    }
+
+    .enter-city-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .btn-shimmer, .btn-hextech {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .enter-city-btn:hover .btn-shimmer,
+    .enter-city-btn:hover .btn-hextech {
+        left: 100%;
+    }
+
+    /* Center Divide */
+    .center-divide {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem 0;
+    }
+
+    .divide-line {
+        width: 2px;
+        height: 150px;
+        background: linear-gradient(180deg, var(--zaun-glow), var(--piltover-glow));
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .hexgate-symbol {
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+
+    .hexgate-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        background: radial-gradient(circle, var(--piltover-glow), var(--zaun-glow));
+        border-radius: 50%;
+        animation: coreRotate 4s linear infinite;
+    }
+
+    .hexgate-rings {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        border: 2px solid var(--piltover-accent);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: ringRotate 6s linear infinite reverse;
+    }
+
+        .hexgate-rings::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 1px solid var(--zaun-accent);
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+
+    @@keyframes coreRotate {
+        0% {
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        100% {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
+
+    @@keyframes ringRotate {
+        0% {
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        100% {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
+
+    .vs-text {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.8rem;
+        font-weight: 900;
+        background: linear-gradient(45deg, var(--zaun-glow), var(--piltover-glow));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Game Info */
+    .game-info-section {
+        margin-top: 4rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 2rem;
+        border-radius: 20px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .info-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-item h4 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: var(--piltover-glow);
+    }
+
+    .info-item p {
+        line-height: 1.6;
+        opacity: 0.9;
+    }
+
+    /* Audio Controls */
+    .audio-controls {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+    }
+
+    .audio-toggle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid var(--piltover-accent);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+        .audio-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--piltover-glow);
+        }
+
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .cities-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .center-divide {
+            flex-direction: row;
+            padding: 1rem 0;
+        }
+
+        .divide-line {
+            width: 150px;
+            height: 2px;
+        }
+
+        .character-cards {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .main-content {
+            padding: 1rem;
+        }
+
+        .city-panel {
+            padding: 1.5rem;
+            min-height: auto;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    public enum City
+    {
+        Zaun,
+        Piltover
+    }
+
+    private bool isAudioEnabled = true;
+
+    private async Task SelectCity(City selectedCity)
+    {
+       //Todo implement city selection logic here
+        if (selectedCity == City.Zaun)
+        {
+            // Navigate to Zaun game page
+        }
+        else if (selectedCity == City.Piltover)
+        {
+            // Navigate to Piltover game page
+        }
+    }
+
+    private void ToggleAudio()
+    {
+        isAudioEnabled = !isAudioEnabled;
+        // Implement audio system toggle here
+    }
+}
