@@ -1,10 +1,21 @@
 using Arcane_Coop.Components;
+using Arcane_Coop.Hubs;
+using Arcane_Coop.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Add Entity Framework
+builder.Services.AddDbContext<GameDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+                     "Data Source=arcane_coop.db"));
 
 var app = builder.Build();
 
@@ -24,5 +35,8 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Map SignalR hubs
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();

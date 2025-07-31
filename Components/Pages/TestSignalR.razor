@@ -1,0 +1,129 @@
+@page "/test-signalr"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>SignalR Test</PageTitle>
+
+<div class="container">
+    <h3>SignalR Connection Test</h3>
+    
+    <div class="mb-3">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    <div class="mb-3">
+        <label for="roomInput">Room ID:</label>
+        <input @bind="roomId" id="roomInput" class="form-control" style="max-width: 200px;" />
+    </div>
+
+    <div class="mb-3">
+        <label for="nameInput">Player Name:</label>
+        <input @bind="playerName" id="nameInput" class="form-control" style="max-width: 200px;" />
+    </div>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+            Join Room
+        </button>
+        <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+            Leave Room
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <label for="messageInput">Test Message:</label>
+        <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
+               id="messageInput" class="form-control" style="max-width: 300px;" />
+        <button class="btn btn-success mt-2" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
+            Send Message
+        </button>
+    </div>
+
+    <div class="messages" style="height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+        @foreach (var message in messages)
+        {
+            <div>@message</div>
+        }
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = new();
+    private string roomId = "";
+    private string playerName = "";
+    private string messageInput = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} joined the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} left the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("ReceiveMessage", (name, message) =>
+        {
+            var formattedMessage = $"{DateTime.Now:HH:mm:ss} - {name}: {message}";
+            messages.Add(formattedMessage);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined room: {roomId}");
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You left room: {roomId}");
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(messageInput) && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("SendMessageToRoom", roomId, playerName, messageInput);
+            messageInput = "";
+        }
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
