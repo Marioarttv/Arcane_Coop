@@ -280,6 +280,101 @@ CodeCrackerPlayerViewUpdated   // Role-specific view updates
 8. Progress through all 10 vocabulary words
 9. Use "Restart Game" to play again with different word order
 
+## SignalR Multiplayer Best Practices
+
+### Key Insights for Robust SignalR Implementation
+
+#### 1. **Type Safety is Critical**
+- **Problem**: Using `dynamic` or `object` types in SignalR event handlers causes serialization issues and Blazor circuit crashes
+- **Solution**: Create strongly-typed classes for data transfer between client and server
+```csharp
+// Backend - Strongly typed data classes
+public class PlayerViewData { /* properties */ }
+public class GameStateData { /* properties */ }
+
+// Frontend - Matching client classes  
+public class PlayerView { /* properties */ }
+public class GameState { /* properties */ }
+
+// SignalR event handlers with proper types
+hubConnection.On<string, PlayerViewData>("GameJoined", (role, view) => { ... });
+```
+
+#### 2. **State Synchronization Patterns**
+- **Always update both game state AND player views** after state changes
+- **Use individual client updates** for role-specific data, group updates for shared state
+```csharp
+// Update shared game state
+await Clients.Group(roomId).SendAsync("GameStateUpdated", game.GetGameState());
+
+// Update individual player views with role-specific data
+foreach (var player in game.GetConnectedPlayers())
+{
+    await Clients.Client(player).SendAsync("PlayerViewUpdated", game.GetPlayerView(player));
+}
+```
+
+#### 3. **Connection Management**
+- **Ensure players join SignalR groups** before game-specific operations
+- **Handle duplicate join attempts** gracefully - return existing state instead of failing
+- **Clean up games on disconnection** to prevent memory leaks
+```csharp
+public async Task JoinGame(string roomId, string playerName)
+{
+    // Always ensure group membership first
+    await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+    
+    // Handle existing players gracefully
+    var existingRole = game.GetExistingPlayerRole(Context.ConnectionId);
+    if (existingRole != null) return existingRole;
+}
+```
+
+#### 4. **Error Handling and Debugging**
+- **Enable DetailedErrors in development** for better error visibility
+- **Add comprehensive error messages** for invalid operations
+- **Use proper exception handling** in hub methods
+```json
+// appsettings.Development.json
+{
+  "DetailedErrors": true
+}
+```
+
+#### 5. **Game State Validation**
+- **Validate all player actions** server-side (never trust client input)
+- **Check game completion state** before processing actions
+- **Implement proper turn management** for turn-based games
+```csharp
+public (bool Success, string Message) ProcessAction(string connectionId, object action)
+{
+    if (IsCompleted) return (false, "Game is already completed");
+    if (!Players.ContainsKey(connectionId)) return (false, "Player not in game");
+    if (!IsPlayerTurn(connectionId)) return (false, "Not your turn");
+    // ... process action
+}
+```
+
+#### 6. **Performance Considerations**
+- **Use concurrent collections** for thread-safe game storage
+- **Limit the size of data sent** in SignalR messages
+- **Batch related updates** instead of sending multiple small updates
+- **Clean up completed/abandoned games** periodically
+
+#### 7. **Client-Side Resilience**
+- **Handle connection drops gracefully** with automatic reconnection
+- **Show connection status** to users
+- **Disable actions during disconnection** to prevent errors
+- **Use proper async/await patterns** in event handlers
+
+#### Common Pitfalls to Avoid
+- ❌ Using `dynamic` types in SignalR messages (causes crashes)
+- ❌ Forgetting to update player views after game state changes
+- ❌ Not validating player actions server-side
+- ❌ Missing SignalR group membership before game operations
+- ❌ Not handling duplicate join attempts
+- ❌ Mixing async/sync code improperly in event handlers
+
 ## Important Notes
 
 - This is a **game/entertainment application** focused on the Arcane universe
