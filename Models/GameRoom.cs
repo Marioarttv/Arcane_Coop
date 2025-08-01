@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Arcane_Coop.Models;
 
@@ -39,6 +40,8 @@ public class Player
     
     // Foreign key
     public string RoomId { get; set; } = string.Empty;
+    
+    [JsonIgnore] // Prevent circular reference during JSON serialization
     public GameRoom? Room { get; set; }
 }
 
