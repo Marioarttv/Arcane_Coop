@@ -1,0 +1,437 @@
+@page "/visual-novel"
+@page "/visual-novel/{theme}"
+@using Arcane_Coop.Models
+@inject IJSRuntime JSRuntime
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<div class="visual-novel @GetThemeClass()">
+    @if (currentScene != null)
+    {
+        <!-- Background -->
+        <div class="scene-background @GetBackgroundClass()">
+            @if (!string.IsNullOrEmpty(currentScene.BackgroundImage))
+            {
+                <img src="@currentScene.BackgroundImage" alt="Scene background" class="background-image" />
+            }
+            <div class="background-overlay"></div>
+            <div class="atmospheric-effects"></div>
+        </div>
+
+        <!-- Character Layer -->
+        <div class="characters-layer @GetLayoutClass()">
+            @if (currentScene.Layout == SceneLayout.SingleCenter && GetCurrentSpeaker() != null)
+            {
+                <div class="character-container center-character @(GetCurrentSpeaker()?.IsActive == true ? "active" : "")">
+                    <div class="character-portrait">
+                        <img src="@GetCurrentSpeaker()?.ImagePath" alt="@GetCurrentSpeaker()?.Name" class="portrait-image" />
+                        <div class="character-glow"></div>
+                    </div>
+                </div>
+            }
+            else if (currentScene.Layout == SceneLayout.DualCharacters)
+            {
+                @foreach (var character in currentScene.Characters.Take(2))
+                {
+                    <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-portrait">
+                            <img src="@character.ImagePath" alt="@character.Name" class="portrait-image" />
+                            <div class="character-glow"></div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Dialogue Box -->
+        <div class="dialogue-section">
+            <div class="dialogue-box @GetDialogueBoxClass()">
+                <!-- Ornate Corner Decorations -->
+                <div class="corner-decoration-tl"></div>
+                <div class="corner-decoration-tr"></div>
+                <div class="corner-decoration-bl"></div>
+                <div class="corner-decoration-br"></div>
+
+                <!-- Control Buttons at Top -->
+                <div class="dialogue-controls-top">
+                    @if (config.ShowSkipButton && !state.IsTextFullyDisplayed)
+                    {
+                        <button class="control-btn skip-btn @GetControlButtonClass()" @onclick="SkipText" title="Skip to end of text">
+                            <span class="btn-icon">⏭️</span>
+                            <span class="btn-text">Skip</span>
+                            <div class="btn-effect"></div>
+                        </button>
+                    }
+
+                    @if (config.ShowContinueButton && state.IsTextFullyDisplayed && !IsLastDialogue())
+                    {
+                        <button class="control-btn continue-btn @GetControlButtonClass()" @onclick="ContinueToNext" title="Continue to next dialogue">
+                            <span class="btn-icon">▶️</span>
+                            <span class="btn-text">Continue</span>
+                            <div class="btn-effect"></div>
+                        </button>
+                    }
+                </div>
+
+                <!-- Character Name -->
+                @if (config.ShowCharacterNames && GetCurrentSpeaker() != null)
+                {
+                    <div class="character-name-tag @GetNameTagClass()">
+                        <span class="character-name">@GetCurrentSpeaker()?.DisplayName</span>
+                        <div class="name-tag-decoration"></div>
+                    </div>
+                }
+
+                <!-- Dialogue Text Container -->
+                <div class="dialogue-content">
+                    <div class="dialogue-text-container">
+                        <div class="dialogue-text @GetTextAnimationClass()" @ref="dialogueTextElement">
+                            @((MarkupString)GetFormattedText())
+                        </div>
+                        
+                        @if (!state.IsTextFullyDisplayed && currentDialogue?.AnimationType == TextAnimationType.Typewriter)
+                        {
+                            <div class="typing-cursor @GetCursorClass()">|</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="loading-screen @GetThemeClass()">
+            <div class="loading-content">
+                <div class="loading-spinner @GetSpinnerClass()"></div>
+                <h2>Loading Visual Novel...</h2>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Theme { get; set; }
+    [Parameter] public VisualNovelScene? Scene { get; set; }
+    [Parameter] public VisualNovelConfig? Configuration { get; set; }
+    [Parameter] public EventCallback<VisualNovelState> OnStateChanged { get; set; }
+    [Parameter] public EventCallback OnSceneComplete { get; set; }
+
+    private VisualNovelConfig config = new();
+    private VisualNovelState state = new();
+    private VisualNovelScene? currentScene;
+    private DialogueLine? currentDialogue;
+    private ElementReference dialogueTextElement;
+    
+    private Timer? typewriterTimer;
+    private int currentTextIndex = 0;
+    private string displayedText = "";
+    private bool isDisposed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize configuration
+        if (Configuration != null)
+            config = Configuration;
+        
+        // Set theme from parameter
+        if (!string.IsNullOrEmpty(Theme))
+        {
+            if (Enum.TryParse<NovelTheme>(Theme, true, out var themeEnum))
+                config.Theme = themeEnum;
+        }
+
+        // Initialize scene
+        if (Scene != null)
+        {
+            currentScene = Scene;
+            state.CurrentSceneId = Scene.Id;
+            await StartDialogue();
+        }
+        else
+        {
+            // Load demo scene if no scene provided
+            currentScene = CreateDemoScene();
+            await StartDialogue();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && currentDialogue != null)
+        {
+            await StartTextAnimation();
+        }
+    }
+
+    private async Task StartDialogue()
+    {
+        if (currentScene == null || !currentScene.DialogueLines.Any()) return;
+        
+        currentDialogue = currentScene.DialogueLines[state.CurrentDialogueIndex];
+        UpdateCharacterStates();
+        await InvokeStateChanged();
+    }
+
+    private async Task StartTextAnimation()
+    {
+        if (currentDialogue == null) return;
+
+        displayedText = "";
+        currentTextIndex = 0;
+        state.IsTextFullyDisplayed = false;
+
+        switch (currentDialogue.AnimationType)
+        {
+            case TextAnimationType.Typewriter:
+                await StartTypewriterEffect();
+                break;
+            case TextAnimationType.Instant:
+                displayedText = currentDialogue.Text;
+                state.IsTextFullyDisplayed = true;
+                StateHasChanged();
+                break;
+            case TextAnimationType.FadeIn:
+            case TextAnimationType.SlideUp:
+                displayedText = currentDialogue.Text;
+                state.IsTextFullyDisplayed = true;
+                StateHasChanged();
+                break;
+        }
+
+        await InvokeStateChanged();
+    }
+
+    private async Task StartTypewriterEffect()
+    {
+        if (currentDialogue == null || isDisposed) return;
+
+        var speed = currentDialogue.TypewriterSpeed > 0 ? currentDialogue.TypewriterSpeed : config.DefaultTypewriterSpeed;
+        
+        typewriterTimer?.Dispose();
+        typewriterTimer = new Timer(async _ =>
+        {
+            if (isDisposed || currentDialogue == null) return;
+
+            await InvokeAsync(() =>
+            {
+                if (currentTextIndex < currentDialogue.Text.Length)
+                {
+                    displayedText += currentDialogue.Text[currentTextIndex];
+                    currentTextIndex++;
+                    StateHasChanged();
+                }
+                else
+                {
+                    state.IsTextFullyDisplayed = true;
+                    typewriterTimer?.Dispose();
+                    StateHasChanged();
+                    
+                    // Auto-continue if enabled
+                    if (currentDialogue.AutoContinue && !IsLastDialogue())
+                    {
+                        _ = Task.Delay(currentDialogue.AutoContinueDelay).ContinueWith(async _ =>
+                        {
+                            if (!isDisposed)
+                                await InvokeAsync(ContinueToNext);
+                        });
+                    }
+                }
+            });
+        }, null, 0, speed);
+    }
+
+    private async Task SkipText()
+    {
+        if (currentDialogue == null) return;
+
+        typewriterTimer?.Dispose();
+        displayedText = currentDialogue.Text;
+        state.IsTextFullyDisplayed = true;
+        StateHasChanged();
+        await InvokeStateChanged();
+    }
+
+    private async Task ContinueToNext()
+    {
+        if (IsLastDialogue())
+        {
+            await OnSceneComplete.InvokeAsync();
+            return;
+        }
+
+        state.CurrentDialogueIndex++;
+        currentDialogue = currentScene?.DialogueLines[state.CurrentDialogueIndex];
+        UpdateCharacterStates();
+        await StartTextAnimation();
+    }
+
+
+    private void UpdateCharacterStates()
+    {
+        if (currentScene == null || currentDialogue == null) return;
+
+        // Reset all characters to inactive
+        foreach (var character in currentScene.Characters)
+            character.IsActive = false;
+
+        // Set current speaker as active
+        var speaker = currentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+        if (speaker != null)
+            speaker.IsActive = true;
+    }
+
+    private VisualNovelCharacter? GetCurrentSpeaker()
+    {
+        if (currentScene == null || currentDialogue == null) return null;
+        return currentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+    }
+
+    private bool IsLastDialogue()
+    {
+        return currentScene == null || state.CurrentDialogueIndex >= currentScene.DialogueLines.Count - 1;
+    }
+
+    private async Task InvokeStateChanged()
+    {
+        await OnStateChanged.InvokeAsync(state);
+    }
+
+    private string GetFormattedText()
+    {
+        return displayedText.Replace("\n", "<br/>");
+    }
+
+    // CSS Class Methods
+    private string GetThemeClass() => config.Theme.ToString().ToLower();
+    private string GetBackgroundClass() => $"background-{config.Theme.ToString().ToLower()}";
+    private string GetLayoutClass() => currentScene?.Layout.ToString().ToLower() ?? "single";
+    private string GetDialogueBoxClass() => $"dialogue-{config.Theme.ToString().ToLower()}";
+    private string GetNameTagClass() => $"name-tag-{config.Theme.ToString().ToLower()}";
+    private string GetTextAnimationClass() => currentDialogue?.AnimationType.ToString().ToLower() ?? "typewriter";
+    private string GetCursorClass() => $"cursor-{config.Theme.ToString().ToLower()}";
+    private string GetControlButtonClass() => $"control-{config.Theme.ToString().ToLower()}";
+    private string GetSpinnerClass() => $"spinner-{config.Theme.ToString().ToLower()}";
+    
+    private string GetCharacterPositionClass(VisualNovelCharacter character)
+    {
+        return character.Position.ToString().ToLower() + "-character";
+    }
+
+    private VisualNovelScene CreateDemoScene()
+    {
+        var scene = new VisualNovelScene
+        {
+            Name = "Demo Scene",
+            Layout = SceneLayout.DualCharacters,
+            Theme = config.Theme
+        };
+
+        // Add demo characters based on theme
+        if (config.Theme == NovelTheme.Piltover)
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "jayce",
+                    Name = "Jayce",
+                    DisplayName = "Jayce Talis",
+                    ImagePath = "/images/Jayce.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#c8aa6e"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "viktor",
+                    Name = "Viktor",
+                    DisplayName = "Viktor",
+                    ImagePath = "/images/Viktor.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#0596aa"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "The Hextech research shows promising results, Viktor. We're on the verge of a breakthrough that could change everything.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "viktor",
+                    Text = "Indeed, Jayce. But we must consider the implications. Progress without wisdom is merely chaos in disguise.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 45
+                },
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "You're right to be cautious. But think of what we could accomplish - clean energy for all of Piltover, maybe even beyond.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                }
+            });
+        }
+        else
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/Vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Sheriff Caitlyn",
+                    ImagePath = "/images/Cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#ff007f"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Cupcake, you seeing this? The chemical levels down here are off the charts. Something big is going down.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "I see it, Vi. The readings match what we found at the warehouse. Someone's been manufacturing Shimmer on an industrial scale.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 50
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Then we better move fast. In Zaun, when the Chem-Barons get desperate, innocent people pay the price.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                }
+            });
+        }
+
+        return scene;
+    }
+
+    public void Dispose()
+    {
+        isDisposed = true;
+        typewriterTimer?.Dispose();
+    }
+}

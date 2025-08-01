@@ -1,0 +1,455 @@
+@page "/visual-novel-demo"
+@page "/visual-novel-demo/{theme}"
+@using Arcane_Coop.Models
+@inject NavigationManager Navigation
+
+<div class="demo-container">
+    <div class="demo-header">
+        <h1 class="demo-title">Visual Novel System Demo</h1>
+        <p class="demo-subtitle">Experience the Arcane-themed narrative system</p>
+        
+        <div class="theme-selector">
+            <button class="theme-btn @(selectedTheme == NovelTheme.Piltover ? "active" : "")" 
+                    @onclick="() => SelectTheme(NovelTheme.Piltover)">
+                <span class="theme-icon">⚙️</span>
+                <span>Piltover Theme</span>
+                <small>Hextech & Progress</small>
+            </button>
+            
+            <button class="theme-btn @(selectedTheme == NovelTheme.Zaun ? "active" : "")" 
+                    @onclick="() => SelectTheme(NovelTheme.Zaun)">
+                <span class="theme-icon">⚡</span>
+                <span>Zaun Theme</span>
+                <small>Underground & Rebellion</small>
+            </button>
+        </div>
+
+        <div class="demo-controls">
+            <button class="demo-control-btn" @onclick="StartDemo">
+                <span>🎭</span>
+                Start Visual Novel Demo
+            </button>
+            
+            <button class="demo-control-btn" @onclick="StartCustomScene">
+                <span>📝</span>
+                Custom Scene Example
+            </button>
+            
+            <a href="/" class="demo-control-btn back-btn">
+                <span>🏠</span>
+                Back to Main
+            </a>
+        </div>
+    </div>
+
+    @if (showVisualNovel)
+    {
+        <VisualNovel 
+            Scene="@currentScene" 
+            Configuration="@novelConfig"
+            OnStateChanged="@HandleStateChanged"
+            OnSceneComplete="@HandleSceneComplete" />
+    }
+</div>
+
+<style>
+    .demo-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a1e16 0%, #2c1810 50%, #0f3427 100%);
+        color: #f0f8ff;
+        font-family: 'Rajdhani', sans-serif;
+        padding: 2rem;
+    }
+
+    .demo-header {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+        padding: 2rem 0;
+    }
+
+    .demo-title {
+        font-family: 'Arcane Nine', 'Cinzel', serif;
+        font-size: 3rem;
+        background: linear-gradient(90deg, #c8aa6e 0%, #00d4aa 50%, #ffd700 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        letter-spacing: 0.2em;
+    }
+
+    .demo-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.8;
+        margin-bottom: 3rem;
+        font-style: italic;
+    }
+
+    .theme-selector {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-bottom: 3rem;
+    }
+
+    .theme-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        color: #f0f8ff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        min-width: 200px;
+    }
+
+    .theme-btn:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .theme-btn.active {
+        border-color: #00d4aa;
+        background: rgba(0, 212, 170, 0.1);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 10px 30px rgba(0, 212, 170, 0.2);
+    }
+
+    .theme-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .theme-btn span:not(.theme-icon) {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .theme-btn small {
+        opacity: 0.7;
+        font-size: 0.9rem;
+    }
+
+    .demo-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .demo-control-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #c8aa6e, #ffd700);
+        color: #2c1810;
+        border: none;
+        border-radius: 25px;
+        font-family: 'Orbitron', monospace;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .demo-control-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    }
+
+    .back-btn {
+        background: linear-gradient(135deg, #00d4aa, #00ffc8);
+        color: #0a1e16;
+    }
+
+    .back-btn:hover {
+        box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+    }
+
+    @@media (max-width: 768px) {
+        .demo-title {
+            font-size: 2rem;
+        }
+
+        .theme-selector {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .theme-btn {
+            min-width: 250px;
+        }
+
+        .demo-controls {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .demo-control-btn {
+            width: 250px;
+            justify-content: center;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public string? Theme { get; set; }
+
+    private NovelTheme selectedTheme = NovelTheme.Piltover;
+    private bool showVisualNovel = false;
+    private VisualNovelScene? currentScene;
+    private VisualNovelConfig novelConfig = new();
+    private VisualNovelState currentState = new();
+
+    protected override void OnInitialized()
+    {
+        // Parse theme from URL parameter
+        if (!string.IsNullOrEmpty(Theme))
+        {
+            if (Enum.TryParse<NovelTheme>(Theme, true, out var themeEnum))
+            {
+                selectedTheme = themeEnum;
+            }
+        }
+
+        // Initialize config
+        novelConfig = new VisualNovelConfig
+        {
+            Theme = selectedTheme,
+            ShowSkipButton = true,
+            ShowContinueButton = true,
+            ShowAutoPlayButton = false,
+            EnableSoundEffects = true,
+            EnableBackgroundMusic = true,
+            DefaultTypewriterSpeed = 45,
+            ShowCharacterNames = true
+        };
+    }
+
+    private void SelectTheme(NovelTheme theme)
+    {
+        selectedTheme = theme;
+        novelConfig.Theme = theme;
+        StateHasChanged();
+    }
+
+    private void StartDemo()
+    {
+        currentScene = CreateDemoScene();
+        showVisualNovel = true;
+        StateHasChanged();
+    }
+
+    private void StartCustomScene()
+    {
+        currentScene = CreateCustomScene();
+        showVisualNovel = true;
+        StateHasChanged();
+    }
+
+    private void HandleStateChanged(VisualNovelState state)
+    {
+        currentState = state;
+        // Handle state changes - could save progress, update UI, etc.
+    }
+
+    private void HandleSceneComplete()
+    {
+        showVisualNovel = false;
+        StateHasChanged();
+        
+        // Could navigate to next scene, show completion screen, etc.
+    }
+
+    private VisualNovelScene CreateDemoScene()
+    {
+        var scene = new VisualNovelScene
+        {
+            Name = $"{selectedTheme} Demo Scene",
+            Layout = SceneLayout.DualCharacters,
+            Theme = selectedTheme
+        };
+
+        if (selectedTheme == NovelTheme.Piltover)
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "jayce",
+                    Name = "Jayce",
+                    DisplayName = "Jayce Talis",
+                    ImagePath = "/images/Jayce.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#c8aa6e"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "viktor",
+                    Name = "Viktor",
+                    DisplayName = "Viktor",
+                    ImagePath = "/images/Viktor.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#0596aa"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "The Hextech research shows remarkable progress, Viktor. Our latest experiments with the crystal matrices have exceeded all expectations.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                },
+                new DialogueLine
+                {
+                    CharacterId = "viktor",
+                    Text = "Indeed, Jayce. But with great power comes great responsibility. We must ensure this technology serves to uplift humanity, not destroy it.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "You're absolutely right. That's why we need to be careful about who gains access to this research. The future of Piltover depends on it.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                },
+                new DialogueLine
+                {
+                    CharacterId = "viktor",
+                    Text = "The glorious evolution awaits, but only if we proceed with wisdom. Every breakthrough brings us closer to transcending our limitations.",
+                    AnimationType = TextAnimationType.FadeIn
+                }
+            });
+        }
+        else
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/Vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Sheriff Caitlyn",
+                    ImagePath = "/images/Cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#ff007f"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Cupcake, these readings are off the charts. Someone's been cooking up Shimmer in quantities we've never seen before.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "The chemical signature matches the samples from the docks. This isn't just street-level dealing anymore, Vi - this is industrial.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 45
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Then we better move fast. In Zaun, when the Chem-Barons get desperate, innocent people always pay the price first.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "We'll stop them, Vi. Whatever it takes. The people of the Undercity deserve better than living in fear.",
+                    AnimationType = TextAnimationType.SlideUp
+                }
+            });
+        }
+
+        return scene;
+    }
+
+    private VisualNovelScene CreateCustomScene()
+    {
+        var scene = new VisualNovelScene
+        {
+            Name = "Custom Narrative Example",
+            Layout = SceneLayout.SingleCenter,
+            Theme = selectedTheme
+        };
+
+        var character = selectedTheme == NovelTheme.Piltover 
+            ? new VisualNovelCharacter
+            {
+                Id = "narrator_p",
+                Name = "Narrator",
+                DisplayName = "Hextech Archives",
+                ImagePath = "/images/Jayce.jpeg",
+                Position = CharacterPosition.Center,
+                ThemeColor = "#c8aa6e"
+            }
+            : new VisualNovelCharacter
+            {
+                Id = "narrator_z",
+                Name = "Narrator",
+                DisplayName = "Underground Intel",
+                ImagePath = "/images/Vi.jpeg",
+                Position = CharacterPosition.Center,
+                ThemeColor = "#00d4aa"
+            };
+
+        scene.Characters.Add(character);
+
+        var narrativeText = selectedTheme == NovelTheme.Piltover 
+            ? new[]
+            {
+                "Welcome to the Visual Novel System demonstration. This narrative engine supports multiple animation types and advanced text rendering.",
+                "Notice how the typewriter effect creates immersion, while the skip button allows players to control pacing according to their preferences.",
+                "The system is fully modular - scenes, characters, and dialogue can be dynamically loaded and configured for different story branches.",
+                "This concludes the custom scene demonstration. The system is ready for integration into your Arcane escape room experience."
+            }
+            : new[]
+            {
+                "Greetings from the Underground. This visual novel system captures the authentic Arcane atmosphere with theme-appropriate styling.",
+                "The dual-theme approach ensures both Piltover and Zaun narratives feel distinct while maintaining consistent functionality.",
+                "Character highlighting, atmospheric effects, and responsive design make this system perfect for immersive storytelling.",
+                "End of demonstration. The narrative engine is fully prepared for your escape room adventures."
+            };
+
+        for (int i = 0; i < narrativeText.Length; i++)
+        {
+            scene.DialogueLines.Add(new DialogueLine
+            {
+                CharacterId = character.Id,
+                Text = narrativeText[i],
+                AnimationType = i % 2 == 0 ? TextAnimationType.Typewriter : TextAnimationType.FadeIn,
+                TypewriterSpeed = 40
+            });
+        }
+
+        return scene;
+    }
+}

@@ -1,6 +1,7 @@
 using Arcane_Coop.Components;
 using Arcane_Coop.Hubs;
 using Arcane_Coop.Data;
+using Arcane_Coop.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,9 @@ builder.Services.AddSignalR();
 builder.Services.AddDbContext<GameDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
                      "Data Source=arcane_coop.db"));
+
+// Add Visual Novel Service
+builder.Services.AddScoped<IVisualNovelService, VisualNovelService>();
 
 var app = builder.Build();
 
