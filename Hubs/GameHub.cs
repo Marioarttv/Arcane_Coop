@@ -104,9 +104,13 @@ public class GameHub : Hub
             var result = game.SubmitGuess(Context.ConnectionId, guess);
             if (result.Success)
             {
+                // Send success animation to all players
+                await Clients.Group(roomId).SendAsync("CodeCrackerCorrectGuess", result.Message);
+                
                 await Clients.Group(roomId).SendAsync("CodeCrackerGameStateUpdated", game.GetGameState());
                 
-                // Update player views with new word data after correct guess
+                // Update player views with new word data after correct guess (with delay for animation)
+                await Task.Delay(2500); // Wait for success animation
                 foreach (var player in game.GetConnectedPlayers())
                 {
                     await Clients.Client(player).SendAsync("CodeCrackerPlayerViewUpdated", game.GetPlayerView(player));

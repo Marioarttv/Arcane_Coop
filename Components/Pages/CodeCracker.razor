@@ -20,6 +20,58 @@
         </span>
     </div>
 
+    @if (!inGame)
+    {
+        <div class="instructions-panel">
+            <div class="instruction-header">
+                <h3>🎮 How to Play Code Cracker</h3>
+            </div>
+            <div class="instruction-content">
+                <div class="step-by-step">
+                    <div class="instruction-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Share Room Code</h4>
+                            <p>Both players enter the <strong>same Room ID</strong> below. Choose any code like "game123" or "friends".</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Join Together</h4>
+                            <p>Click <strong>"Join Room"</strong> then <strong>"Join Game"</strong>. First player becomes Caitlyn (Piltover), second becomes Vi (Zaunite).</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Collaborate to Solve</h4>
+                            <p><strong>Piltover</strong> sees distorted words, <strong>Zaunite</strong> gets clues. Work together via chat to decode all 10 words!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="role-preview">
+                    <div class="role-card piltover-preview">
+                        <h4>🏛️ Caitlyn (Piltover)</h4>
+                        <p>You see corrupted data like:</p>
+                        <div class="preview-word">m_r_u_</div>
+                        <small>Decode the missing letters</small>
+                    </div>
+                    <div class="role-card zaunite-preview">
+                        <h4>⚡ Vi (Zaunite)</h4>
+                        <p>You get intelligence clues:</p>
+                        <ul class="preview-clues">
+                            <li><strong>Definition:</strong> a soft, low sound</li>
+                            <li><strong>German:</strong> Flüstern</li>
+                            <li><strong>Synonym:</strong> whisper</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="game-setup mb-4">
         <div class="row">
             <div class="col-md-6">
@@ -72,22 +124,33 @@
                     <div class="piltover-section">
                         <div class="distorted-word">
                             <h3>Corrupted Archive Data:</h3>
-                            <div class="word-display">@(playerView?.DistortedWord ?? "")</div>
+                            <div class="word-display @(wordTransitioning ? "word-transition" : "")">@(playerView?.DistortedWord ?? "")</div>
                         </div>
                     </div>
                 }
                 else
                 {
                     <div class="zaunite-section">
-                        <h3>Intelligence Gathered:</h3>
+                        <div class="zaunite-header">
+                            <h3 class="intelligence-title">
+                                <span class="hacker-symbol">⚡</span>
+                                INTELLIGENCE GATHERED
+                                <span class="hacker-symbol">⚡</span>
+                            </h3>
+                            <div class="hacker-lines">
+                                <div class="line"></div>
+                                <div class="line"></div>
+                                <div class="line"></div>
+                            </div>
+                        </div>
                         <div class="clue-cards">
-                            <div class="clue-card">
+                            <div class="clue-card @clueAnimationClass">
                                 <strong>Definition:</strong> @(playerView?.Definition ?? "")
                             </div>
-                            <div class="clue-card">
+                            <div class="clue-card @clueAnimationClass">
                                 <strong>German:</strong> @(playerView?.GermanTranslation ?? "")
                             </div>
-                            <div class="clue-card">
+                            <div class="clue-card @clueAnimationClass">
                                 <strong>Synonym:</strong> @(playerView?.Synonym ?? "")
                             </div>
                         </div>
@@ -143,10 +206,31 @@
 
             @if (gameState?.PlayersNeeded > 0)
             {
-                <div class="alert alert-warning mt-3">
-                    Waiting for @gameState.PlayersNeeded more player(s) to join...
+                <div class="connection-guidance">
+                    <div class="waiting-indicator">
+                        <span>Waiting for @gameState.PlayersNeeded more player(s) to join</span>
+                        <div class="loading-dots">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">
+                        Share your Room ID "<strong>@roomId</strong>" with your partner!
+                    </p>
                 </div>
             }
+        </div>
+    }
+
+    @if (showSuccessAnimation)
+    {
+        <div class="success-overlay" @onclick="() => showSuccessAnimation = false">
+            <div class="success-content">
+                <div class="success-title">🎉 DECODED!</div>
+                <div class="success-message">@successMessage</div>
+                <p style="opacity: 0.8;">Click anywhere to continue...</p>
+            </div>
         </div>
     }
 
@@ -199,13 +283,30 @@
         --neutral-light: #f0f8ff;
     }
 
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body, html {
+        margin: 0;
+        padding: 0;
+        background: var(--neutral-dark);
+        overflow-x: hidden;
+    }
+
     .container {
         position: relative;
         min-height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 1rem;
         font-family: 'Rajdhani', sans-serif;
         color: var(--neutral-light);
         background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--neutral-dark) 50%, var(--piltover-primary) 100%);
         background-attachment: fixed;
+        box-sizing: border-box;
     }
 
     .container::before {
@@ -509,8 +610,8 @@
     }
 
     @@keyframes zaunitePulse {
-        0% { opacity: 0.4; transform: scale(1) rotate(0deg); }
-        100% { opacity: 0.7; transform: scale(1.01) rotate(1deg); }
+        0% { opacity: 0.4; transform: scale(1); }
+        100% { opacity: 0.7; transform: scale(1.01); }
     }
 
     .word-display {
@@ -549,25 +650,94 @@
         overflow: hidden;
     }
 
-    .clue-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(to bottom, var(--zaun-accent), var(--zaun-glow));
-        animation: clueGlow 3s ease-in-out infinite alternate;
+    /* Fly-in animation classes */
+    .clue-card.updating {
+        animation: clueOut 0.3s ease-in forwards;
     }
 
-    @@keyframes clueGlow {
-        0% { box-shadow: 0 0 5px var(--zaun-accent); }
-        100% { box-shadow: 0 0 15px var(--zaun-glow); }
+    .clue-card.updated {
+        animation: clueIn 0.5s ease-out forwards;
+    }
+
+    .clue-card:nth-child(1).updated { animation-delay: 0.1s; }
+    .clue-card:nth-child(2).updated { animation-delay: 0.2s; }
+    .clue-card:nth-child(3).updated { animation-delay: 0.3s; }
+
+    @@keyframes clueOut {
+        0% { 
+            opacity: 1; 
+            transform: translateX(0) scale(1);
+        }
+        100% { 
+            opacity: 0; 
+            transform: translateX(-50px) scale(0.9);
+        }
+    }
+
+    @@keyframes clueIn {
+        0% { 
+            opacity: 0; 
+            transform: translateX(50px) scale(0.9);
+        }
+        100% { 
+            opacity: 1; 
+            transform: translateX(0) scale(1);
+        }
     }
 
     .clue-card:hover {
         transform: translateX(5px);
         box-shadow: 0 6px 20px rgba(0, 212, 170, 0.3);
+    }
+
+    .clue-card strong {
+        color: var(--zaun-glow);
+        text-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
+        font-family: 'Orbitron', monospace;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Enhanced Zaunite Header */
+    .zaunite-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 3;
+    }
+
+    .intelligence-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--zaun-glow);
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 15px rgba(0, 255, 200, 0.5);
+        position: relative;
+    }
+
+    .hacker-symbol {
+        display: inline-block;
+        margin: 0 1rem;
+        font-size: 2rem;
+        color: var(--zaun-accent);
+    }
+
+    .hacker-lines {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .hacker-lines .line {
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--zaun-accent), transparent);
+        opacity: 0.6;
     }
 
     .game-actions {
@@ -671,6 +841,249 @@
         border-left: 4px solid var(--piltover-accent);
     }
 
+    /* Instructions Panel */
+    .instructions-panel {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .instruction-header h3 {
+        font-family: 'Orbitron', monospace;
+        color: var(--piltover-accent);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .step-by-step {
+        margin-bottom: 2rem;
+    }
+
+    .instruction-step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: rgba(0,0,0,0.2);
+        border-radius: 12px;
+        border-left: 4px solid var(--zaun-accent);
+        transition: all 0.3s ease;
+    }
+
+    .instruction-step:hover {
+        background: rgba(0,0,0,0.3);
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 212, 170, 0.2);
+    }
+
+    .step-number {
+        background: linear-gradient(45deg, var(--zaun-accent), var(--zaun-glow));
+        color: var(--neutral-dark);
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(0, 212, 170, 0.4);
+    }
+
+    .step-content h4 {
+        color: var(--piltover-accent);
+        font-family: 'Orbitron', monospace;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .step-content p {
+        color: var(--neutral-light);
+        opacity: 0.9;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .role-preview {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .role-card {
+        padding: 1.5rem;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .piltover-preview {
+        background: linear-gradient(135deg, var(--piltover-primary) 0%, var(--piltover-secondary) 100%);
+        border: 2px solid var(--piltover-accent);
+    }
+
+    .zaunite-preview {
+        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--zaun-primary) 100%);
+        border: 2px solid var(--zaun-accent);
+    }
+
+    .role-card h4 {
+        font-family: 'Orbitron', monospace;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .preview-word {
+        font-family: 'Orbitron', monospace;
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: 0.3em;
+        text-align: center;
+        padding: 1rem;
+        background: rgba(0,0,0,0.4);
+        border-radius: 8px;
+        margin: 1rem 0;
+        text-transform: uppercase;
+    }
+
+    .preview-clues {
+        list-style: none;
+        padding: 0;
+    }
+
+    .preview-clues li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 0.9rem;
+    }
+
+    /* Success Animation */
+    .success-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(0, 212, 170, 0.3) 0%, rgba(0, 0, 0, 0.8) 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: successFadeIn 0.5s ease-out;
+    }
+
+    .success-content {
+        text-align: center;
+        animation: successBounce 0.8s ease-out;
+    }
+
+    .success-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 4rem;
+        color: var(--zaun-glow);
+        text-shadow: 0 0 30px var(--zaun-accent);
+        margin-bottom: 1rem;
+        animation: successPulse 2s ease-in-out infinite;
+    }
+
+    .success-message {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.5rem;
+        color: var(--neutral-light);
+        margin-bottom: 2rem;
+    }
+
+    .word-transition {
+        animation: wordTransition 2s ease-in-out;
+    }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes successFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes successBounce {
+        0% { transform: scale(0.3) translateY(50px); opacity: 0; }
+        50% { transform: scale(1.1) translateY(-10px); opacity: 1; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    @@keyframes successPulse {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.05); filter: brightness(1.2); }
+    }
+
+    @@keyframes wordTransition {
+        0% { opacity: 1; transform: scale(1); }
+        25% { opacity: 0; transform: scale(0.8) rotateY(90deg); }
+        75% { opacity: 0; transform: scale(0.8) rotateY(-90deg); }
+        100% { opacity: 1; transform: scale(1) rotateY(0deg); }
+    }
+
+    /* Connection Guidance */
+    .connection-guidance {
+        background: rgba(5, 150, 170, 0.1);
+        border: 1px solid var(--hextech-blue);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: pulse 2s ease-in-out infinite alternate;
+    }
+
+    .waiting-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--zaun-accent);
+        font-weight: 600;
+    }
+
+    .loading-dots {
+        display: inline-flex;
+        gap: 0.2rem;
+    }
+
+    .loading-dot {
+        width: 4px;
+        height: 4px;
+        background: var(--zaun-accent);
+        border-radius: 50%;
+        animation: loadingDot 1.4s ease-in-out infinite both;
+    }
+
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @@keyframes loadingDot {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+
     /* Responsive Design */
     @@media (max-width: 768px) {
         .game-title {
@@ -690,8 +1103,25 @@
             padding: 1rem;
         }
         
-        .game-section, .game-setup, .chat-section {
+        .game-section, .game-setup, .chat-section, .instructions-panel {
             padding: 1.5rem;
+        }
+
+        .role-preview {
+            grid-template-columns: 1fr;
+        }
+
+        .success-title {
+            font-size: 2.5rem;
+        }
+
+        .instruction-step {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .step-number {
+            margin: 0 0 1rem 0;
         }
     }
 </style>
@@ -710,6 +1140,12 @@
     private bool inGame = false;
     private PlayerView? playerView;
     private GameState? gameState;
+    
+    // Animation state
+    private bool showSuccessAnimation = false;
+    private string successMessage = "";
+    private bool wordTransitioning = false;
+    private string clueAnimationClass = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -793,18 +1229,52 @@
 
         hubConnection.On<PlayerViewData>("CodeCrackerPlayerViewUpdated", (view) =>
         {
-            playerView = new PlayerView
+            InvokeAsync(async () =>
             {
-                Role = view.Role,
-                DisplayName = view.DisplayName,
-                Instruction = view.Instruction,
-                DistortedWord = view.DistortedWord,
-                Definition = view.Definition,
-                GermanTranslation = view.GermanTranslation,
-                Synonym = view.Synonym,
-                AttemptHistory = view.AttemptHistory
-            };
-            InvokeAsync(StateHasChanged);
+                // For Piltover - trigger word transition
+                if (view.Role == "Piltover")
+                {
+                    wordTransitioning = true;
+                    StateHasChanged();
+                    await Task.Delay(250);
+                }
+                // For Zaunite - trigger clue fly-out
+                else if (view.Role == "Zaunite")
+                {
+                    clueAnimationClass = "updating";
+                    StateHasChanged();
+                    await Task.Delay(300); // Wait for fly-out
+                }
+                
+                // Update the content
+                playerView = new PlayerView
+                {
+                    Role = view.Role,
+                    DisplayName = view.DisplayName,
+                    Instruction = view.Instruction,
+                    DistortedWord = view.DistortedWord,
+                    Definition = view.Definition,
+                    GermanTranslation = view.GermanTranslation,
+                    Synonym = view.Synonym,
+                    AttemptHistory = view.AttemptHistory
+                };
+                
+                // Trigger fly-in animations
+                if (view.Role == "Piltover")
+                {
+                    await Task.Delay(1750);
+                    wordTransitioning = false;
+                }
+                else if (view.Role == "Zaunite")
+                {
+                    clueAnimationClass = "updated";
+                    StateHasChanged();
+                    await Task.Delay(800); // Wait for staggered fly-in
+                    clueAnimationClass = "";
+                }
+                
+                StateHasChanged();
+            });
         });
 
         hubConnection.On<string, int, int>("CodeCrackerGameCompleted", (message, score, wordsCompleted) =>
@@ -818,6 +1288,22 @@
         {
             gameStatus = $"❌ {message}";
             InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("CodeCrackerCorrectGuess", (message) =>
+        {
+            // Show success animation
+            successMessage = message;
+            showSuccessAnimation = true;
+            InvokeAsync(StateHasChanged);
+            
+            // Auto-dismiss after 3 seconds
+            InvokeAsync(async () =>
+            {
+                await Task.Delay(3000);
+                showSuccessAnimation = false;
+                StateHasChanged();
+            });
         });
 
         hubConnection.On<string>("CodeCrackerHintReceived", (hint) =>
