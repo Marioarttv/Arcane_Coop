@@ -1,0 +1,576 @@
+@page "/code-cracker"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Arcane_Coop.Hubs
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>Code Cracker: Lexical Puzzle</PageTitle>
+
+<div class="container">
+    <div class="header-section">
+        <h2 class="game-title">🔐 Code Cracker: Lexical Puzzle</h2>
+        <p class="game-subtitle">Caitlyn vs Vi - Decode the Corrupted Archives</p>
+    </div>
+    
+    <div class="connection-status mb-3">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    <div class="game-setup mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="roomInput" class="form-label">Room ID:</label>
+                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+            </div>
+            <div class="col-md-6">
+                <label for="nameInput" class="form-label">Player Name:</label>
+                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+            </div>
+        </div>
+
+        <div class="setup-buttons mt-3">
+            <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                Join Room
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                Leave Room
+            </button>
+            <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                Join Game
+            </button>
+        </div>
+    </div>
+
+    @if (inGame && playerView != null)
+    {
+        <div class="game-section">
+            <div class="game-header">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="player-role @GetRoleClass()">
+                            @(playerView?.DisplayName ?? "Unknown Player")
+                        </h4>
+                        <p class="role-instruction">@(playerView?.Instruction ?? "")</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="game-progress">
+                            <strong>Progress:</strong> @((gameState?.CurrentWordIndex ?? 0) + 1) / @(gameState?.TotalWords ?? 0)<br/>
+                            <strong>Score:</strong> @gameState?.Score<br/>
+                            <strong>Hints Used:</strong> @gameState?.HintsUsed / 3
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="puzzle-area">
+                @if (playerView?.Role == "Piltover")
+                {
+                    <div class="piltover-section">
+                        <div class="distorted-word">
+                            <h3>Corrupted Archive Data:</h3>
+                            <div class="word-display">@(playerView?.DistortedWord ?? "")</div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="zaunite-section">
+                        <h3>Intelligence Gathered:</h3>
+                        <div class="clue-cards">
+                            <div class="clue-card">
+                                <strong>Definition:</strong> @(playerView?.Definition ?? "")
+                            </div>
+                            <div class="clue-card">
+                                <strong>German:</strong> @(playerView?.GermanTranslation ?? "")
+                            </div>
+                            <div class="clue-card">
+                                <strong>Synonym:</strong> @(playerView?.Synonym ?? "")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="game-actions">
+                <div class="guess-section">
+                    <div class="input-group">
+                        <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
+                               class="form-control" placeholder="Enter your guess..." />
+                        <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
+                            Submit Guess
+                        </button>
+                    </div>
+                </div>
+
+                <div class="game-controls mt-3">
+                    <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
+                        Request Hint (@(3 - (gameState?.HintsUsed ?? 0)) left)
+                    </button>
+                    <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
+                        Restart Game
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(gameStatus))
+            {
+                <div class="alert @GetStatusClass() mt-3">@gameStatus</div>
+            }
+
+            @if (!string.IsNullOrEmpty(latestHint))
+            {
+                <div class="alert alert-info mt-2">
+                    <strong>Hint:</strong> @latestHint
+                </div>
+            }
+
+            @if (playerView?.AttemptHistory?.Any() == true)
+            {
+                <div class="attempt-history mt-3">
+                    <h5>Recent Attempts:</h5>
+                    <ul class="list-group">
+                        @foreach (var attempt in playerView.AttemptHistory)
+                        {
+                            <li class="list-group-item">@attempt</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (gameState?.PlayersNeeded > 0)
+            {
+                <div class="alert alert-warning mt-3">
+                    Waiting for @gameState.PlayersNeeded more player(s) to join...
+                </div>
+            }
+        </div>
+    }
+
+    <div class="chat-section mt-4">
+        <h5>Team Communication</h5>
+        <div class="input-group mb-3">
+            <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
+                   class="form-control" placeholder="Coordinate with your partner..." />
+            <button class="btn btn-success" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
+                Send
+            </button>
+        </div>
+
+        <div class="messages-container">
+            @foreach (var message in messages)
+            {
+                <div class="message">@message</div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .game-title {
+        color: #c8aa6e;
+        text-align: center;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .game-subtitle {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .game-section {
+        border: 2px solid #c8aa6e;
+        border-radius: 15px;
+        padding: 25px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .player-role {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .player-role.piltover {
+        color: #c8aa6e;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .player-role.zaunite {
+        color: #0f2027;
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+    }
+
+    .role-instruction {
+        color: #666;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .game-progress {
+        background: rgba(200, 170, 110, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: right;
+    }
+
+    .puzzle-area {
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .piltover-section {
+        background: linear-gradient(135deg, #c8aa6e 0%, #f4e4bc 100%);
+        color: #2c1810;
+        text-align: center;
+    }
+
+    .zaunite-section {
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
+        color: #ffffff;
+    }
+
+    .word-display {
+        font-size: 3rem;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        margin: 20px 0;
+        padding: 20px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .clue-cards {
+        display: grid;
+        gap: 15px;
+    }
+
+    .clue-card {
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #c8aa6e;
+    }
+
+    .guess-section .input-group {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .game-actions {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .attempt-history {
+        background: rgba(0,0,0,0.05);
+        padding: 15px;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .chat-section {
+        border-top: 2px solid #dee2e6;
+        padding-top: 20px;
+    }
+
+    .messages-container {
+        height: 250px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .message {
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .connection-status {
+        text-align: center;
+        padding: 10px;
+        background: rgba(0,0,0,0.05);
+        border-radius: 5px;
+    }
+
+    .setup-buttons {
+        text-align: center;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = new();
+    private string roomId = "";
+    private string playerName = "";
+    private string messageInput = "";
+    private string currentGuess = "";
+    private string gameStatus = "";
+    private string latestHint = "";
+    
+    // Game state
+    private bool inGame = false;
+    private PlayerView? playerView;
+    private GameState? gameState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        // Room management events
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} joined the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} left the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("ReceiveMessage", (name, message) =>
+        {
+            var formattedMessage = $"{DateTime.Now:HH:mm:ss} - {name}: {message}";
+            messages.Add(formattedMessage);
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Code Cracker game events
+        hubConnection.On<string, PlayerViewData>("CodeCrackerGameJoined", (role, view) =>
+        {
+            playerView = new PlayerView
+            {
+                Role = view.Role,
+                DisplayName = view.DisplayName,
+                Instruction = view.Instruction,
+                DistortedWord = view.DistortedWord,
+                Definition = view.Definition,
+                GermanTranslation = view.GermanTranslation,
+                Synonym = view.Synonym,
+                AttemptHistory = view.AttemptHistory
+            };
+            inGame = true;
+            gameStatus = $"Joined game as {role}. Waiting for opponent...";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined as {role}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("CodeCrackerGameFull", () =>
+        {
+            gameStatus = "Game is full! Cannot join.";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Game is full");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<GameStateData>("CodeCrackerGameStateUpdated", (state) =>
+        {
+            gameState = new GameState
+            {
+                CurrentWordIndex = state.CurrentWordIndex,
+                TotalWords = state.TotalWords,
+                IsCompleted = state.IsCompleted,
+                Score = state.Score,
+                HintsUsed = state.HintsUsed,
+                PlayerCount = state.PlayerCount,
+                PlayersNeeded = state.PlayersNeeded
+            };
+            
+            if (gameState?.PlayerCount == 2 && gameState?.IsCompleted == false)
+            {
+                gameStatus = "Both players connected! Start guessing!";
+            }
+            else if (gameState?.PlayerCount < 2)
+            {
+                gameStatus = "Waiting for opponent...";
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<PlayerViewData>("CodeCrackerPlayerViewUpdated", (view) =>
+        {
+            playerView = new PlayerView
+            {
+                Role = view.Role,
+                DisplayName = view.DisplayName,
+                Instruction = view.Instruction,
+                DistortedWord = view.DistortedWord,
+                Definition = view.Definition,
+                GermanTranslation = view.GermanTranslation,
+                Synonym = view.Synonym,
+                AttemptHistory = view.AttemptHistory
+            };
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, int, int>("CodeCrackerGameCompleted", (message, score, wordsCompleted) =>
+        {
+            gameStatus = $"🎉 {message} - Words completed: {wordsCompleted}";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Game completed! Final score: {score}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("CodeCrackerInvalidGuess", (message) =>
+        {
+            gameStatus = $"❌ {message}";
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("CodeCrackerHintReceived", (hint) =>
+        {
+            latestHint = hint;
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Hint received: {hint}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined room: {roomId}");
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You left room: {roomId}");
+            inGame = false;
+            playerView = null;
+            gameState = null;
+            gameStatus = "";
+            latestHint = "";
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinCodeCrackerGame", roomId, playerName);
+        }
+    }
+
+    private async Task SubmitGuess()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(currentGuess))
+        {
+            await hubConnection.SendAsync("SubmitCodeCrackerGuess", roomId, currentGuess);
+            currentGuess = "";
+            latestHint = ""; // Clear hint after guess
+        }
+    }
+
+    private async Task RequestHint()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RequestCodeCrackerHint", roomId);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartCodeCrackerGame", roomId);
+            gameStatus = "Game restarted!";
+            latestHint = "";
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(messageInput) && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("SendMessageToRoom", roomId, playerName, messageInput);
+            messageInput = "";
+        }
+    }
+
+    private string GetRoleClass()
+    {
+        return playerView?.Role?.ToLower() ?? "";
+    }
+
+    private string GetStatusClass()
+    {
+        if (gameStatus.Contains("Correct") || gameStatus.Contains("🎉"))
+            return "alert-success";
+        else if (gameStatus.Contains("❌") || gameStatus.Contains("Incorrect"))
+            return "alert-danger";
+        else
+            return "alert-info";
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    // Client-side data classes
+    public class PlayerView
+    {
+        public string Role { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Instruction { get; set; } = "";
+        public string? DistortedWord { get; set; }
+        public string? Definition { get; set; }
+        public string? GermanTranslation { get; set; }
+        public string? Synonym { get; set; }
+        public List<string> AttemptHistory { get; set; } = new();
+    }
+
+    public class GameState
+    {
+        public int CurrentWordIndex { get; set; }
+        public int TotalWords { get; set; }
+        public bool IsCompleted { get; set; }
+        public int Score { get; set; }
+        public int HintsUsed { get; set; }
+        public int PlayerCount { get; set; }
+        public int PlayersNeeded { get; set; }
+    }
+}

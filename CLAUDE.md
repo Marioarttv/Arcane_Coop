@@ -72,6 +72,214 @@ dotnet publish -c Release
 - Development/Production environment support
 - HTTPS redirection and HSTS enabled for production
 
+## Multiplayer Tic-Tac-Toe Implementation
+
+### Implementation Workflow
+
+#### 1. Analysis Phase
+- Examined existing SignalR infrastructure in `TestSignalR.razor` and `GameHub.cs`
+- Identified basic room management and messaging functionality
+- Reviewed existing UI components and styling patterns
+
+#### 2. Backend Implementation (`Hubs/GameHub.cs`)
+- **Added TicTacToeGame class** with complete game logic:
+  - Board state management (string[9] array)
+  - Player management (X/O assignments)
+  - Turn-based gameplay enforcement
+  - Win condition detection (rows, columns, diagonals)
+  - Tie game detection
+- **Enhanced GameHub with game-specific methods**:
+  - `JoinGame()` - Player joins tic-tac-toe game
+  - `MakeMove()` - Process and validate player moves
+  - `RestartGame()` - Reset game state
+- **Added concurrent game management** using `ConcurrentDictionary<string, TicTacToeGame>`
+- **Implemented disconnection handling** to clean up games when players leave
+
+#### 3. Frontend Implementation (`Components/Pages/TestSignalR.razor`)
+- **Enhanced UI with game interface**:
+  - 3x3 grid using CSS Grid layout
+  - Real-time game state display
+  - Turn indicator and player symbol display
+  - Game status messages
+- **Added SignalR event handlers**:
+  - `GameJoined` - Player successfully joins game
+  - `GameStateUpdated` - Real-time board updates
+  - `GameEnded` - Win/tie notifications with winning line highlighting
+  - `InvalidMove` - Move validation feedback
+- **Implemented game logic methods**:
+  - Move validation and execution
+  - Visual feedback for winning combinations
+  - Game restart functionality
+- **Added responsive CSS styling** with hover effects and visual indicators
+
+#### 4. Testing and Validation
+- Verified build process and resolved file locking issues
+- Confirmed SignalR connectivity and real-time synchronization
+- Validated multiplayer functionality across multiple browser instances
+
+### Key Features Implemented
+
+#### Game Mechanics
+- **Turn-based gameplay** with server-side validation
+- **Real-time synchronization** between players
+- **Win detection** for all possible combinations (8 winning patterns)
+- **Tie game handling** when board is full
+- **Move validation** prevents invalid plays
+- **Game restart** functionality for continuous play
+
+#### User Interface
+- **Clean 3x3 grid** with consistent cell sizing (100x100px)
+- **Visual feedback** with hover effects and winning line highlighting
+- **Game status display** showing current turn and game state
+- **Player identification** with clear X/O symbol display
+- **Integrated chat** for player communication
+- **Responsive design** using Bootstrap classes
+
+#### Multiplayer Architecture
+- **Room-based games** supporting up to 2 players per room
+- **Player disconnection handling** with automatic game cleanup
+- **Connection state management** with visual status indicators
+- **Error handling** for invalid moves and game full scenarios
+
+### Technical Implementation Details
+
+#### SignalR Hub Methods
+```csharp
+JoinGame(string roomId, string playerName)    // Join tic-tac-toe game
+MakeMove(string roomId, int position)         // Make a move
+RestartGame(string roomId)                    // Reset game state
+```
+
+#### Client-Side Event Handlers
+```csharp
+GameJoined          // Player joins game successfully
+GameStateUpdated    // Real-time board state updates
+GameEnded           // Game completion with winner/tie
+InvalidMove         // Move validation errors
+```
+
+#### Game State Management
+- **Server-side game state** stored in concurrent dictionary
+- **Client-side state sync** through SignalR events  
+- **Position-based board** (0-8 array indices)
+- **Symbol assignment** (first player X, second player O)
+
+### Usage Instructions
+1. Navigate to `/test-signalr` page
+2. Enter Room ID and Player Name
+3. Click "Join Room" then "Join Game"
+4. Play by clicking empty cells when it's your turn
+5. Use "Restart Game" to play again
+6. Chat functionality available for communication
+
+## Code Cracker: Lexical Puzzle Implementation
+
+### Game Overview
+**Code Cracker** is a collaborative vocabulary-building game designed for German ESL students. Players work together to decode corrupted English words using various clues and hints.
+
+#### Narrative Theme
+- **Piltover Player (Caitlyn)**: Sees distorted words from Piltover's corrupted archives
+- **Zaunite Player (Vi)**: Receives intelligence clues to help decode the words
+- **Collaborative Gameplay**: Both players must communicate to solve word puzzles
+
+### Implementation Details
+
+#### Backend Architecture (`Hubs/GameHub.cs`)
+- **CodeCrackerGame class** with comprehensive vocabulary puzzle system:
+  - Word bank with 10 educational vocabulary words
+  - Player role assignments (Piltover/Zaunite with different information views)
+  - Progressive scoring system (10 points minus hints and attempts)
+  - Three-tier hint system (word length, first letter, category)
+  - Attempt tracking and game state management
+- **Enhanced GameHub methods**:
+  - `JoinCodeCrackerGame()` - Role-based player assignment
+  - `SubmitCodeCrackerGuess()` - Word validation and progression
+  - `RequestCodeCrackerHint()` - Progressive hint system
+  - `RestartCodeCrackerGame()` - Game reset functionality
+- **Concurrent game management** using dedicated dictionary for Code Cracker games
+- **Role-based information filtering** ensuring each player sees appropriate clues
+
+#### Frontend Implementation (`Components/Pages/CodeCracker.razor`)
+- **Themed UI with Arcane styling**:
+  - Piltover section: Golden gradient with distorted word display
+  - Zaunite section: Dark gradient with intelligence clues
+  - Responsive design with role-specific visual indicators
+- **Real-time multiplayer features**:
+  - SignalR event handlers for game state synchronization
+  - Live attempt history display
+  - Progressive hint system with usage tracking
+  - Team communication chat system
+- **Educational focus elements**:
+  - German translation integration for ESL learning
+  - Definition and synonym clues for vocabulary building
+  - Scoring system encouraging efficient problem-solving
+
+#### Key Features Implemented
+
+#### Game Mechanics
+- **Role-based gameplay** with distinct information views for each player
+- **10-word vocabulary progression** with increasing complexity
+- **Collaborative problem-solving** requiring communication between players
+- **Progressive hint system** (3 hints per word: length, first letter, category)
+- **Scoring system** rewarding efficiency (fewer hints and attempts = higher score)
+- **Real-time synchronization** of all game state changes
+
+#### Educational Value
+- **German-English translation** support for ESL students
+- **Multiple clue types** (definitions, synonyms, translations) for comprehensive learning
+- **Vocabulary range** covering common English words with educational value
+- **Collaborative learning** encouraging peer-to-peer assistance
+
+#### User Interface
+- **Immersive Arcane theming** with Piltover (golden) and Zaunite (dark) visual styles
+- **Clear role differentiation** with distinct UI sections for each player type
+- **Progress tracking** showing current word, score, and hints used
+- **Attempt history** for tracking problem-solving approaches
+- **Integrated team chat** for strategy coordination
+
+#### Multiplayer Architecture
+- **Room-based games** supporting exactly 2 players with distinct roles
+- **Player disconnection handling** with automatic game cleanup
+- **Real-time state synchronization** across all connected clients
+- **Role-specific data filtering** ensuring appropriate information distribution
+
+### Technical Implementation Details
+
+#### SignalR Hub Methods
+```csharp
+JoinCodeCrackerGame(string roomId, string playerName)    // Join with role assignment
+SubmitCodeCrackerGuess(string roomId, string guess)      // Submit word guess
+RequestCodeCrackerHint(string roomId)                    // Request progressive hints
+RestartCodeCrackerGame(string roomId)                    // Reset game state
+```
+
+#### Client-Side Event Handlers
+```csharp
+CodeCrackerGameJoined          // Player joins with role assignment
+CodeCrackerGameStateUpdated    // Real-time game state synchronization
+CodeCrackerGameCompleted       // Game completion with final score
+CodeCrackerInvalidGuess        // Guess validation feedback
+CodeCrackerHintReceived        // Progressive hint delivery
+CodeCrackerPlayerViewUpdated   // Role-specific view updates
+```
+
+#### Game State Management
+- **Server-side vocabulary bank** with educational word selection
+- **Role-based information filtering** (Piltover sees distorted words, Zaunite sees clues)
+- **Progressive scoring system** encouraging strategic hint usage
+- **Attempt tracking** for learning assessment and replay value
+
+### Usage Instructions (Code Cracker)
+1. Navigate to `/code-cracker` page
+2. Enter Room ID and Player Name
+3. Click "Join Room" then "Join Game"
+4. **Piltover Player**: Study the distorted word pattern
+5. **Zaunite Player**: Analyze the definition, German translation, and synonym
+6. **Both Players**: Collaborate via chat to solve the word
+7. Submit guesses and use hints strategically
+8. Progress through all 10 vocabulary words
+9. Use "Restart Game" to play again with different word order
+
 ## Important Notes
 
 - This is a **game/entertainment application** focused on the Arcane universe
@@ -79,3 +287,4 @@ dotnet publish -c Release
 - **Character selection logic is not yet implemented** (see TODO comments in LandingPage.razor:1069)
 - **Audio system is placeholder** functionality
 - Uses **Blazor Server** rendering mode throughout
+- **Multiplayer tic-tac-toe** now fully implemented with real-time synchronization

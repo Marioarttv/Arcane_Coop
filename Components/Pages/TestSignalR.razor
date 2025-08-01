@@ -4,10 +4,10 @@
 @implements IAsyncDisposable
 @inject NavigationManager Navigation
 
-<PageTitle>SignalR Test</PageTitle>
+<PageTitle>Multiplayer Tic-Tac-Toe</PageTitle>
 
 <div class="container">
-    <h3>SignalR Connection Test</h3>
+    <h3>Multiplayer Tic-Tac-Toe</h3>
     
     <div class="mb-3">
         <strong>Connection Status:</strong> 
@@ -33,10 +33,51 @@
         <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
             Leave Room
         </button>
+        <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+            Join Game
+        </button>
     </div>
 
+    @if (inGame)
+    {
+        <div class="game-section mb-4">
+            <div class="game-info mb-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>You are: </strong><span class="player-symbol">@mySymbol</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Current Turn: </strong><span class="current-turn">@currentGameState?.CurrentPlayer</span>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(gameStatus))
+                {
+                    <div class="alert alert-info mt-2">@gameStatus</div>
+                }
+            </div>
+
+            <div class="tic-tac-toe-board">
+                @for (int i = 0; i < 9; i++)
+                {
+                    int position = i; // Capture for lambda
+                    <button class="board-cell @GetCellClass(position)" 
+                            @onclick="() => MakeMove(position)"
+                            disabled="@(!CanMakeMove(position))">
+                        @(currentGameState?.Board[position] ?? "")
+                    </button>
+                }
+            </div>
+
+            <div class="game-controls mt-3">
+                <button class="btn btn-warning" @onclick="RestartGame" disabled="@(!IsConnected)">
+                    Restart Game
+                </button>
+            </div>
+        </div>
+    }
+
     <div class="mb-3">
-        <label for="messageInput">Test Message:</label>
+        <label for="messageInput">Chat:</label>
         <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
                id="messageInput" class="form-control" style="max-width: 300px;" />
         <button class="btn btn-success mt-2" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
@@ -52,12 +93,83 @@
     </div>
 </div>
 
+<style>
+    .tic-tac-toe-board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+        gap: 5px;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .board-cell {
+        width: 100px;
+        height: 100px;
+        font-size: 2rem;
+        font-weight: bold;
+        border: 2px solid #333;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .board-cell:hover:not(:disabled) {
+        background-color: #e9ecef;
+    }
+
+    .board-cell:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .board-cell.winning-cell {
+        background-color: #28a745 !important;
+        color: white;
+    }
+
+    .player-symbol {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .current-turn {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .game-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+
+    .game-section {
+        border: 2px solid #007bff;
+        border-radius: 10px;
+        padding: 20px;
+        background-color: #ffffff;
+    }
+</style>
+
 @code {
     private HubConnection? hubConnection;
     private List<string> messages = new();
     private string roomId = "";
     private string playerName = "";
     private string messageInput = "";
+    
+    // Game state
+    private bool inGame = false;
+    private string mySymbol = "";
+    private TicTacToeGameState? currentGameState;
+    private string gameStatus = "";
+    private int[]? winningLine;
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,6 +177,7 @@
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
 
+        // Room management events
         hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
         {
             var message = $"{DateTime.Now:HH:mm:ss} - {name} joined the room";
@@ -86,6 +199,76 @@
             InvokeAsync(StateHasChanged);
         });
 
+        // Game events
+        hubConnection.On<string, TicTacToeGameState>("GameJoined", (symbol, gameState) =>
+        {
+            mySymbol = symbol;
+            currentGameState = gameState;
+            inGame = true;
+            gameStatus = $"Joined game as {symbol}. Waiting for opponent...";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined the game as {symbol}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("GameFull", () =>
+        {
+            gameStatus = "Game is full! Cannot join.";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Game is full");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<TicTacToeGameState>("GameStateUpdated", (gameState) =>
+        {
+            currentGameState = gameState;
+            
+            if (gameState.Players.Count == 2 && !gameState.GameOver)
+            {
+                if (gameState.CurrentPlayer == mySymbol)
+                {
+                    gameStatus = "Your turn!";
+                }
+                else
+                {
+                    gameStatus = "Opponent's turn";
+                }
+            }
+            else if (gameState.Players.Count < 2)
+            {
+                gameStatus = "Waiting for opponent...";
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, int[]>("GameEnded", (winner, winningLinePositions) =>
+        {
+            winningLine = winningLinePositions;
+            
+            if (winner == "TIE")
+            {
+                gameStatus = "Game ended in a tie!";
+                messages.Add($"{DateTime.Now:HH:mm:ss} - Game ended in a tie!");
+            }
+            else if (winner == mySymbol)
+            {
+                gameStatus = "You won! 🎉";
+                messages.Add($"{DateTime.Now:HH:mm:ss} - You won the game!");
+            }
+            else
+            {
+                gameStatus = "You lost! Better luck next time.";
+                messages.Add($"{DateTime.Now:HH:mm:ss} - You lost the game.");
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("InvalidMove", (message) =>
+        {
+            gameStatus = $"Invalid move: {message}";
+            InvokeAsync(StateHasChanged);
+        });
+
         await hubConnection.StartAsync();
     }
 
@@ -104,6 +287,36 @@
         {
             await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
             messages.Add($"{DateTime.Now:HH:mm:ss} - You left room: {roomId}");
+            inGame = false;
+            currentGameState = null;
+            gameStatus = "";
+            winningLine = null;
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinGame", roomId, playerName);
+        }
+    }
+
+    private async Task MakeMove(int position)
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("MakeMove", roomId, position);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartGame", roomId);
+            winningLine = null;
+            gameStatus = currentGameState?.Players.Count == 2 ? "Game restarted!" : "Waiting for opponent...";
         }
     }
 
@@ -116,6 +329,24 @@
         }
     }
 
+    private bool CanMakeMove(int position)
+    {
+        return inGame && 
+               currentGameState != null && 
+               !currentGameState.GameOver && 
+               currentGameState.CurrentPlayer == mySymbol && 
+               string.IsNullOrEmpty(currentGameState.Board[position]);
+    }
+
+    private string GetCellClass(int position)
+    {
+        if (winningLine != null && winningLine.Contains(position))
+        {
+            return "winning-cell";
+        }
+        return "";
+    }
+
     public bool IsConnected =>
         hubConnection?.State == HubConnectionState.Connected;
 
@@ -125,5 +356,16 @@
         {
             await hubConnection.DisposeAsync();
         }
+    }
+
+    // Game state class for client-side
+    public class TicTacToeGameState
+    {
+        public string[] Board { get; set; } = new string[9];
+        public string CurrentPlayer { get; set; } = "X";
+        public bool GameOver { get; set; } = false;
+        public string? Winner { get; set; }
+        public Dictionary<string, string> Players { get; set; } = new();
+        public Dictionary<string, string> PlayerNames { get; set; } = new();
     }
 }
