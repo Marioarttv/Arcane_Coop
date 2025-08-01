@@ -1,7 +1,6 @@
 using Arcane_Coop.Components;
 using Arcane_Coop.Hubs;
 using Arcane_Coop.Data;
-using Arcane_Coop.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,11 +16,6 @@ builder.Services.AddSignalR();
 builder.Services.AddDbContext<GameDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
                      "Data Source=arcane_coop.db"));
-
-// Add custom services
-builder.Services.AddScoped<IGameRoomService, GameRoomService>();
-builder.Services.AddScoped<IStateManager, StateManager>();
-builder.Services.AddScoped<IPuzzleEngine, PuzzleEngine>();
 
 var app = builder.Build();
 
