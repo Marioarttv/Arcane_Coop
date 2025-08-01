@@ -175,12 +175,13 @@ InvalidMove         // Move validation errors
 ## Code Cracker: Lexical Puzzle Implementation
 
 ### Game Overview
-**Code Cracker** is a collaborative vocabulary-building game designed for German ESL students. Players work together to decode corrupted English words using various clues and hints.
+**Code Cracker** is a premium collaborative vocabulary-building game designed for German ESL students. Players work together to decode corrupted English words using various clues and hints in an immersive Arcane-themed environment.
 
 #### Narrative Theme
-- **Piltover Player (Caitlyn)**: Sees distorted words from Piltover's corrupted archives
-- **Zaunite Player (Vi)**: Receives intelligence clues to help decode the words
-- **Collaborative Gameplay**: Both players must communicate to solve word puzzles
+- **Piltover Player (Caitlyn)**: Sees distorted words from Piltover's corrupted archives with clean, hextech-inspired visuals
+- **Zaunite Player (Vi)**: Receives intelligence clues with underground hacker aesthetics and smooth fly-in transitions
+- **Collaborative Gameplay**: Both players must communicate via integrated chat to solve word puzzles
+- **Full Arcane Immersion**: Split-theme design with authentic Piltover (golden) and Zaunite (teal) visual identities
 
 ### Implementation Details
 
@@ -200,19 +201,28 @@ InvalidMove         // Move validation errors
 - **Role-based information filtering** ensuring each player sees appropriate clues
 
 #### Frontend Implementation (`Components/Pages/CodeCracker.razor`)
-- **Themed UI with Arcane styling**:
-  - Piltover section: Golden gradient with distorted word display
-  - Zaunite section: Dark gradient with intelligence clues
-  - Responsive design with role-specific visual indicators
-- **Real-time multiplayer features**:
-  - SignalR event handlers for game state synchronization
-  - Live attempt history display
-  - Progressive hint system with usage tracking
-  - Team communication chat system
+- **Premium Arcane-themed UI with full immersion**:
+  - Full-screen gradient backgrounds with atmospheric effects
+  - Piltover section: Golden hextech gradients with 3D word flip transitions
+  - Zaunite section: Underground aesthetics with smooth clue fly-in animations
+  - Custom font integration (Arcane Nine, Orbitron, Cinzel, Rajdhani)
+  - Glassmorphism design with backdrop blur and gradient borders
+- **Advanced animation system**:
+  - Success celebration overlays with full-screen effects
+  - Smooth content transitions (fly-out → update → fly-in)
+  - Staggered clue card animations (Definition → German → Synonym)
+  - 3D word flip transitions for Piltover players
+  - Hardware-accelerated CSS animations for 60fps performance
+- **Enhanced UX features**:
+  - Interactive tutorial with step-by-step instructions
+  - Role preview cards showing exact gameplay mechanics
+  - Connection guidance with animated waiting indicators
+  - Real-time collaboration feedback and status updates
 - **Educational focus elements**:
   - German translation integration for ESL learning
   - Definition and synonym clues for vocabulary building
-  - Scoring system encouraging efficient problem-solving
+  - Progressive hint system with strategic scoring
+  - Attempt history tracking for learning assessment
 
 #### Key Features Implemented
 
@@ -230,12 +240,25 @@ InvalidMove         // Move validation errors
 - **Vocabulary range** covering common English words with educational value
 - **Collaborative learning** encouraging peer-to-peer assistance
 
-#### User Interface
-- **Immersive Arcane theming** with Piltover (golden) and Zaunite (dark) visual styles
-- **Clear role differentiation** with distinct UI sections for each player type
-- **Progress tracking** showing current word, score, and hints used
-- **Attempt history** for tracking problem-solving approaches
-- **Integrated team chat** for strategy coordination
+#### User Interface & Experience
+- **AAA Gaming Experience** with cinematic presentation and professional animations
+- **Immersive full-screen design** with no white borders or visual distractions
+- **Role-specific visual identities**:
+  - Piltover: Golden hextech themes with clean, technological aesthetics
+  - Zaunite: Underground hacker vibes with smooth content transitions
+- **Interactive onboarding system**:
+  - Step-by-step tutorial with animated numbered guides
+  - Role preview demonstrations showing exact gameplay mechanics
+  - Connection guidance with room code sharing instructions
+- **Dynamic feedback system**:
+  - Full-screen success celebrations with auto-dismiss
+  - Smooth content transitions during word progression
+  - Real-time collaboration status with animated indicators
+- **Professional UI polish**:
+  - Custom font integration with proper web font loading
+  - Glassmorphism effects with backdrop blur throughout
+  - Responsive design optimized for all screen sizes
+  - Hardware-accelerated animations for smooth 60fps performance
 
 #### Multiplayer Architecture
 - **Room-based games** supporting exactly 2 players with distinct roles
@@ -270,15 +293,24 @@ CodeCrackerPlayerViewUpdated   // Role-specific view updates
 - **Attempt tracking** for learning assessment and replay value
 
 ### Usage Instructions (Code Cracker)
-1. Navigate to `/code-cracker` page
-2. Enter Room ID and Player Name
-3. Click "Join Room" then "Join Game"
-4. **Piltover Player**: Study the distorted word pattern
-5. **Zaunite Player**: Analyze the definition, German translation, and synonym
-6. **Both Players**: Collaborate via chat to solve the word
-7. Submit guesses and use hints strategically
-8. Progress through all 10 vocabulary words
-9. Use "Restart Game" to play again with different word order
+1. Navigate to `/code-cracker` page for immersive full-screen experience
+2. **Follow the interactive tutorial** - Read the step-by-step guide and role previews
+3. **Share room code** - Both players enter the same Room ID (e.g., "friends", "game123")
+4. **Connect together** - Click "Join Room" then "Join Game" (first = Piltover, second = Zaunite)
+5. **Experience role-specific gameplay**:
+   - **Piltover Player (Caitlyn)**: Study corrupted archive data with missing letters
+   - **Zaunite Player (Vi)**: Analyze intelligence clues (definition, German, synonym)
+6. **Collaborate in real-time** - Use integrated chat for strategy coordination
+7. **Solve progressively** - Submit guesses, use strategic hints, celebrate successes
+8. **Complete the challenge** - Progress through all 10 vocabulary words with scoring
+9. **Replay seamlessly** - Use "Restart Game" for new word sequences
+
+### Advanced Features
+- **Success celebrations**: Full-screen animations when words are decoded
+- **Smooth transitions**: Content flies out and new information flies in
+- **Strategic hints**: 3-tier system (length → first letter → category)
+- **Educational tracking**: Attempt history and performance scoring
+- **Responsive design**: Optimized experience across all devices
 
 ## SignalR Multiplayer Best Practices
 
@@ -377,9 +409,14 @@ public (bool Success, string Message) ProcessAction(string connectionId, object 
 
 ## Important Notes
 
-- This is a **game/entertainment application** focused on the Arcane universe
-- The project emphasizes **visual design** with extensive CSS animations and effects
+- This is a **premium game/entertainment application** focused on the Arcane universe
+- The project emphasizes **AAA-quality visual design** with cinematic animations and immersive theming
 - **Character selection logic is not yet implemented** (see TODO comments in LandingPage.razor:1069)
 - **Audio system is placeholder** functionality
 - Uses **Blazor Server** rendering mode throughout
-- **Multiplayer tic-tac-toe** now fully implemented with real-time synchronization
+- **Multiplayer games implemented**:
+  - **Tic-tac-toe**: Fully functional with real-time synchronization
+  - **Code Cracker**: Premium vocabulary puzzle with educational focus and advanced UX
+- **Advanced animation system** with hardware-accelerated CSS and smooth transitions
+- **Educational gaming focus** specifically designed for German ESL students
+- **Professional multiplayer architecture** with robust SignalR implementation
