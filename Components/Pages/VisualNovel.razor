@@ -437,14 +437,17 @@
  * Visual Novel Container & Base Styling
  ********************************************/
 .visual-novel {
-    position: relative;
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
     height: 100vh;
     overflow: hidden;
     font-family: 'Rajdhani', sans-serif;
     color: #fff;
     display: flex;
     flex-direction: column;
+    z-index: 1000;
 }
 
 /********************************************
@@ -520,7 +523,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-bottom: 35%;
+    
 }
 
 .characters-layer.single {
@@ -528,12 +531,14 @@
 }
 
 .characters-layer.dualcharacters {
-    justify-content: space-between;
-    padding: 0 10%;
+    justify-content: space-around;
+    padding: 0 5%;
+    
 }
 
 .character-container {
     position: relative;
+    bottom: 35%;
     transition: all 0.5s ease;
     filter: brightness(0.6) saturate(0.5);
     transform: scale(0.95);
@@ -854,7 +859,8 @@
     }
     
     .characters-layer.dualcharacters {
-        padding: 0 5%;
+        padding: 0 2%;
+        padding-bottom: 35%;
     }
     
     .portrait-image {

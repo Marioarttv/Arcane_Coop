@@ -3,54 +3,56 @@
 @using Arcane_Coop.Models
 @inject NavigationManager Navigation
 
-<div class="demo-container">
-    <div class="demo-header">
-        <h1 class="demo-title">Visual Novel System Demo</h1>
-        <p class="demo-subtitle">Experience the Arcane-themed narrative system</p>
-        
-        <div class="theme-selector">
-            <button class="theme-btn @(selectedTheme == NovelTheme.Piltover ? "active" : "")" 
-                    @onclick="() => SelectTheme(NovelTheme.Piltover)">
-                <span class="theme-icon">⚙️</span>
-                <span>Piltover Theme</span>
-                <small>Hextech & Progress</small>
-            </button>
+@if (showVisualNovel)
+{
+    <VisualNovel 
+        Scene="@currentScene" 
+        Configuration="@novelConfig"
+        OnStateChanged="@HandleStateChanged"
+        OnSceneComplete="@HandleSceneComplete" />
+}
+else
+{
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="demo-title">Visual Novel System Demo</h1>
+            <p class="demo-subtitle">Experience the Arcane-themed narrative system</p>
             
-            <button class="theme-btn @(selectedTheme == NovelTheme.Zaun ? "active" : "")" 
-                    @onclick="() => SelectTheme(NovelTheme.Zaun)">
-                <span class="theme-icon">⚡</span>
-                <span>Zaun Theme</span>
-                <small>Underground & Rebellion</small>
-            </button>
-        </div>
+            <div class="theme-selector">
+                <button class="theme-btn @(selectedTheme == NovelTheme.Piltover ? "active" : "")" 
+                        @onclick="() => SelectTheme(NovelTheme.Piltover)">
+                    <span class="theme-icon">⚙️</span>
+                    <span>Piltover Theme</span>
+                    <small>Hextech & Progress</small>
+                </button>
+                
+                <button class="theme-btn @(selectedTheme == NovelTheme.Zaun ? "active" : "")" 
+                        @onclick="() => SelectTheme(NovelTheme.Zaun)">
+                    <span class="theme-icon">⚡</span>
+                    <span>Zaun Theme</span>
+                    <small>Underground & Rebellion</small>
+                </button>
+            </div>
 
-        <div class="demo-controls">
-            <button class="demo-control-btn" @onclick="StartDemo">
-                <span>🎭</span>
-                Start Visual Novel Demo
-            </button>
-            
-            <button class="demo-control-btn" @onclick="StartCustomScene">
-                <span>📝</span>
-                Custom Scene Example
-            </button>
-            
-            <a href="/" class="demo-control-btn back-btn">
-                <span>🏠</span>
-                Back to Main
-            </a>
+            <div class="demo-controls">
+                <button class="demo-control-btn" @onclick="StartDemo">
+                    <span>🎭</span>
+                    Start Visual Novel Demo
+                </button>
+                
+                <button class="demo-control-btn" @onclick="StartCustomScene">
+                    <span>📝</span>
+                    Custom Scene Example
+                </button>
+                
+                <a href="/" class="demo-control-btn back-btn">
+                    <span>🏠</span>
+                    Back to Main
+                </a>
+            </div>
         </div>
     </div>
-
-    @if (showVisualNovel)
-    {
-        <VisualNovel 
-            Scene="@currentScene" 
-            Configuration="@novelConfig"
-            OnStateChanged="@HandleStateChanged"
-            OnSceneComplete="@HandleSceneComplete" />
-    }
-</div>
+}
 
 <style>
     .demo-container {
