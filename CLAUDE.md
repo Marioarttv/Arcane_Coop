@@ -60,6 +60,7 @@ dotnet publish -c Release
 - **Enum-based** city selection (City.Zaun, City.Piltover)
 - **Async/await** patterns for component interactions
 - **Cascading parameters** for context sharing
+- **CSS @ symbols must be escaped** in Razor components: use `@@keyframes`, `@@media`, `@@import`, `@@font-face`
 
 ### Static Assets
 - Located in **wwwroot/**
@@ -312,6 +313,126 @@ CodeCrackerPlayerViewUpdated   // Role-specific view updates
 - **Educational tracking**: Attempt history and performance scoring
 - **Responsive design**: Optimized experience across all devices
 
+## Signal Decoder: Simplified Listening Comprehension Game
+
+### Game Overview
+**Signal Decoder** is a simplified cooperative listening comprehension game designed for ESL students. Players work together to decode audio transmissions by filling in missing words, with one player listening to audio and the other seeing incomplete sentences.
+
+#### Narrative Theme
+- **Piltover Player (Caitlyn)**: Sees incomplete sentences with blanks to fill in
+- **Zaunite Player (Vi)**: Listens to audio transmissions and relays missing words to partner
+- **Collaborative Gameplay**: Communication between players is essential for success
+- **Clean, Focused Design**: Removed unnecessary complexity for better learning experience
+
+### Implementation Details
+
+#### Backend Architecture (`Hubs/GameHub.cs`)
+- **SimpleSignalDecoderGame class** with streamlined vocabulary system:
+  - 3 progressive signal transmissions with increasing difficulty
+  - Simple scoring system (10 points minus hints used per word)
+  - Position-specific word replacement using string templates
+  - Audio file progression with automatic updates
+- **Simplified GameHub methods**:
+  - `JoinSignalDecoderGame()` - Role-based player assignment (Piltover/Zaunite)
+  - `SubmitSignalDecoderGuess()` - Word validation with proper completion logic
+  - `RequestSignalDecoderHint()` - 3-tier hint system for learning support
+  - `RestartSignalDecoderGame()` - Complete game reset functionality
+
+#### Signal Progression System
+- **Signal 1**: `"Help! {0} spreading {1}!"` → "fire", "fast" (Emergency scenario)
+- **Signal 2**: `"{0} {1} {2}!"` → "evacuate", "building", "now" (Evacuation scenario)  
+- **Signal 3**: `"{0} {1}!"` → "medical", "emergency" (Medical scenario)
+- **Automatic Progression**: Game moves to next signal when current is completed
+- **Audio Updates**: Zaunite player gets new audio file automatically via @key forcing
+
+#### Key Technical Solutions
+- **Word Position Mapping**: Uses `{0}`, `{1}`, `{2}` placeholders for precise word placement
+- **Audio Element Refresh**: `@key="audioUpdateCounter"` forces Blazor to recreate audio elements
+- **Signal Completion Logic**: Prevents index out of bounds on final signal completion
+- **Animation Timing**: Success animations only trigger on signal completion, not individual words
+
+#### Frontend Implementation (`Components/Pages/SignalDecoder.razor`)
+- **Simplified UI with essential elements only**:
+  - Clean audio player for Zaunite players (removed frequency/morse displays)
+  - Clear sentence display for Piltover players with proper word replacement
+  - Progress tracking showing current signal and score
+  - Streamlined hint system integration
+- **Robust SignalR Integration**:
+  - Type-safe event handlers using simplified data models
+  - Real-time audio file updates with forced element refresh
+  - Proper word replacement display with position-specific mapping
+
+### Key Features Implemented
+
+#### Game Mechanics
+- **3-Signal Progression**: Emergency scenarios with increasing vocabulary complexity
+- **Position-Specific Word Replacement**: Each word fills its designated blank correctly
+- **Audio File Progression**: Automatic audio updates when moving between signals
+- **Smart Success Animations**: Celebrations only on signal completion, not individual words
+- **Hint System**: Category → Length/First Letter → Context hints for learning support
+
+#### Educational Value
+- **Listening Comprehension Focus**: Core ESL skill development through audio-text coordination
+- **Emergency Vocabulary**: Practical English words for urgent situations
+- **Collaborative Learning**: Encourages peer communication and teamwork
+- **Progressive Difficulty**: Vocabulary complexity increases across the three signals
+
+#### User Experience
+- **Clean, Distraction-Free Design**: Removed unnecessary UI elements (frequency displays, morse patterns)
+- **Immediate Visual Feedback**: Words appear in correct positions as typed
+- **Smooth Signal Transitions**: 2-second celebration delay before new signal loads
+- **Audio Debug Information**: Shows current audio file and update counter for troubleshooting
+- **Responsive Progress Display**: Real-time signal tracking (Signal: 1/3, 2/3, 3/3)
+
+#### Multiplayer Architecture
+- **Room-based games** supporting exactly 2 players with distinct roles
+- **Real-time audio synchronization** across player progression
+- **Type-safe SignalR messaging** using simplified data models
+- **Robust error handling** for game completion and edge cases
+
+### Technical Implementation Details
+
+#### SignalR Hub Methods
+```csharp
+JoinSignalDecoderGame(string roomId, string playerName)    // Join with role assignment
+SubmitSignalDecoderGuess(string roomId, string guess)      // Submit word with position validation
+RequestSignalDecoderHint(string roomId)                    // Request learning hints
+RestartSignalDecoderGame(string roomId)                    // Reset game state
+```
+
+#### Client-Side Event Handlers
+```csharp
+SignalDecoderGameJoined          // Player joins with role assignment
+SignalDecoderGameStateUpdated    // Real-time game state synchronization
+SignalDecoderGameCompleted       // Final game completion
+SignalDecoderInvalidGuess        // Guess validation feedback
+SignalDecoderCorrectGuess        // Success feedback (signal-level animations only)
+SignalDecoderPlayerViewUpdated   // Role-specific view updates with audio refresh
+```
+
+#### Data Models
+```csharp
+SimpleSignalData                 // Signal template with audio file
+SimplePlayerView                 // Role-specific view data
+SimpleGameState                  // Progress tracking and scoring
+```
+
+### Usage Instructions (Signal Decoder)
+1. Navigate to `/signal-decoder` page
+2. **Connect together** - Both players enter same Room ID and click "Join Room" then "Join Game"
+3. **Role Assignment** - First player becomes Piltover (text), second becomes Zaunite (audio)
+4. **Signal 1**: Piltover sees `"Help! ____ spreading ____!"`, Zaunite listens to emergency audio
+5. **Collaborate** - Zaunite listens and tells Piltover the missing words ("fire", "fast")
+6. **Progress** - Complete all 3 signals with different emergency scenarios
+7. **Restart** - Use "Restart Game" to play again with same room
+
+### Lessons Learned from Over-Engineering
+- **Started Complex**: Originally had 12+ audio files, priority systems, timers, complex UI
+- **Simplified Successfully**: Reduced to 3 essential signals with clean gameplay loop
+- **Focus on Learning**: Prioritized ESL education over complex game mechanics
+- **Technical Challenges Solved**: Audio updates, word positioning, completion logic, animation timing
+- **Result**: Clean, educational, functional listening comprehension tool
+
 ## SignalR Multiplayer Best Practices
 
 ### Key Insights for Robust SignalR Implementation
@@ -417,6 +538,7 @@ public (bool Success, string Message) ProcessAction(string connectionId, object 
 - **Multiplayer games implemented**:
   - **Tic-tac-toe**: Fully functional with real-time synchronization
   - **Code Cracker**: Premium vocabulary puzzle with educational focus and advanced UX
+  - **Signal Decoder**: Simplified listening comprehension game for ESL students
 - **Advanced animation system** with hardware-accelerated CSS and smooth transitions
 - **Educational gaming focus** specifically designed for German ESL students
 - **Professional multiplayer architecture** with robust SignalR implementation

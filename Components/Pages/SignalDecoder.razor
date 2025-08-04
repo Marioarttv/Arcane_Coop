@@ -1,0 +1,1855 @@
+@page "/signal-decoder"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Arcane_Coop.Hubs
+@using Arcane_Coop.Models
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>Signal Decoder: Communication Under Pressure</PageTitle>
+
+<div class="container">
+    <div class="header-section">
+        <h2 class="game-title">📡 Signal Decoder</h2>
+        <p class="game-subtitle">Caitlyn vs Vi - Intercept the Encrypted Transmissions</p>
+    </div>
+    
+    <div class="connection-status mb-3">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    @if (!inGame)
+    {
+        <div class="instructions-panel">
+            <div class="instruction-header">
+                <h3>📻 How to Play Signal Decoder</h3>
+            </div>
+            <div class="instruction-content">
+                <div class="step-by-step">
+                    <div class="instruction-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Share Room Code</h4>
+                            <p>Both players enter the <strong>same Room ID</strong> below. Choose any code like "signals123" or "decode".</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Join Together</h4>
+                            <p>Click <strong>"Join Room"</strong> then <strong>"Join Game"</strong>. First player becomes Caitlyn (Interceptor), second becomes Vi (Analyst).</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Decode Under Pressure</h4>
+                            <p><strong>Caitlyn</strong> sees fragmented text, <strong>Vi</strong> gets audio and signal data. Work together fast - signals decay over time!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="role-preview">
+                    <div class="role-card piltover-preview">
+                        <h4>🎯 Caitlyn (Signal Interceptor)</h4>
+                        <p>You see corrupted transmissions like:</p>
+                        <div class="preview-signal">Emergency: Code *** in sector *</div>
+                        <small>Decode the *** missing words</small>
+                    </div>
+                    <div class="role-card zaunite-preview">
+                        <h4>📡 Vi (Signal Analyst)</h4>
+                        <p>You get audio and technical data:</p>
+                        <ul class="preview-clues">
+                            <li><strong>🔊 Audio:</strong> Full transmission sound</li>
+                            <li><strong>📊 Frequency:</strong> 156.8 MHz</li>
+                            <li><strong>⚡ Morse:</strong> ··· ―――</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="game-setup mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="roomInput" class="form-label">Room ID:</label>
+                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+            </div>
+            <div class="col-md-6">
+                <label for="nameInput" class="form-label">Player Name:</label>
+                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+            </div>
+        </div>
+
+        <div class="setup-buttons mt-3">
+            <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                Join Room
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                Leave Room
+            </button>
+            <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                Join Game
+            </button>
+        </div>
+    </div>
+
+    @if (inGame && playerView != null)
+    {
+        <div class="game-section">
+            <div class="game-header">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="player-role @GetRoleClass()">
+                            @(playerView?.DisplayName ?? "Unknown Player")
+                        </h4>
+                        <p class="role-instruction">@(playerView?.Instruction ?? "")</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="game-progress">
+                            <strong>Signal:</strong> @gameState?.CurrentSignal / @gameState?.TotalSignals<br/>
+                            <strong>Score:</strong> @gameState?.Score<br/>
+                            <strong>Remaining Words:</strong> @gameState?.RemainingWords<br/>
+                            <strong>Hints Used:</strong> @gameState?.HintsUsed / 3
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (playerView != null && gameState?.PlayerCount == 2)
+            {
+                <div class="signal-content">
+                    @if (playerView?.Role == "Piltover")
+                    {
+                        <div class="piltover-section">
+                            <div class="intercepted-message">
+                                <h3>📟 Intercepted Signal:</h3>
+                                <div class="message-display">@(playerView?.SentenceWithBlanks ?? "")</div>
+                            </div>
+                            @if (playerView?.GuessedWords?.Any() == true)
+                            {
+                                <div class="decoded-words">
+                                    <h5>🔓 Decoded Words:</h5>
+                                    <div class="word-chips">
+                                        @foreach (var word in playerView.GuessedWords)
+                                        {
+                                            <span class="word-chip">@word</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="zaunite-section">
+                            <div class="zaunite-header">
+                                <h3 class="signal-title">
+                                    <span class="signal-symbol">📡</span>
+                                    AUDIO INTELLIGENCE
+                                    <span class="signal-symbol">📡</span>
+                                </h3>
+                            </div>
+                            <div class="analysis-cards">
+                                @if (!string.IsNullOrEmpty(playerView?.AudioFile))
+                                {
+                                    <div class="analysis-card audio-card">
+                                        <h4>🔊 Listen to the Audio Signal</h4>
+                                        <audio @key="audioUpdateCounter" controls class="signal-audio">
+                                            <source src="@playerView.AudioFile" type="audio/mpeg">
+                                            Audio not supported
+                                        </audio>
+                                        <p class="audio-instruction">Listen carefully and tell your partner the missing words!</p>
+                                        <small class="text-muted">Audio: @playerView.AudioFile (Update: @audioUpdateCounter)</small>
+                                    </div>
+                                }
+                            </div>
+                            @if (playerView?.GuessedWords?.Any() == true)
+                            {
+                                <div class="decoded-words">
+                                    <h5>🔓 Decoded Words:</h5>
+                                    <div class="word-chips">
+                                        @foreach (var word in playerView.GuessedWords)
+                                        {
+                                            <span class="word-chip">@word</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="game-actions">
+                <div class="guess-section">
+                    <div class="input-group">
+                        <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
+                               class="form-control" placeholder="Enter missing word..." />
+                        <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
+                            Decode Word
+                        </button>
+                    </div>
+                </div>
+
+                <div class="game-controls mt-3">
+                    <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
+                        Signal Boost (@(3 - (gameState?.HintsUsed ?? 0)) left)
+                    </button>
+                    <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
+                        Restart Mission
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(gameStatus))
+            {
+                <div class="alert @GetStatusClass() mt-3">@gameStatus</div>
+            }
+
+            @if (!string.IsNullOrEmpty(latestHint))
+            {
+                <div class="alert alert-info mt-2">
+                    <strong>Signal Boost:</strong> @latestHint
+                </div>
+            }
+
+            @if (playerView?.AttemptHistory?.Any() == true)
+            {
+                <div class="attempt-history mt-3">
+                    <h5>Transmission Log:</h5>
+                    <ul class="list-group">
+                        @foreach (var attempt in playerView.AttemptHistory)
+                        {
+                            <li class="list-group-item">@attempt</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (gameState?.PlayersNeeded > 0)
+            {
+                <div class="connection-guidance">
+                    <div class="waiting-indicator">
+                        <span>📡 Waiting for @gameState.PlayersNeeded more operative(s)</span>
+                        <div class="loading-dots">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">
+                        Share Room ID "<strong>@roomId</strong>" with your partner!
+                    </p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showSuccessAnimation)
+    {
+        <div class="success-overlay" @onclick="() => showSuccessAnimation = false">
+            <div class="success-content">
+                <div class="success-title">📡 DECODED!</div>
+                <div class="success-message">@successMessage</div>
+                <p style="opacity: 0.8;">Click anywhere to continue...</p>
+            </div>
+        </div>
+    }
+
+    <div class="chat-section mt-4">
+        <h5>🔗 Secure Communication Channel</h5>
+        <div class="input-group mb-3">
+            <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
+                   class="form-control" placeholder="Coordinate with your partner..." />
+            <button class="btn btn-success" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
+                Send
+            </button>
+        </div>
+
+        <div class="messages-container">
+            @foreach (var message in messages)
+            {
+                <div class="message">@message</div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+    /* Load Arcane Nine font */
+    @@font-face {
+        font-family: 'Arcane Nine';
+        src: url('/fonts/Arcane Nine.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    :root {
+        --zaun-primary: #0f3427;
+        --zaun-secondary: #1e5f47;
+        --zaun-accent: #00d4aa;
+        --zaun-glow: #00ffc8;
+        --zaun-dark: #0a1e16;
+        --shimmer-pink: #ff007f;
+        --piltover-primary: #2c1810;
+        --piltover-secondary: #5c3317;
+        --piltover-accent: #c8aa6e;
+        --piltover-glow: #ffd700;
+        --piltover-light: #f5e6a3;
+        --hextech-blue: #0596aa;
+        --arcane-blue: #0596aa;
+        --neutral-dark: #000a0f;
+        --neutral-light: #f0f8ff;
+        --signal-strong: #00ff00;
+        --signal-medium: #ffff00;
+        --signal-weak: #ff0000;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body, html {
+        margin: 0;
+        padding: 0;
+        background: var(--neutral-dark);
+        overflow-x: hidden;
+    }
+
+    .container {
+        position: relative;
+        min-height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 1rem;
+        font-family: 'Rajdhani', sans-serif;
+        color: var(--neutral-light);
+        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--neutral-dark) 50%, var(--piltover-primary) 100%);
+        background-attachment: fixed;
+        box-sizing: border-box;
+    }
+
+    .container::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(200, 170, 110, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(5, 150, 170, 0.05) 0%, transparent 60%);
+        animation: atmosphereFlow 12s ease-in-out infinite alternate;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    @@keyframes atmosphereFlow {
+        0% { opacity: 0.6; transform: scale(1) rotate(0deg); }
+        50% { opacity: 1; transform: scale(1.02) rotate(1deg); }
+        100% { opacity: 0.8; transform: scale(1.01) rotate(-1deg); }
+    }
+
+    .header-section {
+        text-align: center;
+        padding: 2rem 0;
+        position: relative;
+        z-index: 10;
+    }
+
+    .game-title {
+        font-family: 'Arcane Nine', fantasy;
+        font-size: 3.5rem;
+        background: linear-gradient(45deg, var(--hextech-blue), var(--zaun-accent), var(--piltover-accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(5, 150, 170, 0.5), 0 0 60px rgba(0, 212, 170, 0.3);
+        margin-bottom: 0.5rem;
+        animation: titleGlow 4s ease-in-out infinite alternate;
+    }
+
+    @@keyframes titleGlow {
+        0% { filter: brightness(1) drop-shadow(0 0 20px rgba(5, 150, 170, 0.4)); }
+        100% { filter: brightness(1.2) drop-shadow(0 0 40px rgba(0, 212, 170, 0.6)); }
+    }
+
+    .game-subtitle {
+        font-family: 'Cinzel', serif;
+        font-size: 1.2rem;
+        color: var(--neutral-light);
+        opacity: 0.9;
+        margin-bottom: 2rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Signal-specific styling */
+    .transmission-area {
+        margin: 2rem 0;
+        padding: 2rem;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .piltover-section {
+        background: linear-gradient(135deg, var(--piltover-primary) 0%, var(--piltover-secondary) 50%, var(--hextech-blue) 100%);
+        color: var(--neutral-light);
+        position: relative;
+    }
+
+    .zaunite-section {
+        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--zaun-primary) 50%, var(--zaun-secondary) 100%);
+        color: var(--neutral-light);
+        position: relative;
+    }
+
+    .transmission-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: rgba(0,0,0,0.3);
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+
+    .transmission-type {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--piltover-glow);
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .signal-strength-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .signal-bar {
+        width: 200px;
+        height: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 5px;
+        overflow: hidden;
+        border: 1px solid var(--hextech-blue);
+    }
+
+    .signal-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--signal-weak), var(--signal-medium), var(--signal-strong));
+        transition: width 0.5s ease;
+        animation: signalPulse 2s ease-in-out infinite alternate;
+    }
+
+    @@keyframes signalPulse {
+        0% { filter: brightness(1); }
+        100% { filter: brightness(1.2); }
+    }
+
+    .signal-text {
+        font-family: 'Orbitron', monospace;
+        font-weight: 600;
+        color: var(--zaun-accent);
+    }
+
+    .signal-strength-strong { color: var(--signal-strong); }
+    .signal-strength-medium { color: var(--signal-medium); }
+    .signal-strength-weak { color: var(--signal-weak); }
+
+    .intercepted-message {
+        background: rgba(0,0,0,0.4);
+        border: 2px solid var(--hextech-blue);
+        padding: 2rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 2;
+    }
+
+    .message-display {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-align: center;
+        padding: 2rem;
+        background: rgba(0,0,0,0.3);
+        border-radius: 8px;
+        text-transform: uppercase;
+        text-shadow: 0 0 15px rgba(255,255,255,0.3);
+        word-break: break-word;
+    }
+
+    .signal-decay {
+        animation: signalInterference 2s ease-in-out infinite;
+    }
+
+    @@keyframes signalInterference {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        25% { opacity: 0.8; transform: scale(1.01) skew(0.5deg, 0deg); }
+        50% { opacity: 0.9; transform: scale(0.99) skew(-0.5deg, 0deg); }
+        75% { opacity: 0.85; transform: scale(1.005) skew(0.2deg, 0deg); }
+    }
+
+    .analysis-cards {
+        display: grid;
+        gap: 1.5rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .analysis-card {
+        background: rgba(0,0,0,0.4);
+        border-left: 4px solid var(--zaun-accent);
+        padding: 1.5rem;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analysis-card h4 {
+        color: var(--zaun-glow);
+        font-family: 'Orbitron', monospace;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
+    }
+
+    .signal-audio {
+        width: 100%;
+        margin: 1rem 0;
+        border-radius: 5px;
+    }
+
+    .frequency-display {
+        font-family: 'Orbitron', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--hextech-blue);
+        text-align: center;
+        text-shadow: 0 0 15px rgba(5, 150, 170, 0.5);
+        margin: 1rem 0;
+    }
+
+    .frequency-bars {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 5px;
+        height: 60px;
+        margin-top: 1rem;
+    }
+
+    .freq-bar {
+        width: 8px;
+        background: linear-gradient(0deg, var(--zaun-accent), var(--zaun-glow));
+        border-radius: 4px 4px 0 0;
+        animation: frequencyPulse 1.5s ease-in-out infinite alternate;
+    }
+
+    .freq-bar:nth-child(odd) { animation-delay: 0.2s; }
+    .freq-bar:nth-child(even) { animation-delay: 0.4s; }
+
+    @@keyframes frequencyPulse {
+        0% { opacity: 0.6; transform: scaleY(0.8); }
+        100% { opacity: 1; transform: scaleY(1); }
+    }
+
+    .morse-display {
+        font-family: 'Orbitron', monospace;
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--zaun-glow);
+        text-align: center;
+        letter-spacing: 0.3em;
+        text-shadow: 0 0 20px rgba(0, 255, 200, 0.6);
+        margin: 1rem 0;
+    }
+
+    .morse-animation {
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .morse-pulse {
+        width: 10px;
+        height: 10px;
+        background: var(--zaun-glow);
+        border-radius: 50%;
+        animation: morseBlink 2s ease-in-out infinite;
+        box-shadow: 0 0 15px var(--zaun-glow);
+    }
+
+    @@keyframes morseBlink {
+        0%, 20%, 40%, 60%, 80%, 100% { opacity: 0; }
+        10%, 30%, 50%, 70%, 90% { opacity: 1; }
+    }
+
+    .word-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .word-chip {
+        background: linear-gradient(45deg, var(--zaun-accent), var(--zaun-glow));
+        color: var(--neutral-dark);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 10px rgba(0, 212, 170, 0.4);
+        animation: chipGlow 2s ease-in-out infinite alternate;
+    }
+
+    @@keyframes chipGlow {
+        0% { box-shadow: 0 2px 10px rgba(0, 212, 170, 0.4); }
+        100% { box-shadow: 0 4px 20px rgba(0, 255, 200, 0.6); }
+    }
+
+    /* Enhanced scanner header for Zaunite */
+    .zaunite-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 3;
+    }
+
+    .signal-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--zaun-glow);
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 15px rgba(0, 255, 200, 0.5);
+        position: relative;
+    }
+
+    .signal-symbol {
+        display: inline-block;
+        margin: 0 1rem;
+        font-size: 2rem;
+        color: var(--hextech-blue);
+        animation: signalBlink 3s ease-in-out infinite;
+    }
+
+    @@keyframes signalBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .scanner-lines {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .scanner-lines .line {
+        width: 80px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--hextech-blue), transparent);
+        opacity: 0.6;
+        animation: scannerSweep 2s ease-in-out infinite;
+    }
+
+    .scanner-lines .line:nth-child(2) { animation-delay: 0.3s; }
+    .scanner-lines .line:nth-child(3) { animation-delay: 0.6s; }
+
+    @@keyframes scannerSweep {
+        0%, 100% { opacity: 0.3; transform: scaleX(1); }
+        50% { opacity: 1; transform: scaleX(1.2); }
+    }
+
+    /* Reuse existing styles from CodeCracker for common elements */
+    .connection-status, .game-setup, .form-label, .form-control, .btn, 
+    .game-section, .player-role, .role-instruction, .game-progress,
+    .game-actions, .guess-section, .attempt-history, .list-group-item,
+    .chat-section, .messages-container, .message, .alert,
+    .instructions-panel, .instruction-header, .step-by-step, .instruction-step,
+    .step-number, .step-content, .role-preview, .role-card, .success-overlay,
+    .success-content, .success-title, .success-message, .connection-guidance,
+    .waiting-indicator, .loading-dots, .loading-dot {
+        /* Inherit styles from CodeCracker - same CSS classes */
+    }
+
+    /* Copy the CodeCracker styles here for consistency */
+    .connection-status {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .game-setup {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .form-label {
+        color: var(--piltover-accent);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .form-control {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(200, 170, 110, 0.4);
+        border-radius: 8px;
+        color: var(--neutral-light);
+        padding: 0.75rem;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        background: rgba(0,0,0,0.7);
+        border-color: var(--zaun-accent);
+        box-shadow: 0 0 0 0.2rem rgba(0, 212, 170, 0.25), 0 0 20px rgba(0, 212, 170, 0.3);
+        color: var(--neutral-light);
+    }
+
+    .btn {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, var(--hextech-blue), var(--zaun-accent));
+        color: white;
+        box-shadow: 0 4px 15px rgba(5, 150, 170, 0.4);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(45deg, var(--zaun-accent), var(--hextech-blue));
+        box-shadow: 0 6px 20px rgba(0, 212, 170, 0.6);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(45deg, var(--piltover-secondary), var(--piltover-accent));
+        color: white;
+        box-shadow: 0 4px 15px rgba(200, 170, 110, 0.4);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(45deg, var(--piltover-accent), var(--piltover-secondary));
+        box-shadow: 0 6px 20px rgba(200, 170, 110, 0.6);
+        transform: translateY(-2px);
+    }
+
+    .btn-success {
+        background: linear-gradient(45deg, var(--zaun-secondary), var(--zaun-accent));
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 212, 170, 0.4);
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(45deg, var(--zaun-accent), var(--zaun-glow));
+        box-shadow: 0 6px 20px rgba(0, 255, 200, 0.6);
+        transform: translateY(-2px);
+    }
+
+    .btn-info {
+        background: linear-gradient(45deg, var(--hextech-blue), var(--arcane-blue));
+        color: white;
+        box-shadow: 0 4px 15px rgba(5, 150, 170, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(45deg, var(--piltover-accent), var(--piltover-glow));
+        color: var(--neutral-dark);
+        box-shadow: 0 4px 15px rgba(200, 170, 110, 0.4);
+    }
+
+    .game-section {
+        background: rgba(0,0,0,0.6);
+        border: 2px solid;
+        border-image: linear-gradient(45deg, var(--hextech-blue), var(--zaun-accent), var(--piltover-accent)) 1;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(15px);
+        box-shadow: 
+            0 8px 32px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .player-role {
+        font-family: 'Orbitron', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .player-role.piltover {
+        background: linear-gradient(45deg, var(--piltover-accent), var(--piltover-glow));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+        filter: drop-shadow(0 2px 4px rgba(200, 170, 110, 0.3));
+    }
+
+    .player-role.zaunite {
+        background: linear-gradient(45deg, var(--zaun-accent), var(--zaun-glow));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
+        filter: drop-shadow(0 2px 4px rgba(0, 212, 170, 0.3));
+    }
+
+    .role-instruction {
+        color: var(--neutral-light);
+        font-style: italic;
+        margin-bottom: 1.5rem;
+        opacity: 0.9;
+        font-size: 1.1rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .game-progress {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: right;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        font-family: 'Orbitron', monospace;
+        position: relative;
+        z-index: 2;
+    }
+
+    .game-actions {
+        text-align: center;
+        margin: 2rem 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    .guess-section .input-group {
+        max-width: 600px;
+        margin: 0 auto 2rem;
+    }
+
+    .attempt-history {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        padding: 1.5rem;
+        border-radius: 12px;
+        max-height: 250px;
+        overflow-y: auto;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .list-group-item {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(200, 170, 110, 0.2);
+        color: var(--neutral-light);
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        padding: 0.75rem;
+    }
+
+    .chat-section {
+        background: rgba(0,0,0,0.4);
+        border-top: 2px solid rgba(200, 170, 110, 0.3);
+        padding: 2rem;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .chat-section h5 {
+        color: var(--hextech-blue);
+        font-family: 'Orbitron', monospace;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .messages-container {
+        height: 300px;
+        overflow-y: auto;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        padding: 1rem;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .message {
+        color: var(--neutral-light);
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(200, 170, 110, 0.1);
+        font-family: 'Rajdhani', sans-serif;
+    }
+
+    .alert {
+        border-radius: 10px;
+        border: none;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: rgba(0, 212, 170, 0.2);
+        color: var(--zaun-glow);
+        border-left: 4px solid var(--zaun-accent);
+    }
+
+    .alert-danger {
+        background: rgba(255, 0, 127, 0.2);
+        color: #ff6b9d;
+        border-left: 4px solid var(--shimmer-pink);
+    }
+
+    .alert-info {
+        background: rgba(5, 150, 170, 0.2);
+        color: var(--hextech-blue);
+        border-left: 4px solid var(--arcane-blue);
+    }
+
+    .alert-warning {
+        background: rgba(200, 170, 110, 0.2);
+        color: var(--piltover-glow);
+        border-left: 4px solid var(--piltover-accent);
+    }
+
+    /* Instructions Panel */
+    .instructions-panel {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(200, 170, 110, 0.3);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .instruction-header h3 {
+        font-family: 'Orbitron', monospace;
+        color: var(--hextech-blue);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .step-by-step {
+        margin-bottom: 2rem;
+    }
+
+    .instruction-step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: rgba(0,0,0,0.2);
+        border-radius: 12px;
+        border-left: 4px solid var(--hextech-blue);
+        transition: all 0.3s ease;
+    }
+
+    .instruction-step:hover {
+        background: rgba(0,0,0,0.3);
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(5, 150, 170, 0.2);
+    }
+
+    .step-number {
+        background: linear-gradient(45deg, var(--hextech-blue), var(--zaun-accent));
+        color: var(--neutral-light);
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(5, 150, 170, 0.4);
+    }
+
+    .step-content h4 {
+        color: var(--hextech-blue);
+        font-family: 'Orbitron', monospace;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .step-content p {
+        color: var(--neutral-light);
+        opacity: 0.9;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .role-preview {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .role-card {
+        padding: 1.5rem;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .piltover-preview {
+        background: linear-gradient(135deg, var(--piltover-primary) 0%, var(--piltover-secondary) 100%);
+        border: 2px solid var(--piltover-accent);
+    }
+
+    .zaunite-preview {
+        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--zaun-primary) 100%);
+        border: 2px solid var(--zaun-accent);
+    }
+
+    .role-card h4 {
+        font-family: 'Orbitron', monospace;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .preview-signal {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-align: center;
+        padding: 1rem;
+        background: rgba(0,0,0,0.4);
+        border-radius: 8px;
+        margin: 1rem 0;
+        text-transform: uppercase;
+    }
+
+    .preview-clues {
+        list-style: none;
+        padding: 0;
+    }
+
+    .preview-clues li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 0.9rem;
+    }
+
+    /* Success Animation */
+    .success-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(5, 150, 170, 0.3) 0%, rgba(0, 0, 0, 0.8) 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: successFadeIn 0.5s ease-out;
+    }
+
+    .success-content {
+        text-align: center;
+        animation: successBounce 0.8s ease-out;
+    }
+
+    .success-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 4rem;
+        color: var(--hextech-blue);
+        text-shadow: 0 0 30px var(--zaun-accent);
+        margin-bottom: 1rem;
+        animation: successPulse 2s ease-in-out infinite;
+    }
+
+    .success-message {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.5rem;
+        color: var(--neutral-light);
+        margin-bottom: 2rem;
+    }
+
+    .connection-guidance {
+        background: rgba(5, 150, 170, 0.1);
+        border: 1px solid var(--hextech-blue);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: pulse 2s ease-in-out infinite alternate;
+    }
+
+    .waiting-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--hextech-blue);
+        font-weight: 600;
+    }
+
+    .loading-dots {
+        display: inline-flex;
+        gap: 0.2rem;
+    }
+
+    .loading-dot {
+        width: 4px;
+        height: 4px;
+        background: var(--hextech-blue);
+        border-radius: 50%;
+        animation: loadingDot 1.4s ease-in-out infinite both;
+    }
+
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @@keyframes loadingDot {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes successFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes successBounce {
+        0% { transform: scale(0.3) translateY(50px); opacity: 0; }
+        50% { transform: scale(1.1) translateY(-10px); opacity: 1; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    @@keyframes successPulse {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.05); filter: brightness(1.2); }
+    }
+
+    @@keyframes pulse {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .game-title {
+            font-size: 2.5rem;
+        }
+        
+        .message-display {
+            font-size: 1.2rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .player-role {
+            font-size: 1.5rem;
+        }
+        
+        .container {
+            padding: 1rem;
+        }
+        
+        .game-section, .game-setup, .chat-section, .instructions-panel {
+            padding: 1.5rem;
+        }
+
+        .role-preview {
+            grid-template-columns: 1fr;
+        }
+
+        .success-title {
+            font-size: 2.5rem;
+        }
+
+        .instruction-step {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .step-number {
+            margin: 0 0 1rem 0;
+        }
+
+        .transmission-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .signal-bar {
+            width: 150px;
+        }
+    }
+
+    /* Multiple Transmissions UI */
+    .transmissions-overview {
+        background: rgba(5, 150, 170, 0.05);
+        border: 2px solid var(--hextech-blue);
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 0 30px rgba(5, 150, 170, 0.3);
+    }
+
+    .overview-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.8rem;
+        color: var(--hextech-blue);
+        text-align: center;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 10px var(--hextech-blue);
+        animation: titlePulse 2s ease-in-out infinite alternate;
+    }
+
+    .network-icon {
+        color: var(--zaun-accent);
+        margin: 0 1rem;
+        animation: networkBlink 1.5s ease-in-out infinite alternate;
+    }
+
+    .overview-instruction {
+        text-align: center;
+        color: var(--neutral-light);
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        font-style: italic;
+    }
+
+    .transmission-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .transmission-card {
+        background: rgba(20, 20, 20, 0.9);
+        border: 2px solid var(--neutral-dark);
+        border-radius: 12px;
+        padding: 1.5rem;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .transmission-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .transmission-card.selected {
+        border-color: var(--hextech-blue);
+        background: rgba(5, 150, 170, 0.1);
+        box-shadow: 0 0 20px rgba(5, 150, 170, 0.4);
+        animation: selectedPulse 2s ease-in-out infinite alternate;
+    }
+
+    .transmission-card.priority-critical {
+        border-left: 5px solid #ff4444;
+    }
+
+    .transmission-card.priority-important {
+        border-left: 5px solid #ffaa00;
+    }
+
+    .transmission-card.priority-standard {
+        border-left: 5px solid #4477ff;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .priority-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .priority-badge.priority-critical {
+        background: rgba(255, 68, 68, 0.2);
+        color: #ff6666;
+        border: 1px solid #ff4444;
+        animation: criticalBlink 1s ease-in-out infinite alternate;
+    }
+
+    .priority-badge.priority-important {
+        background: rgba(255, 170, 0, 0.2);
+        color: #ffcc44;
+        border: 1px solid #ffaa00;
+    }
+
+    .priority-badge.priority-standard {
+        background: rgba(68, 119, 255, 0.2);
+        color: #6699ff;
+        border: 1px solid #4477ff;
+    }
+
+    .timer-display {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .timer-value {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--neutral-light);
+        min-width: 40px;
+    }
+
+    .timer-bar {
+        width: 100px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .timer-fill {
+        height: 100%;
+        transition: width 1s linear;
+    }
+
+    .timer-fill.timer-safe {
+        background: linear-gradient(90deg, #44ff44, #66ff66);
+    }
+
+    .timer-fill.timer-warning {
+        background: linear-gradient(90deg, #ffaa00, #ffcc44);
+    }
+
+    .timer-fill.timer-critical {
+        background: linear-gradient(90deg, #ff4444, #ff6666);
+        animation: timerCritical 0.5s ease-in-out infinite alternate;
+    }
+
+    .transmission-info {
+        margin: 1rem 0;
+    }
+
+    .transmission-type {
+        font-size: 1.1rem;
+        color: var(--hextech-blue);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .word-progress {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    .progress-text {
+        color: var(--neutral-light);
+        font-size: 0.9rem;
+    }
+
+    .progress-dots {
+        display: flex;
+        gap: 0.3rem;
+    }
+
+    .progress-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .progress-dot.completed {
+        background: var(--hextech-blue);
+        box-shadow: 0 0 8px var(--hextech-blue);
+    }
+
+    .selected-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(90deg, var(--hextech-blue), var(--zaun-accent));
+        padding: 0.5rem;
+        text-align: center;
+        font-weight: bold;
+        color: white;
+        border-radius: 0 0 10px 10px;
+        animation: indicatorPulse 1.5s ease-in-out infinite alternate;
+    }
+
+    .indicator-text {
+        text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .active-transmission-area {
+        margin-top: 2rem;
+        border-top: 2px solid var(--hextech-blue);
+        padding-top: 2rem;
+    }
+
+    /* Animations for new elements */
+    @@keyframes titlePulse {
+        0% { opacity: 0.8; transform: scale(1); }
+        100% { opacity: 1; transform: scale(1.02); }
+    }
+
+    @@keyframes networkBlink {
+        0% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    @@keyframes selectedPulse {
+        0% { box-shadow: 0 0 20px rgba(5, 150, 170, 0.4); }
+        100% { box-shadow: 0 0 30px rgba(5, 150, 170, 0.7); }
+    }
+
+    @@keyframes criticalBlink {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    @@keyframes timerCritical {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    @@keyframes indicatorPulse {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    /* Responsive design for transmission cards */
+    @@media (max-width: 768px) {
+        .transmission-cards {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .transmission-card {
+            padding: 1rem;
+        }
+
+        .overview-title {
+            font-size: 1.4rem;
+        }
+
+        .card-header {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .timer-display {
+            justify-content: center;
+        }
+
+        .priority-badge {
+            text-align: center;
+        }
+    }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = new();
+    private string roomId = "";
+    private string playerName = "";
+    private string messageInput = "";
+    private string currentGuess = "";
+    private string gameStatus = "";
+    private string latestHint = "";
+    
+    // Game state - SIMPLIFIED
+    private bool inGame = false;
+    private SimplePlayerViewClient? playerView;
+    private SimpleGameStateClient? gameState;
+    private int audioUpdateCounter = 0;
+    
+    // Animation state
+    private bool showSuccessAnimation = false;
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        // Room management events
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} joined the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            var message = $"{DateTime.Now:HH:mm:ss} - {name} left the room";
+            messages.Add(message);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("ReceiveMessage", (name, message) =>
+        {
+            var formattedMessage = $"{DateTime.Now:HH:mm:ss} - {name}: {message}";
+            messages.Add(formattedMessage);
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Signal Decoder game events - SIMPLIFIED
+        hubConnection.On<string, SimplePlayerView>("SignalDecoderGameJoined", (role, view) =>
+        {
+            playerView = new SimplePlayerViewClient
+            {
+                Role = view.Role,
+                DisplayName = view.DisplayName,
+                Instruction = view.Instruction,
+                SentenceWithBlanks = view.SentenceWithBlanks,
+                AudioFile = view.AudioFile,
+                AttemptHistory = view.AttemptHistory,
+                GuessedWords = view.GuessedWords
+            };
+            
+            // Initialize audio counter
+            if (!string.IsNullOrEmpty(view.AudioFile))
+            {
+                audioUpdateCounter++;
+            }
+            
+            inGame = true;
+            gameStatus = $"Joined mission as {role}. Waiting for partner...";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined as {role}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("SignalDecoderGameFull", () =>
+        {
+            gameStatus = "Mission is full! Cannot join.";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Mission is full");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<SimpleGameState>("SignalDecoderGameStateUpdated", (state) =>
+        {
+            gameState = new SimpleGameStateClient
+            {
+                Score = state.Score,
+                HintsUsed = state.HintsUsed,
+                PlayerCount = state.PlayerCount,
+                PlayersNeeded = state.PlayersNeeded,
+                IsCompleted = state.IsCompleted,
+                RemainingWords = state.RemainingWords
+            };
+            
+            if (gameState?.PlayerCount == 2 && gameState?.IsCompleted == false)
+            {
+                gameStatus = "Both operatives connected! Decoding transmission...";
+            }
+            else if (gameState?.PlayerCount < 2)
+            {
+                gameStatus = "Waiting for partner operative...";
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<SimplePlayerView>("SignalDecoderPlayerViewUpdated", (view) =>
+        {
+            var oldAudioFile = playerView?.AudioFile;
+            playerView = new SimplePlayerViewClient
+            {
+                Role = view.Role,
+                DisplayName = view.DisplayName,
+                Instruction = view.Instruction,
+                SentenceWithBlanks = view.SentenceWithBlanks,
+                AudioFile = view.AudioFile,
+                AttemptHistory = view.AttemptHistory,
+                GuessedWords = view.GuessedWords
+            };
+            
+            // Force audio element to update if audio file changed
+            if (oldAudioFile != view.AudioFile && !string.IsNullOrEmpty(view.AudioFile))
+            {
+                audioUpdateCounter++;
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, int, int>("SignalDecoderGameCompleted", (message, score, transmissionsDecoded) =>
+        {
+            gameStatus = $"🎉 {message}";
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Signal decoded! Final score: {score}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("SignalDecoderInvalidGuess", (message) =>
+        {
+            gameStatus = $"❌ {message}";
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("SignalDecoderCorrectGuess", (message) =>
+        {
+            // Only show success animation for complete signal decoding, not individual words
+            if (message.Contains("New signal incoming") || message.Contains("All signals decoded"))
+            {
+                successMessage = message;
+                showSuccessAnimation = true;
+                InvokeAsync(StateHasChanged);
+                
+                // Auto-dismiss after 2 seconds
+                InvokeAsync(async () =>
+                {
+                    await Task.Delay(2000);
+                    showSuccessAnimation = false;
+                    StateHasChanged();
+                });
+            }
+            else
+            {
+                // Just update the status for individual words without animation
+                gameStatus = message;
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        hubConnection.On<string>("SignalDecoderHintReceived", (hint) =>
+        {
+            latestHint = hint;
+            messages.Add($"{DateTime.Now:HH:mm:ss} - Signal boost: {hint}");
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined room: {roomId}");
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
+            messages.Add($"{DateTime.Now:HH:mm:ss} - You left room: {roomId}");
+            inGame = false;
+            playerView = null;
+            gameState = null;
+            gameStatus = "";
+            latestHint = "";
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinSignalDecoderGame", roomId, playerName);
+        }
+    }
+
+    private async Task SubmitGuess()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(currentGuess))
+        {
+            await hubConnection.SendAsync("SubmitSignalDecoderGuess", roomId, currentGuess);
+            currentGuess = "";
+            latestHint = "";
+        }
+    }
+
+    private async Task RequestHint()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RequestSignalDecoderHint", roomId);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartSignalDecoderGame", roomId);
+            gameStatus = "Mission restarted!";
+            latestHint = "";
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(messageInput) && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("SendMessageToRoom", roomId, playerName, messageInput);
+            messageInput = "";
+        }
+    }
+
+    private string GetRoleClass()
+    {
+        return playerView?.Role?.ToLower() ?? "";
+    }
+
+    private string GetStatusClass()
+    {
+        if (gameStatus.Contains("Correct") || gameStatus.Contains("🎉") || gameStatus.Contains("📡"))
+            return "alert-success";
+        else if (gameStatus.Contains("❌") || gameStatus.Contains("Invalid"))
+            return "alert-danger";
+        else
+            return "alert-info";
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    // Simplified client-side data classes
+    public class SimplePlayerViewClient
+    {
+        public string Role { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Instruction { get; set; } = "";
+        public string? SentenceWithBlanks { get; set; }
+        public string? AudioFile { get; set; }
+        public List<string> AttemptHistory { get; set; } = new();
+        public List<string> GuessedWords { get; set; } = new();
+    }
+
+    public class SimpleGameStateClient
+    {
+        public int Score { get; set; }
+        public int HintsUsed { get; set; }
+        public int PlayerCount { get; set; }
+        public int PlayersNeeded { get; set; }
+        public bool IsCompleted { get; set; }
+        public int RemainingWords { get; set; }
+        public int CurrentSignal { get; set; }
+        public int TotalSignals { get; set; }
+        public int SignalsCompleted { get; set; }
+    }
+}

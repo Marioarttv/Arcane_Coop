@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using Arcane_Coop.Models;
 
 namespace Arcane_Coop.Hubs;
 
@@ -7,6 +8,7 @@ public class GameHub : Hub
 {
     private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
     private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
+    private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
 
     public async Task JoinRoom(string roomId, string playerName)
     {
@@ -156,6 +158,102 @@ public class GameHub : Hub
         }
     }
 
+    // Signal Decoder specific methods - SIMPLIFIED
+    public async Task JoinSignalDecoderGame(string roomId, string playerName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _signalDecoderGames.GetOrAdd(roomId, _ => new SimpleSignalDecoderGame());
+        
+        var playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("SignalDecoderGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+            
+            // Start game if both players are connected
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("SignalDecoderPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("SignalDecoderGameFull");
+        }
+    }
+
+    public async Task SubmitSignalDecoderGuess(string roomId, string guess)
+    {
+        if (_signalDecoderGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.SubmitGuess(Context.ConnectionId, guess);
+            if (result.Success)
+            {
+                await Clients.Group(roomId).SendAsync("SignalDecoderCorrectGuess", result.Message);
+                await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+                
+                // Update player views
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("SignalDecoderPlayerViewUpdated", game.GetPlayerView(player));
+                }
+                
+                if (game.IsCompleted)
+                {
+                    await Clients.Group(roomId).SendAsync("SignalDecoderGameCompleted", "All words decoded!", game.Score, 1);
+                }
+                else if (result.Message.Contains("New signal incoming"))
+                {
+                    // Give time for celebration, then send new signal data
+                    await Task.Delay(2000);
+                    await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+                    
+                    // Send updated player views with new signal
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("SignalDecoderPlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("SignalDecoderInvalidGuess", result.Message);
+            }
+        }
+    }
+
+    public async Task RequestSignalDecoderHint(string roomId)
+    {
+        if (_signalDecoderGames.TryGetValue(roomId, out var game))
+        {
+            var hint = game.GetHint(Context.ConnectionId);
+            if (hint != null)
+            {
+                await Clients.Caller.SendAsync("SignalDecoderHintReceived", hint);
+                await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+            }
+        }
+    }
+
+    public async Task RestartSignalDecoderGame(string roomId)
+    {
+        if (_signalDecoderGames.TryGetValue(roomId, out var game))
+        {
+            game.Reset();
+            await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+            
+            // Send updated player views
+            foreach (var player in game.GetConnectedPlayers())
+            {
+                await Clients.Client(player).SendAsync("SignalDecoderPlayerViewUpdated", game.GetPlayerView(player));
+            }
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove player from any games
@@ -173,6 +271,15 @@ public class GameHub : Hub
             if (kvp.Value.RemovePlayer(Context.ConnectionId))
             {
                 await Clients.Group(kvp.Key).SendAsync("CodeCrackerGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from signal decoder games
+        foreach (var kvp in _signalDecoderGames)
+        {
+            if (kvp.Value.RemovePlayer(Context.ConnectionId))
+            {
+                await Clients.Group(kvp.Key).SendAsync("SignalDecoderGameStateUpdated", kvp.Value.GetGameState());
             }
         }
         
@@ -503,4 +610,242 @@ public class GameStateData
     public int HintsUsed { get; set; }
     public int PlayerCount { get; set; }
     public int PlayersNeeded { get; set; }
+}
+
+// SIMPLIFIED Signal Decoder Game - Single Audio/Sentence Approach
+public class SimpleSignalDecoderGame
+{
+    public enum PlayerRole { Piltover, Zaunite }
+    
+    // Multiple simple sentences for progression
+    private static readonly SimpleSignalData[] SignalBank = new[]
+    {
+        new SimpleSignalData
+        {
+            FullSentence = "Help! Fire spreading fast!",
+            SentenceWithBlanks = "Help! {0} spreading {1}!",
+            MissingWords = new[] { "fire", "fast" },
+            AudioFile = "audio/signals/critical_01.mp3"
+        },
+        new SimpleSignalData
+        {
+            FullSentence = "Evacuate building now!",
+            SentenceWithBlanks = "{0} {1} {2}!",
+            MissingWords = new[] { "evacuate", "building", "now" },
+            AudioFile = "audio/signals/critical_02.mp3"
+        },
+        new SimpleSignalData
+        {
+            FullSentence = "Medical emergency!",
+            SentenceWithBlanks = "{0} {1}!",
+            MissingWords = new[] { "medical", "emergency" },
+            AudioFile = "audio/signals/critical_03.mp3"
+        }
+    };
+
+    public Dictionary<string, PlayerRole> Players { get; set; } = new();
+    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public List<string> GuessedWords { get; set; } = new();
+    public List<string> AttemptHistory { get; set; } = new();
+    public bool IsCompleted { get; set; } = false;
+    public int Score { get; set; } = 0;
+    public int HintsUsed { get; set; } = 0;
+    public int CurrentSignalIndex { get; set; } = 0;
+    public int SignalsCompleted { get; set; } = 0;
+    
+    public int PlayerCount => Players.Count;
+    public SimpleSignalData CurrentSignal => SignalBank[CurrentSignalIndex];
+    public int RemainingWords => CurrentSignal.MissingWords.Length - GuessedWords.Count;
+    
+    public PlayerRole? AddPlayer(string connectionId, string playerName)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        Players[connectionId] = role;
+        PlayerNames[connectionId] = playerName;
+        return role;
+    }
+
+    public bool RemovePlayer(string connectionId)
+    {
+        var removed = Players.Remove(connectionId);
+        PlayerNames.Remove(connectionId);
+        return removed;
+    }
+
+    public List<string> GetConnectedPlayers()
+    {
+        return Players.Keys.ToList();
+    }
+
+    public (bool Success, string Message) SubmitGuess(string connectionId, string guess)
+    {
+        if (IsCompleted)
+            return (false, "Game is already completed");
+            
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+
+        guess = guess.Trim().ToLower();
+        
+        // Check if this word is one of the missing words
+        var targetWords = CurrentSignal.MissingWords.Select(w => w.ToLower()).ToList();
+        var matchingWord = targetWords.FirstOrDefault(w => w == guess);
+        
+        if (matchingWord != null && !GuessedWords.Contains(matchingWord))
+        {
+            GuessedWords.Add(matchingWord);
+            AttemptHistory.Add($"{PlayerNames[connectionId]}: {guess} ✓");
+            
+            // Simple scoring
+            Score += Math.Max(1, 10 - HintsUsed);
+            
+            if (GuessedWords.Count >= CurrentSignal.MissingWords.Length)
+            {
+                // Current signal completed
+                SignalsCompleted++;
+                
+                if (CurrentSignalIndex >= SignalBank.Length - 1)
+                {
+                    // All signals completed - DON'T increment CurrentSignalIndex
+                    IsCompleted = true;
+                    return (true, $"🎉 All signals decoded! Final score: {Score}");
+                }
+                else
+                {
+                    // Move to next signal
+                    CurrentSignalIndex++;
+                    GuessedWords.Clear();
+                    HintsUsed = 0;
+                    return (true, $"📡 Signal {SignalsCompleted} completed! New signal incoming...");
+                }
+            }
+            else
+            {
+                int remaining = CurrentSignal.MissingWords.Length - GuessedWords.Count;
+                return (true, $"✅ Correct! {remaining} word(s) remaining.");
+            }
+        }
+        else if (GuessedWords.Contains(guess))
+        {
+            return (false, "Word already found!");
+        }
+        else
+        {
+            AttemptHistory.Add($"{PlayerNames[connectionId]}: {guess} ❌");
+            return (false, $"❌ '{guess}' is not one of the missing words");
+        }
+    }
+
+    public string? GetHint(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId) || HintsUsed >= 3)
+            return null;
+
+        HintsUsed++;
+        
+        var unguessedWords = CurrentSignal.MissingWords
+            .Where(w => !GuessedWords.Contains(w.ToLower())).ToList();
+        if (!unguessedWords.Any()) return null;
+        
+        var targetWord = unguessedWords.First();
+        
+        return HintsUsed switch
+        {
+            1 => "🔍 Emergency signal - listen for action words",
+            2 => $"📏 One word has {targetWord.Length} letters: {targetWord[0]}***",
+            3 => $"🎯 Final hint: Think about what spreads in emergencies",
+            _ => null
+        };
+    }
+
+    public SimplePlayerView GetPlayerView(string connectionId)
+    {
+        if (!Players.TryGetValue(connectionId, out var role))
+            return new SimplePlayerView();
+
+        if (role == PlayerRole.Piltover)
+        {
+            // Piltover sees the sentence with proper word replacement
+            var displaySentence = BuildDisplaySentence();
+            
+            return new SimplePlayerView
+            {
+                Role = "Piltover",
+                DisplayName = "Caitlyn (Signal Interceptor)",
+                Instruction = "Decode the intercepted transmission:",
+                SentenceWithBlanks = displaySentence,
+                GuessedWords = GuessedWords.ToList(),
+                AttemptHistory = AttemptHistory.TakeLast(5).ToList()
+            };
+        }
+        else
+        {
+            // Zaunite gets the audio
+            return new SimplePlayerView
+            {
+                Role = "Zaunite",
+                DisplayName = "Vi (Signal Analyst)",
+                Instruction = "Listen to the audio and relay the missing words:",
+                AudioFile = CurrentSignal.AudioFile,
+                GuessedWords = GuessedWords.ToList(),
+                AttemptHistory = AttemptHistory.TakeLast(5).ToList()
+            };
+        }
+    }
+
+    private string BuildDisplaySentence()
+    {
+        var template = CurrentSignal.SentenceWithBlanks;
+        var words = new string[CurrentSignal.MissingWords.Length];
+        
+        // Fill in guessed words in their correct positions
+        for (int i = 0; i < CurrentSignal.MissingWords.Length; i++)
+        {
+            var expectedWord = CurrentSignal.MissingWords[i].ToLower();
+            if (GuessedWords.Contains(expectedWord))
+            {
+                words[i] = expectedWord.ToUpper();
+            }
+            else
+            {
+                words[i] = new string('_', expectedWord.Length);
+            }
+        }
+        
+        return string.Format(template, words);
+    }
+
+    public SimpleGameState GetGameState()
+    {
+        return new SimpleGameState
+        {
+            Score = Score,
+            HintsUsed = HintsUsed,
+            PlayerCount = Players.Count,
+            PlayersNeeded = 2 - Players.Count,
+            IsCompleted = IsCompleted,
+            RemainingWords = RemainingWords,
+            CurrentSignal = CurrentSignalIndex + 1,
+            TotalSignals = SignalBank.Length,
+            SignalsCompleted = SignalsCompleted
+        };
+    }
+
+    public void Reset()
+    {
+        GuessedWords.Clear();
+        AttemptHistory.Clear();
+        IsCompleted = false;
+        Score = 0;
+        HintsUsed = 0;
+        CurrentSignalIndex = 0;
+        SignalsCompleted = 0;
+    }
 }
