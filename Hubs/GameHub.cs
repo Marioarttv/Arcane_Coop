@@ -569,12 +569,12 @@ public class AlchemyGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Healing Potion Recipe for Vi
+    // Healing Potion Recipe for Vi - Simplified 3-Ingredient Version
     private static readonly AlchemyRecipe HealingPotionRecipe = new AlchemyRecipe
     {
         Name = "Vi's Healing Potion",
-        Description = "A powerful healing elixir to restore Vi's strength after her latest undercity adventure.",
-        RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey", "piltover_mint", "vial_of_tears" },
+        Description = "A powerful healing elixir to restore Vi's strength after her latest undercity adventure. This concentrated version uses only the most essential ingredients.",
+        RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey" },
         Steps = new[]
         {
             new RecipeStep
@@ -602,25 +602,7 @@ public class AlchemyGame
                 IngredientId = "zaun_grey",
                 RequiredStation = ProcessingStation.CuttingBoard,
                 RequiredState = IngredientState.Chopped,
-                DetailedDescription = "Carefully chop the Zaun Grey mushroom into small pieces. Be precise - uneven cuts will affect the potion's potency."
-            },
-            new RecipeStep
-            {
-                StepNumber = 4,
-                Instruction = "Step 4: Purify the mint",
-                IngredientId = "piltover_mint",
-                RequiredStation = ProcessingStation.FilteringStation,
-                RequiredState = IngredientState.Filtered,
-                DetailedDescription = "Filter the Piltover Mint to remove impurities. The mint should have a crystal-clear appearance when properly filtered."
-            },
-            new RecipeStep
-            {
-                StepNumber = 5,
-                Instruction = "Step 5: Combine in order",
-                IngredientId = "vial_of_tears",
-                RequiredStation = ProcessingStation.Cauldron,
-                RequiredState = IngredientState.Raw,
-                DetailedDescription = "Add ingredients to cauldron in this exact order: Ground Shimmer Crystal, Heated Hex Berries, Chopped Zaun Grey, Filtered Piltover Mint, and finally the Vial of Tears (unprocessed)."
+                DetailedDescription = "Carefully chop the Zaun Grey mushroom into small pieces. Be precise - uneven cuts will affect the potion's potency. Add all three processed ingredients to the cauldron in the correct order."
             }
         }
     };
@@ -647,20 +629,6 @@ public class AlchemyGame
             Name = "Zaun Grey Mushroom",
             Description = "A hardy mushroom that grows in the undercity's toxic soil",
             ImagePath = "images/alchemy/zaun_grey_raw.png"
-        },
-        new AlchemyIngredient
-        {
-            Id = "piltover_mint",
-            Name = "Piltover Mint",
-            Description = "A pure mint leaf from Piltover's pristine gardens",
-            ImagePath = "images/alchemy/piltover_mint_raw.png"
-        },
-        new AlchemyIngredient
-        {
-            Id = "vial_of_tears",
-            Name = "Vial of Tears",
-            Description = "Precious tears collected from the Grey - use sparingly",
-            ImagePath = "images/alchemy/vial_of_tears_raw.png"
         }
     };
     
