@@ -1,0 +1,1658 @@
+@page "/navigation-maze"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Arcane_Coop.Hubs
+@using Arcane_Coop.Models
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>Navigation Maze: Underground Escape</PageTitle>
+
+<div class="navigation-maze-container">
+    <div class="header-section">
+        <h2 class="game-title">🗺️ Navigation Maze</h2>
+        <p class="game-subtitle">Caitlyn vs Vi - Navigate the Underground Escape Route</p>
+    </div>
+    
+    <div class="connection-status mb-3">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    @if (!inGame)
+    {
+        <div class="instructions-panel">
+            <div class="instruction-header">
+                <h3>🗺️ How to Play Navigation Maze</h3>
+            </div>
+            <div class="instruction-content">
+                <div class="step-by-step">
+                    <div class="instruction-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Share Room Code</h4>
+                            <p>Both players enter the <strong>same Room ID</strong> below. Choose any code like "escape123" or "maze".</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Join Together</h4>
+                            <p>Click <strong>"Join Room"</strong> then <strong>"Start Mission"</strong>. First player becomes Caitlyn (Navigator), second becomes Vi (Explorer).</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Navigate Together</h4>
+                            <p><strong>Caitlyn</strong> sees tactical maps and intel, <strong>Vi</strong> makes navigation choices. Work together to reach Piltover safely!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="role-preview">
+                    <div class="role-card piltover-preview">
+                        <h4>🏛️ Caitlyn (Navigator)</h4>
+                        <p>You see tactical intelligence:</p>
+                        <ul class="preview-clues">
+                            <li><strong>📁 Intel Files:</strong> Location data and threat levels</li>
+                            <li><strong>🗺️ Tactical Maps:</strong> Safe routes and hazards</li>
+                            <li><strong>📊 Reconnaissance:</strong> Guide Vi to safety</li>
+                        </ul>
+                    </div>
+                    <div class="role-card zaunite-preview">
+                        <h4>⚡ Vi (Explorer)</h4>
+                        <p>You navigate dangerous terrain:</p>
+                        <ul class="preview-clues">
+                            <li><strong>👁️ First-Person View:</strong> See locations directly</li>
+                            <li><strong>🚶 Path Choices:</strong> Choose which way to go</li>
+                            <li><strong>💬 Team Communication:</strong> Coordinate with Caitlyn</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!inGame)
+    {
+        <div class="game-setup mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="roomInput" class="form-label">Room ID:</label>
+                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+            </div>
+            <div class="col-md-6">
+                <label for="nameInput" class="form-label">Player Name:</label>
+                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+            </div>
+        </div>
+
+        <div class="setup-buttons">
+            <button class="arcane-btn arcane-btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                🚪 Join Room
+            </button>
+            <button class="arcane-btn arcane-btn-secondary" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                🚶 Leave Room
+            </button>
+            <button class="arcane-btn arcane-btn-success" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                🎯 Start Mission
+            </button>
+            @if (inGame)
+            {
+                <button class="arcane-btn arcane-btn-warning" @onclick="RestartGame">
+                    🔄 Restart Mission
+                </button>
+            }
+        </div>
+        
+        @if (inRoom && !inGame)
+        {
+            <div class="arcane-alert arcane-alert-info">
+                <strong>📡 In Room:</strong> @roomId - Waiting for mission to start...
+            </div>
+        }
+        @if (inGame && playerView != null)
+        {
+            <div class="arcane-alert arcane-alert-success">
+                <strong>🎮 Playing as:</strong> @playerView.DisplayName (@playerView.Role)
+            </div>
+        }
+    </div>
+
+    @if (inRoom && !inGame)
+    {
+        <div class="players-section">
+            <div class="players-header">
+                <h4>👥 Mission Team</h4>
+            </div>
+            <div class="players-list">
+                @foreach (var player in connectedPlayers)
+                {
+                    <div class="player-card">
+                        <div class="player-icon">👤</div>
+                        <div class="player-name">@player</div>
+                    </div>
+                }
+                @if (connectedPlayers.Count < 2)
+                {
+                    <div class="player-card waiting">
+                        <div class="player-icon">⏳</div>
+                        <div class="player-name">Waiting for partner...</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    }
+
+    @if (inGame && playerView != null)
+    {
+        <div class="game-interface @playerView.Role.ToLower()">
+            @if (playerView.Role == "Piltover")
+            {
+                <!-- Piltover Player: Map View -->
+                <div class="piltover-interface">
+                    <div class="interface-header">
+                        <div class="character-info">
+                            <img src="/images/cait.jpeg" alt="Caitlyn" class="character-portrait" />
+                            <div class="character-details">
+                                <h3>@playerView.DisplayName</h3>
+                                <p class="role-subtitle">Tactical Navigator</p>
+                            </div>
+                        </div>
+                        <div class="mission-status">
+                            @if (gameState != null)
+                            {
+                                <div class="progress-info">
+                                    <span class="location-counter">Location @(gameState.CurrentLocationId + 1) / @gameState.TotalLocations</span>
+                                    @if (gameState.IsCompleted)
+                                    {
+                                        <span class="status-badge success">✅ MISSION SUCCESS</span>
+                                    }
+                                    else if (gameState.IsGameOver)
+                                    {
+                                        <span class="status-badge danger">💀 MISSION FAILED</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge active">🎯 ACTIVE MISSION</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-panel piltover-instruction">
+                        <p>@playerView.Instruction</p>
+                    </div>
+                    
+                    @if (playerView.MapData != null)
+                    {
+                        <div class="tactical-map">
+                            <div class="file-browser">
+                                <div class="file-browser-header">
+                                    <h4>📁 Reconnaissance Files</h4>
+                                    <p>Select location intel to view tactical data</p>
+                                </div>
+                                
+                                <div class="file-grid">
+                                    @foreach (var location in playerView.MapData.Locations)
+                                    {
+                                        <div class="file-item @(location.IsCurrentLocation ? "current-file" : "") @(location.IsCompleted ? "completed-file" : "") @(selectedLocationId == location.LocationId ? "selected-file" : "")"
+                                             @onclick="() => SelectLocation(location.LocationId)">
+                                            <div class="file-icon">
+                                                @GetLocationIcon(location.LocationId)
+                                            </div>
+                                            <div class="file-info">
+                                                <div class="file-name">@location.Name.Replace(" ", "_").ToUpper().Substring(0, Math.Min(location.Name.Replace(" ", "").Length, 8))_INTEL.dat</div>
+                                                <div class="file-status">
+                                                    @if (location.IsCompleted)
+                                                    {
+                                                        <span class="status-completed">✅ CLEARED</span>
+                                                    }
+                                                    else if (location.IsCurrentLocation)
+                                                    {
+                                                        <span class="status-current">🎯 ACTIVE</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="status-pending">📋 PENDING</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            
+                            @if (selectedLocationId != -1)
+                            {
+                                var selectedLocation = playerView.MapData.Locations.FirstOrDefault(l => l.LocationId == selectedLocationId);
+                                if (selectedLocation != null)
+                                {
+                                    <div class="file-preview">
+                                        <div class="preview-header">
+                                            <h4>📸 @selectedLocation.Name - Tactical Overview</h4>
+                                            <button class="close-preview" @onclick="ClosePreview">✕</button>
+                                        </div>
+                                        
+                                        <div class="preview-content">
+                                            <div class="location-image-preview">
+                                                <!-- Show the same image as Zaun player sees with your Photoshop arrows -->
+                                                <div class="tactical-image" style="background-image: url('@GetLocationImagePath(selectedLocationId)');">
+                                                    <!-- Optional: Simple overlay text for current path -->
+                                                    @{
+                                                        var correctPath = playerView.MapData.CorrectPath.FirstOrDefault(p => p.FromLocationId == selectedLocationId);
+                                                        if (correctPath != null && selectedLocation.IsCurrentLocation)
+                                                        {
+                                                            <div class="safe-route-overlay">
+                                                                <div class="route-label">✅ SAFE ROUTE: @correctPath.Direction</div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="tactical-notes">
+                                                <h5>📋 Intelligence Notes:</h5>
+                                                <ul>
+                                                    <li><strong>Status:</strong> @(selectedLocation.IsCompleted ? "Area Secured" : selectedLocation.IsCurrentLocation ? "Active Zone" : "Pending Infiltration")</li>
+                                                    <li><strong>Threat Level:</strong> @GetThreatLevel(selectedLocationId)</li>
+                                                    <li><strong>Recommended Action:</strong> @GetRecommendedAction(selectedLocationId)</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                    
+                    @if (gameState != null && (gameState.IsGameOver || gameState.IsCompleted))
+                    {
+                        <div class="game-end-panel">
+                            @if (gameState.IsGameOver)
+                            {
+                                <div class="game-over-message">
+                                    <h3>💀 Mission Failed</h3>
+                                    <p>@gameState.GameOverMessage</p>
+                                </div>
+                            }
+                            else if (gameState.IsCompleted)
+                            {
+                                <div class="victory-message">
+                                    <h3>🎉 Mission Accomplished!</h3>
+                                    <p>You successfully guided Vi to safety in Piltover!</p>
+                                </div>
+                            }
+                            
+                            <button class="btn restart" @onclick="RestartGame">
+                                🔄 New Mission
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+            else if (playerView.Role == "Zaunite")
+            {
+                <!-- Zaunite Player: First-Person View -->
+                <div class="zaunite-interface">
+                    <div class="interface-header">
+                        <div class="character-info">
+                            <img src="/images/vi.jpeg" alt="Vi" class="character-portrait" />
+                            <div class="character-details">
+                                <h3>@playerView.DisplayName</h3>
+                                <p class="role-subtitle">Underground Explorer</p>
+                            </div>
+                        </div>
+                        <div class="location-info">
+                            @if (!string.IsNullOrEmpty(playerView.LocationName))
+                            {
+                                <h4 class="current-location">📍 @playerView.LocationName</h4>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-panel zaunite-instruction">
+                        <p>@playerView.Instruction</p>
+                    </div>
+                    
+                    @if (!playerView.IsGameOver && !string.IsNullOrEmpty(playerView.LocationImage))
+                    {
+                        <div class="location-view">
+                            <div class="location-image-container">
+                                <!-- Placeholder for location image -->
+                                <div class="location-image-placeholder" style="background-image: url('@playerView.LocationImage');">
+                                    <div class="location-overlay">
+                                        <h3 class="location-title">@playerView.LocationName</h3>
+                                        <p class="location-description">@playerView.LocationDescription</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if (playerView.AvailableChoices?.Any() == true)
+                            {
+                                <div class="navigation-choices">
+                                    <h4>Choose your path:</h4>
+                                    <div class="choice-grid">
+                                        @foreach (var choice in playerView.AvailableChoices)
+                                        {
+                                            <button class="choice-button" @onclick="() => MakeChoice(choice.Direction)">
+                                                <div class="choice-direction">@choice.Direction</div>
+                                                <div class="choice-description">@choice.Description</div>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    @if (playerView.IsGameOver)
+                    {
+                        <div class="game-over-screen">
+                            <div class="game-over-content">
+                                <h2>💀 CAUGHT!</h2>
+                                <p class="game-over-text">@playerView.GameOverMessage</p>
+                                <div class="game-over-art">
+                                    <div class="danger-icon">⚠️</div>
+                                </div>
+                                <button class="btn restart" @onclick="RestartGame">
+                                    🔄 Try Again
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    
+                    @if (gameState?.IsCompleted == true)
+                    {
+                        <div class="victory-screen">
+                            <div class="victory-content">
+                                <h2>🎉 FREEDOM!</h2>
+                                <p>You made it to Piltover safely!</p>
+                                <div class="victory-art">
+                                    <div class="success-icon">✨</div>
+                                </div>
+                                <button class="btn restart" @onclick="RestartGame">
+                                    🔄 New Adventure
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="status-overlay">
+            <div class="status-message @statusClass">
+                @statusMessage
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Connection and SignalR
+    private HubConnection? hubConnection;
+    private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+    
+    // Game state
+    private string roomId = "";
+    private string playerName = "";
+    private bool inRoom = false;
+    private bool inGame = false;
+    private NavigationPlayerView? playerView;
+    private NavigationGameState? gameState;
+    private int selectedLocationId = -1;
+    
+    // UI feedback
+    private string statusMessage = "";
+    private string statusClass = "";
+    
+    // Player tracking
+    private List<string> connectedPlayers = new List<string>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        // Basic room event handlers
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            if (!connectedPlayers.Contains(name))
+            {
+                connectedPlayers.Add(name);
+            }
+            if (connectionId != hubConnection.ConnectionId)
+            {
+                ShowStatus($"{name} joined the room", "info");
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            connectedPlayers.Remove(name);
+            ShowStatus($"{name} left the room", "info");
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Room state handler to get all current players when joining
+        hubConnection.On<List<string>>("RoomState", (playerNames) =>
+        {
+            connectedPlayers.Clear();
+            connectedPlayers.AddRange(playerNames);
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Navigation Maze game event handlers
+        hubConnection.On<string, NavigationPlayerView>("NavigationMazeGameJoined", (role, view) =>
+        {
+            inGame = true;
+            playerView = view;
+            ShowStatus($"Joined as {view.DisplayName}", "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<NavigationGameState>("NavigationMazeGameStateUpdated", (newGameState) =>
+        {
+            gameState = newGameState;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<NavigationPlayerView>("NavigationMazePlayerViewUpdated", (newView) =>
+        {
+            playerView = newView;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("NavigationMazeCorrectChoice", (message) =>
+        {
+            ShowStatus(message, "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("NavigationMazeGameOver", (message) =>
+        {
+            ShowStatus(message, "danger");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("NavigationMazeGameCompleted", (message) =>
+        {
+            ShowStatus(message, "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("NavigationMazeInvalidChoice", (message) =>
+        {
+            ShowStatus(message, "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("NavigationMazeGameFull", () =>
+        {
+            ShowStatus("Game is full - maximum 2 players", "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            inRoom = true;
+            if (!connectedPlayers.Contains(playerName))
+            {
+                connectedPlayers.Add(playerName);
+            }
+            ShowStatus($"Joined room: {roomId}", "info");
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
+            inRoom = false;
+            inGame = false;
+            playerView = null;
+            gameState = null;
+            connectedPlayers.Clear();
+            ShowStatus("Left room", "info");
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinNavigationMazeGame", roomId, playerName);
+        }
+    }
+
+    private async Task MakeChoice(string choice)
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("MakeNavigationChoice", roomId, choice);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartNavigationMazeGame", roomId);
+            ShowStatus("Mission restarted", "info");
+        }
+    }
+
+    private void ShowStatus(string message, string type)
+    {
+        statusMessage = message;
+        statusClass = type;
+        
+        // Auto-hide status after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            statusMessage = "";
+            statusClass = "";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void SelectLocation(int locationId)
+    {
+        selectedLocationId = locationId;
+    }
+
+    private void ClosePreview()
+    {
+        selectedLocationId = -1;
+    }
+
+    private string GetLocationIcon(int locationId)
+    {
+        return locationId switch
+        {
+            0 => "🚪", // Sewer Entrance
+            1 => "⚙️", // Industrial Pipes
+            2 => "🧪", // Chemical Plant
+            3 => "🏪", // Underground Market
+            4 => "🌉", // Bridge to Piltover
+            _ => "📍"
+        };
+    }
+
+    private string GetLocationImagePath(int locationId)
+    {
+        return locationId switch
+        {
+            0 => "/images/navigation/sewer-entrance-placeholder.jpg",
+            1 => "/images/navigation/industrial-pipes-placeholder.jpg", 
+            2 => "/images/navigation/chemical-plant-placeholder.jpg",
+            3 => "/images/navigation/underground-market-placeholder.jpg",
+            4 => "/images/navigation/bridge-to-piltover-placeholder.jpg",
+            _ => "/images/navigation/default-placeholder.jpg"
+        };
+    }
+
+
+    private string GetThreatLevel(int locationId)
+    {
+        return locationId switch
+        {
+            0 => "MODERATE - Toxic exposure risk",
+            1 => "HIGH - Steam hazards and structural collapse",
+            2 => "EXTREME - Chemical spill danger",
+            3 => "HIGH - Enforcer patrols and unstable terrain",
+            4 => "LOW - Safe zone reached",
+            _ => "UNKNOWN"
+        };
+    }
+
+    private string GetRecommendedAction(int locationId)
+    {
+        return locationId switch
+        {
+            0 => "Avoid side tunnels, proceed straight through central passage",
+            1 => "Navigate around pipe system to avoid steam and collapse",
+            2 => "Stay beside main tank to avoid chemical hazards",
+            3 => "Use rope bridge to avoid crowds and unstable mines",
+            4 => "Congratulations - mission accomplished!",
+            _ => "Assess situation carefully before proceeding"
+        };
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+<style>
+.navigation-maze-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
+    color: #ffffff;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    padding: 20px;
+}
+
+/* Header styling similar to other prototypes */
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem 0;
+}
+
+.game-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #c89b3c, #f0e6d2, #c8aa6e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.game-subtitle {
+    font-size: 1.2rem;
+    color: #c8aa6e;
+    margin-bottom: 0;
+}
+
+.connection-status {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 10px;
+    border: 2px solid #c8aa6e;
+    backdrop-filter: blur(10px);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+}
+
+.text-success {
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.text-danger {
+    color: #ff4444 !important;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+/* Instructions panel similar to other prototypes */
+.instructions-panel {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.instruction-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.instruction-header h3 {
+    color: #c8aa6e;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.step-by-step {
+    margin-bottom: 2rem;
+}
+
+.instruction-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #c89b3c, #c8aa6e);
+    color: #0a0e27;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    color: #f0e6d2;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.step-content p {
+    color: #cdbe91;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.role-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.role-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: left;
+}
+
+.role-card.piltover-preview {
+    border-color: #c89b3c;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
+}
+
+.role-card.zaunite-preview {
+    border-color: #00c8c8;
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.1), rgba(0, 200, 200, 0.05));
+}
+
+.role-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.role-card p {
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.preview-clues {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.preview-clues li {
+    margin-bottom: 0.5rem;
+    padding-left: 0;
+    color: #f0e6d2;
+    font-size: 0.9rem;
+}
+
+.preview-clues strong {
+    color: inherit;
+}
+
+/* Game setup form */
+.game-setup {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.form-label {
+    color: #c8aa6e;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    color: #f0e6d2;
+    padding: 0.75rem 1rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: #c8aa6e;
+    box-shadow: 0 0 0 0.2rem rgba(200, 170, 110, 0.25);
+    color: #f0e6d2;
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: rgba(240, 230, 210, 0.5);
+    font-style: italic;
+}
+
+.setup-buttons {
+    text-align: center;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Players Section Styles */
+.players-section {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.players-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(200, 170, 110, 0.3);
+    padding-bottom: 0.75rem;
+}
+
+.players-header h4 {
+    color: #c8aa6e;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.player-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.player-card:not(.waiting) {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.player-card.waiting {
+    border-color: rgba(200, 170, 110, 0.5);
+    background: rgba(200, 170, 110, 0.05);
+    opacity: 0.7;
+}
+
+.player-icon {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+}
+
+.player-card:not(.waiting) .player-icon {
+    color: #00ff88;
+}
+
+.player-card.waiting .player-icon {
+    color: #c8aa6e;
+    animation: pulse-waiting 2s infinite;
+}
+
+.player-name {
+    color: #f0e6d2;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.player-card.waiting .player-name {
+    color: rgba(240, 230, 210, 0.7);
+    font-style: italic;
+}
+
+@@keyframes pulse-waiting {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Arcane-themed custom buttons */
+.arcane-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin: 0.25rem;
+    display: inline-block;
+}
+
+.arcane-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.arcane-btn:hover:not(:disabled):before {
+    left: 100%;
+}
+
+.arcane-btn-primary {
+    background: linear-gradient(45deg, #c89b3c, #c8aa6e);
+    color: #0a0e27;
+    border: 2px solid #c8aa6e;
+    box-shadow: 0 4px 15px rgba(200, 155, 60, 0.3);
+}
+
+.arcane-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(45deg, #d4a749, #d4b57a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 155, 60, 0.4);
+}
+
+.arcane-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f0e6d2;
+    border: 2px solid rgba(240, 230, 210, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+.arcane-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(240, 230, 210, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(240, 230, 210, 0.2);
+}
+
+.arcane-btn-success {
+    background: linear-gradient(45deg, #00ff88, #00cc6a);
+    color: #0a0e27;
+    border: 2px solid #00ff88;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.arcane-btn-success:hover:not(:disabled) {
+    background: linear-gradient(45deg, #1aff94, #1ad676);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.arcane-btn-warning {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    color: #ffffff;
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.arcane-btn-warning:hover:not(:disabled) {
+    background: linear-gradient(45deg, #ff7a7a, #ff6161);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.arcane-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.arcane-btn:disabled:before {
+    display: none;
+}
+
+/* Custom alert styles */
+.arcane-alert {
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    margin-top: 1rem;
+}
+
+.arcane-alert-info {
+    background: rgba(0, 153, 255, 0.15);
+    color: #66b3ff;
+    border: 1px solid rgba(0, 153, 255, 0.3);
+}
+
+.arcane-alert-success {
+    background: rgba(0, 255, 136, 0.15);
+    color: #66ff99;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+
+/* Game Interface - Simplified */
+.game-interface {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+}
+
+.interface-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.character-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.character-portrait {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c8aa6e;
+}
+
+.character-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #f0e6d2;
+}
+
+.role-subtitle {
+    margin: 0;
+    color: #c8aa6e;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.mission-status {
+    text-align: right;
+}
+
+.location-counter {
+    font-size: 1rem;
+    color: #c8aa6e;
+    font-weight: 600;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.status-badge.success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.status-badge.danger {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+    border: 1px solid #ff4444;
+}
+
+.status-badge.active {
+    background: rgba(200, 155, 60, 0.2);
+    color: #c8aa6e;
+    border: 1px solid #c8aa6e;
+}
+
+.instruction-panel {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.piltover-instruction {
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
+    border: 1px solid #c8aa6e;
+    color: #f0e6d2;
+}
+
+.zaunite-instruction {
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.1), rgba(0, 200, 200, 0.05));
+    border: 1px solid #00c8c8;
+    color: #e0ffff;
+}
+
+/* Simplified Piltover Interface */
+.tactical-map {
+    background: rgba(26, 26, 46, 0.4);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.file-browser-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.file-browser-header h4 {
+    color: #c8aa6e;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.file-browser-header p {
+    color: #f0e6d2;
+    opacity: 0.8;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.file-item {
+    background: rgba(200, 155, 60, 0.1);
+    border: 1px solid rgba(200, 155, 60, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.file-item:hover {
+    border-color: #c8aa6e;
+    background: rgba(200, 155, 60, 0.2);
+}
+
+.file-item.current-file {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.file-item.completed-file {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.file-item.selected-file {
+    border-color: #c8aa6e;
+    background: rgba(200, 155, 60, 0.25);
+}
+
+.file-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-size: 0.85rem;
+    color: #f0e6d2;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.file-status {
+    font-size: 0.75rem;
+}
+
+.status-completed {
+    color: #4caf50;
+    font-weight: 600;
+}
+
+.status-current {
+    color: #00ff88;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #c8aa6e;
+    opacity: 0.8;
+}
+
+/* Simplified File Preview */
+.file-preview {
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.preview-header {
+    background: rgba(200, 155, 60, 0.1);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(200, 155, 60, 0.3);
+}
+
+.preview-header h4 {
+    color: #f0e6d2;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.close-preview {
+    background: rgba(255, 68, 68, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.close-preview:hover {
+    background: rgba(255, 68, 68, 0.3);
+}
+
+.preview-content {
+    padding: 1rem;
+}
+
+.tactical-image {
+    width: 100%;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 6px;
+    border: 1px solid rgba(200, 155, 60, 0.3);
+    background-color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c8aa6e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.tactical-image:not([style*="background-image"]):before {
+    content: "📸 Location Preview\A(Image will be added)";
+    white-space: pre-line;
+    text-align: center;
+    opacity: 0.6;
+}
+
+.safe-route-overlay {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 255, 136, 0.9);
+    color: #0a0e27;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+.tactical-notes {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.tactical-notes h5 {
+    color: #c8aa6e;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.tactical-notes ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tactical-notes li {
+    color: #f0e6d2;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+.tactical-notes strong {
+    color: #c8aa6e;
+}
+
+
+/* Simplified Zaunite Interface */
+.location-view {
+    margin-bottom: 1.5rem;
+}
+
+.location-image-container {
+    margin-bottom: 1rem;
+}
+
+.location-image-placeholder {
+    width: 100%;
+    height: 250px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 8px;
+    border: 1px solid #00c8c8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+}
+
+.location-overlay {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    border-radius: 0 0 8px 8px;
+}
+
+.location-title {
+    font-size: 1.2rem;
+    color: #00c8c8;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.location-description {
+    color: #e0ffff;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+.current-location {
+    color: #00c8c8;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.navigation-choices {
+    background: rgba(26, 26, 46, 0.4);
+    border: 1px solid #00c8c8;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.navigation-choices h4 {
+    color: #00c8c8;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.choice-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.choice-button {
+    background: rgba(0, 153, 153, 0.1);
+    border: 1px solid #00c8c8;
+    border-radius: 6px;
+    padding: 0.75rem;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.choice-button:hover {
+    background: rgba(0, 153, 153, 0.2);
+    border-color: #00ffff;
+}
+
+.choice-direction {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #00c8c8;
+    margin-bottom: 0.25rem;
+}
+
+.choice-description {
+    font-size: 0.85rem;
+    color: #e0ffff;
+    opacity: 0.9;
+}
+
+/* Simplified Game End Screens */
+.game-over-screen, .victory-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.game-over-content, .victory-content {
+    text-align: center;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 400px;
+    background: rgba(26, 26, 46, 0.9);
+}
+
+.game-over-content {
+    border: 2px solid #ff4444;
+}
+
+.victory-content {
+    border: 2px solid #00ff88;
+}
+
+.game-over-content h2 {
+    color: #ff4444;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.victory-content h2 {
+    color: #00ff88;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.game-over-text {
+    color: #ffffff;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.danger-icon, .success-icon {
+    font-size: 3rem;
+    margin: 1rem 0;
+}
+
+.danger-icon {
+    color: #ff4444;
+}
+
+.success-icon {
+    color: #00ff88;
+}
+
+.game-end-panel {
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.game-over-message h3, .victory-message h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.game-over-message h3 {
+    color: #ff4444;
+}
+
+.victory-message h3 {
+    color: #00ff88;
+}
+
+/* Status Messages */
+.status-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.status-message {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-message.success {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+}
+
+.status-message.danger {
+    background: rgba(255, 68, 68, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+}
+
+.status-message.warning {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid #ffc107;
+    color: #ffc107;
+}
+
+.status-message.info {
+    background: rgba(0, 123, 255, 0.2);
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .role-preview {
+        grid-template-columns: 1fr;
+    }
+    
+    .interface-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .file-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tactical-image {
+        height: 150px;
+    }
+    
+    .location-image-placeholder {
+        height: 200px;
+    }
+    
+    .setup-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .arcane-btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .players-list {
+        gap: 0.5rem;
+    }
+    
+    .player-card {
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+</style>

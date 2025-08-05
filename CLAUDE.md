@@ -8,20 +8,20 @@ This is an **ASP.NET Core Blazor Server** application for an Arcane-themed coope
 
 ## Development Commands
 
-### Running the Application
-```bash
-dotnet run
-```
-The application runs on:
-- HTTP: http://localhost:5055
-- HTTPS: https://localhost:7104
-
 ### Build Commands
 ```bash
 dotnet build
 dotnet clean
 dotnet restore
 ```
+
+### Running the Application
+**Note: The user prefers to run the application manually.**
+The application runs on:
+- HTTP: http://localhost:5055
+- HTTPS: https://localhost:7104
+
+When the user runs `dotnet run`, the application will be available at the above URLs.
 
 ### Publishing
 ```bash
@@ -528,6 +528,104 @@ public (bool Success, string Message) ProcessAction(string connectionId, object 
 - ❌ Not handling duplicate join attempts
 - ❌ Mixing async/sync code improperly in event handlers
 
+## NavigationMaze: Underground Escape Route Implementation
+
+### Game Overview
+**NavigationMaze** is a cooperative navigation puzzle where players work together to escape from dangerous Zaun to safety in Piltover. One player acts as the tactical navigator with map access, while the other makes navigation choices from a first-person perspective.
+
+#### Narrative Theme
+- **Piltover Player (Caitlyn)**: Acts as tactical navigator with access to reconnaissance files and tactical maps
+- **Zaunite Player (Vi)**: Explores dangerous undercity terrain from first-person view making navigation choices
+- **Collaborative Gameplay**: Navigator provides intel while Explorer makes path decisions
+- **Simplified Lobby System**: Clean player list display without chat complexity
+
+### Implementation Details
+
+#### Backend Architecture (`Hubs/GameHub.cs`)
+- **NavigationMazeGame class** with cooperative pathfinding system:
+  - 5 progressive location challenges with increasing difficulty
+  - Player role assignments (Piltover Navigator/Zaunite Explorer)
+  - Turn-based navigation choices with win/lose conditions
+  - Location-based map data and tactical intelligence
+- **Enhanced GameHub methods**:
+  - `JoinNavigationMazeGame()` - Role-based player assignment
+  - `MakeNavigationChoice()` - Process navigation decisions with validation
+  - `RestartNavigationMazeGame()` - Reset game state for replay
+- **Room State Tracking**: Server-side player registry for accurate lobby display
+- **Concurrent game management** using dedicated dictionary for NavigationMaze games
+
+#### Room Management System
+- **Player State Tracking**: `ConcurrentDictionary<string, ConcurrentDictionary<string, string>>` for room players
+- **Room State Synchronization**: `RoomState` event sends complete player list to joining players
+- **Automatic Cleanup**: Disconnection handling and empty room cleanup
+- **Real-time Updates**: Both players see accurate player list regardless of join order
+
+#### Frontend Implementation (`Components/Pages/NavigationMaze.razor`)
+- **Simplified Lobby Design**:
+  - Clean header section with game title and subtitle
+  - Step-by-step instructions with numbered guides
+  - Role preview cards showing gameplay mechanics
+  - **Player list display** instead of chat system (Mission Team section)
+  - **Lobby hidden during gameplay** for immersive experience
+- **Arcane-themed UI Components**:
+  - Custom `arcane-btn` classes with gradient backgrounds and hover effects
+  - Form inputs with golden borders and futuristic styling
+  - Player cards with real-time connection status
+  - Responsive design optimized for all screen sizes
+- **Game Interface**:
+  - **Piltover Navigator**: File browser with tactical maps and reconnaissance data
+  - **Zaunite Explorer**: First-person location view with navigation choices
+  - **Role-specific theming**: Golden Piltover vs Teal Zaunite aesthetics
+
+### Key Features Implemented
+
+#### Lobby System
+- **Player List Display**: Shows connected players with status indicators
+- **Real-time Updates**: Accurate player count regardless of join order
+- **Waiting Indicators**: Shows "Waiting for partner..." when only 1 player connected
+- **Role Assignment**: First player = Piltover Navigator, Second = Zaunite Explorer
+- **Clean UI**: Lobby completely hidden during active gameplay
+
+#### Game Mechanics
+- **Cooperative Navigation**: Navigator provides intel, Explorer makes choices
+- **Progressive Difficulty**: 5 locations with increasing challenge complexity
+- **Location Intelligence**: Threat levels, recommended actions, tactical data
+- **Win/Lose Conditions**: Correct choices advance, wrong choices end game
+- **Restart Functionality**: Quick replay without rejoining room
+
+#### Technical Architecture
+- **Room State Management**: Robust player tracking with automatic cleanup
+- **SignalR Event Handlers**:
+  - `NavigationMazeGameJoined` - Role assignment and game start
+  - `NavigationMazeGameStateUpdated` - Real-time game progress
+  - `NavigationMazePlayerViewUpdated` - Role-specific view updates
+  - `RoomState` - Complete player list synchronization
+- **Data Models**: `NavigationPlayerView`, `NavigationGameState`, `NavigationMapData`
+
+### Usage Instructions (NavigationMaze)
+1. Navigate to `/navigation-maze` page
+2. **Setup Room** - Both players enter same Room ID and Player Name
+3. **Join Room** - Click "Join Room" to see Mission Team player list
+4. **Start Mission** - Click "Start Mission" (first = Navigator, second = Explorer)
+5. **Collaborate** - Navigator reads tactical intel, Explorer chooses paths
+6. **Navigate Together** - Progress through 5 locations to reach safety
+7. **Restart** - Use "Restart Mission" to play again
+
+### Technical Improvements Made
+- **Fixed Player List Sync**: Second player now sees first player immediately
+- **Room State Tracking**: Server maintains accurate player registry per room
+- **Lobby Visibility**: Entire setup section hidden during active gameplay
+- **Custom Button Styling**: Replaced Bootstrap with themed `arcane-btn` classes
+- **Performance Optimized**: Concurrent collections for thread-safe operations
+- **Memory Management**: Automatic cleanup of empty rooms and disconnected players
+
+### Development Notes
+- **No Chat System**: Intentionally simplified - players coordinate via game mechanics
+- **Responsive Design**: Optimized for desktop and mobile experiences  
+- **Theming Consistency**: Matches other prototypes' visual quality and behavior
+- **Error Handling**: Robust disconnection and edge case management
+- **Scalable Architecture**: Easy to add more locations or game variations
+
 ## Important Notes
 
 - This is a **premium game/entertainment application** focused on the Arcane universe
@@ -539,6 +637,7 @@ public (bool Success, string Message) ProcessAction(string connectionId, object 
   - **Tic-tac-toe**: Fully functional with real-time synchronization
   - **Code Cracker**: Premium vocabulary puzzle with educational focus and advanced UX
   - **Signal Decoder**: Simplified listening comprehension game for ESL students
+  - **NavigationMaze**: Cooperative pathfinding puzzle with simplified lobby system and player list display
 - **Advanced animation system** with hardware-accelerated CSS and smooth transitions
 - **Educational gaming focus** specifically designed for German ESL students
 - **Professional multiplayer architecture** with robust SignalR implementation

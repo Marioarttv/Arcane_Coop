@@ -9,16 +9,41 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
     private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
     private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
+    private static readonly ConcurrentDictionary<string, NavigationMazeGame> _navigationMazeGames = new();
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
 
     public async Task JoinRoom(string roomId, string playerName)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        // Add player to room tracking
+        var roomPlayerDict = _roomPlayers.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>());
+        roomPlayerDict.TryAdd(Context.ConnectionId, playerName);
+        
+        // Send room state to the joining player
+        var allPlayerNames = roomPlayerDict.Values.ToList();
+        await Clients.Caller.SendAsync("RoomState", allPlayerNames);
+        
+        // Notify others in the room
         await Clients.Group(roomId).SendAsync("PlayerJoined", playerName, Context.ConnectionId);
     }
 
     public async Task LeaveRoom(string roomId, string playerName)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
+        
+        // Remove player from room tracking
+        if (_roomPlayers.TryGetValue(roomId, out var roomPlayerDict))
+        {
+            roomPlayerDict.TryRemove(Context.ConnectionId, out _);
+            
+            // Clean up empty rooms
+            if (roomPlayerDict.IsEmpty)
+            {
+                _roomPlayers.TryRemove(roomId, out _);
+            }
+        }
+        
         await Clients.Group(roomId).SendAsync("PlayerLeft", playerName, Context.ConnectionId);
     }
 
@@ -254,8 +279,121 @@ public class GameHub : Hub
         }
     }
 
+    // Navigation Maze specific methods
+    public async Task JoinNavigationMazeGame(string roomId, string playerName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _navigationMazeGames.GetOrAdd(roomId, _ => new NavigationMazeGame());
+        
+        var playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("NavigationMazeGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+            
+            // Start game if both players are connected
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("NavigationMazeGameFull");
+        }
+    }
+
+    public async Task MakeNavigationChoice(string roomId, string choice)
+    {
+        if (_navigationMazeGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.MakeChoice(Context.ConnectionId, choice);
+            if (result.Success)
+            {
+                if (game.IsGameOver)
+                {
+                    // Game over - wrong choice
+                    await Clients.Group(roomId).SendAsync("NavigationMazeGameOver", result.Message);
+                    await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+                    
+                    // Update player views with game over state
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+                else if (game.IsCompleted)
+                {
+                    // Victory!
+                    await Clients.Group(roomId).SendAsync("NavigationMazeGameCompleted", result.Message);
+                    await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+                    
+                    // Update player views with victory state
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+                else
+                {
+                    // Correct choice - advance to next location
+                    await Clients.Group(roomId).SendAsync("NavigationMazeCorrectChoice", result.Message);
+                    await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+                    
+                    // Small delay for success feedback, then update views
+                    await Task.Delay(1500);
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("NavigationMazeInvalidChoice", result.Message);
+            }
+        }
+    }
+
+    public async Task RestartNavigationMazeGame(string roomId)
+    {
+        if (_navigationMazeGames.TryGetValue(roomId, out var game))
+        {
+            game.Reset();
+            await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+            
+            // Send updated player views
+            foreach (var player in game.GetConnectedPlayers())
+            {
+                await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+            }
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        // Remove player from room tracking
+        foreach (var roomKvp in _roomPlayers)
+        {
+            var roomId = roomKvp.Key;
+            var roomPlayerDict = roomKvp.Value;
+            
+            if (roomPlayerDict.TryRemove(Context.ConnectionId, out var playerName))
+            {
+                await Clients.Group(roomId).SendAsync("PlayerLeft", playerName, Context.ConnectionId);
+                
+                // Clean up empty rooms
+                if (roomPlayerDict.IsEmpty)
+                {
+                    _roomPlayers.TryRemove(roomId, out _);
+                }
+            }
+        }
+        
         // Remove player from any games
         foreach (var kvp in _games)
         {
@@ -280,6 +418,15 @@ public class GameHub : Hub
             if (kvp.Value.RemovePlayer(Context.ConnectionId))
             {
                 await Clients.Group(kvp.Key).SendAsync("SignalDecoderGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from navigation maze games
+        foreach (var kvp in _navigationMazeGames)
+        {
+            if (kvp.Value.RemovePlayer(Context.ConnectionId))
+            {
+                await Clients.Group(kvp.Key).SendAsync("NavigationMazeGameStateUpdated", kvp.Value.GetGameState());
             }
         }
         
@@ -847,5 +994,301 @@ public class SimpleSignalDecoderGame
         HintsUsed = 0;
         CurrentSignalIndex = 0;
         SignalsCompleted = 0;
+    }
+}
+
+public class NavigationMazeGame
+{
+    public enum PlayerRole { Piltover, Zaunite }
+    
+    // Define all 5 locations with progressive difficulty
+    private static readonly NavigationLocation[] LocationBank = new[]
+    {
+        new NavigationLocation
+        {
+            LocationId = 0,
+            Name = "Sewer Entrance",
+            Description = "Dark stone sewer entrance with three tunnel openings. Choose your path carefully...",
+            ImagePath = "images/navigation/sewer-entrance.jpg",
+            CorrectChoiceIndex = 2, // FORWARD
+            SuccessMessage = "The central tunnel leads deeper into the undercity!",
+            Choices = new[]
+            {
+                new NavigationChoice { Direction = "LEFT", Description = "Green chemical glow emanates from this tunnel", IsCorrect = false, GameOverMessage = "Vi got overwhelmed by toxic fumes! Even Vi needs backup sometimes... Try again!" },
+                new NavigationChoice { Direction = "RIGHT", Description = "Completely dark with suspicious sounds", IsCorrect = false, GameOverMessage = "Something big lives down here... Vi had to retreat! That path was more dangerous than a Piltover Enforcer raid!" },
+                new NavigationChoice { Direction = "FORWARD", Description = "Faint light visible at the end", IsCorrect = true, GameOverMessage = "" }
+            }
+        },
+        new NavigationLocation
+        {
+            LocationId = 1,
+            Name = "Industrial Pipe Junction",
+            Description = "Large underground chamber filled with massive pipes. Steam hisses from various joints.",
+            ImagePath = "images/navigation/industrial-pipes.jpg",
+            CorrectChoiceIndex = 2, // AROUND right
+            SuccessMessage = "Smart choice - avoiding the dangerous pipes led to safety!",
+            Choices = new[]
+            {
+                new NavigationChoice { Direction = "THROUGH the large pipe", Description = "The main pipe looks old but passable", IsCorrect = false, GameOverMessage = "The old pipe couldn't hold Vi's weight! Jinx would have blown that up too... Reset and try again!" },
+                new NavigationChoice { Direction = "UNDER the main pipe", Description = "Low crawl space beneath the pipes", IsCorrect = false, GameOverMessage = "Hot steam blocked Vi's path! Not even Vander could have survived that route!" },
+                new NavigationChoice { Direction = "AROUND the pipes to the right", Description = "Safe path around the pipe system", IsCorrect = true, GameOverMessage = "" }
+            }
+        },
+        new NavigationLocation
+        {
+            LocationId = 2,
+            Name = "Chemical Processing Plant",
+            Description = "Industrial chemical processing area with large vats of bubbling green chemicals.",
+            ImagePath = "images/navigation/chemical-plant.jpg",
+            CorrectChoiceIndex = 2, // BESIDE
+            SuccessMessage = "Staying beside the main tank avoided the dangerous areas!",
+            Choices = new[]
+            {
+                new NavigationChoice { Direction = "BETWEEN the chemical vats", Description = "Narrow path between bubbling containers", IsCorrect = false, GameOverMessage = "Chemtech spilled everywhere! Vi had to evacuate! The Undercity has claimed another victim... Restart?" },
+                new NavigationChoice { Direction = "BEHIND the machinery", Description = "Path behind the processing equipment", IsCorrect = false, GameOverMessage = "Vi got trapped behind broken equipment! Even Vi needs backup sometimes... Try again!" },
+                new NavigationChoice { Direction = "BESIDE the main tank", Description = "Safe walkway beside the primary tank", IsCorrect = true, GameOverMessage = "" }
+            }
+        },
+        new NavigationLocation
+        {
+            LocationId = 3,
+            Name = "Underground Market",
+            Description = "Bustling underground marketplace built in a converted mine with multiple levels.",
+            ImagePath = "images/navigation/underground-market.jpg",
+            CorrectChoiceIndex = 2, // ACROSS OVER
+            SuccessMessage = "The rope bridge was the secret route to freedom!",
+            Choices = new[]
+            {
+                new NavigationChoice { Direction = "UP THROUGH the busy market", Description = "Stairs leading through the crowded marketplace", IsCorrect = false, GameOverMessage = "Enforcers were waiting in the crowd! That path was more dangerous than a Piltover Enforcer raid!" },
+                new NavigationChoice { Direction = "DOWN INTO the old mines", Description = "Tunnel leading deeper into abandoned mines", IsCorrect = false, GameOverMessage = "The mines weren't stable... rocks are falling! Not even Vander could have survived that route!" },
+                new NavigationChoice { Direction = "ACROSS OVER the rope bridge", Description = "Rope bridge spanning across the chasm", IsCorrect = true, GameOverMessage = "" }
+            }
+        },
+        new NavigationLocation
+        {
+            LocationId = 4,
+            Name = "Bridge to Piltover",
+            Description = "You've reached the magnificent bridge spanning between the cities! Piltover's golden spires shine in the distance.",
+            ImagePath = "images/navigation/bridge-to-piltover.jpg",
+            CorrectChoiceIndex = 0, // Victory location
+            SuccessMessage = "ESCAPE SUCCESSFUL - Welcome to Piltover! You've successfully navigated through the dangerous undercity!",
+            Choices = Array.Empty<NavigationChoice>()
+        }
+    };
+    
+    public Dictionary<string, PlayerRole> Players { get; set; } = new();
+    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public int CurrentLocationId { get; set; } = 0;
+    public bool IsCompleted { get; set; } = false;
+    public bool IsGameOver { get; set; } = false;
+    public string? GameOverMessage { get; set; }
+    
+    public int PlayerCount => Players.Count;
+    public NavigationLocation CurrentLocation => LocationBank[CurrentLocationId];
+    
+    public PlayerRole? AddPlayer(string connectionId, string playerName)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        Players[connectionId] = role;
+        PlayerNames[connectionId] = playerName;
+        return role;
+    }
+    
+    public bool RemovePlayer(string connectionId)
+    {
+        var removed = Players.Remove(connectionId);
+        PlayerNames.Remove(connectionId);
+        return removed;
+    }
+    
+    public List<string> GetConnectedPlayers()
+    {
+        return Players.Keys.ToList();
+    }
+    
+    public (bool Success, string Message) MakeChoice(string connectionId, string choice)
+    {
+        if (IsCompleted)
+            return (false, "Game is already completed");
+            
+        if (IsGameOver)
+            return (false, "Game is over - restart to try again");
+            
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+            
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return (false, "Only the Zaunite player can make navigation choices");
+
+        var location = CurrentLocation;
+        choice = choice.Trim().ToUpper();
+        
+        // Find the matching choice
+        var selectedChoice = location.Choices.FirstOrDefault(c => c.Direction.ToUpper() == choice);
+        if (selectedChoice == null)
+        {
+            return (false, "Invalid choice - select one of the available options");
+        }
+        
+        if (selectedChoice.IsCorrect)
+        {
+            // Correct choice - advance to next location
+            CurrentLocationId++;
+            
+            if (CurrentLocationId >= LocationBank.Length - 1)
+            {
+                // Reached the final location - victory!
+                CurrentLocationId = LocationBank.Length - 1; // Bridge to Piltover
+                IsCompleted = true;
+                return (true, LocationBank[CurrentLocationId].SuccessMessage);
+            }
+            else
+            {
+                return (true, location.SuccessMessage);
+            }
+        }
+        else
+        {
+            // Wrong choice - game over
+            IsGameOver = true;
+            GameOverMessage = selectedChoice.GameOverMessage;
+            return (true, selectedChoice.GameOverMessage);
+        }
+    }
+    
+    public NavigationPlayerView GetPlayerView(string connectionId)
+    {
+        if (!Players.TryGetValue(connectionId, out var role))
+            return new NavigationPlayerView();
+
+        if (role == PlayerRole.Piltover)
+        {
+            // Piltover player sees the map
+            return new NavigationPlayerView
+            {
+                Role = "Piltover",
+                DisplayName = "Caitlyn (Navigator)",
+                Instruction = IsGameOver ? "Game Over! Guide your partner to restart." : 
+                             IsCompleted ? "Mission Accomplished! You successfully guided Vi to safety!" :
+                             "Guide Vi through the dangerous undercity using your map:",
+                MapData = GetMapData(),
+                IsGameOver = IsGameOver,
+                GameOverMessage = GameOverMessage
+            };
+        }
+        else
+        {
+            // Zaunite player sees first-person view
+            var location = CurrentLocation;
+            return new NavigationPlayerView
+            {
+                Role = "Zaunite",
+                DisplayName = "Vi (Explorer)",
+                Instruction = IsGameOver ? "You got caught! Ask your partner to restart the mission." :
+                             IsCompleted ? "Success! You made it to Piltover safely!" :
+                             "Choose your path based on Caitlyn's guidance:",
+                LocationName = location.Name,
+                LocationDescription = location.Description,
+                LocationImage = location.ImagePath,
+                AvailableChoices = IsCompleted ? Array.Empty<NavigationChoice>() : location.Choices,
+                IsGameOver = IsGameOver,
+                GameOverMessage = GameOverMessage
+            };
+        }
+    }
+    
+    private NavigationMapData GetMapData()
+    {
+        return new NavigationMapData
+        {
+            CurrentLocationId = CurrentLocationId,
+            Locations = LocationBank.Select((loc, index) => new NavigationMapLocation
+            {
+                LocationId = loc.LocationId,
+                Name = loc.Name,
+                X = GetLocationX(index),
+                Y = GetLocationY(index),
+                IsCurrentLocation = index == CurrentLocationId,
+                IsCompleted = index < CurrentLocationId || IsCompleted
+            }).ToArray(),
+            CorrectPath = GetCorrectPathData()
+        };
+    }
+    
+    private NavigationMapPath[] GetCorrectPathData()
+    {
+        var paths = new List<NavigationMapPath>();
+        
+        // Define the correct path through all locations
+        for (int i = 0; i < LocationBank.Length - 1; i++)
+        {
+            var location = LocationBank[i];
+            var correctChoice = location.Choices[location.CorrectChoiceIndex];
+            
+            paths.Add(new NavigationMapPath
+            {
+                FromLocationId = i,
+                ToLocationId = i + 1,
+                Direction = correctChoice.Direction
+            });
+        }
+        
+        return paths.ToArray();
+    }
+    
+    // Position locations on the map (as percentages for responsive design)
+    private float GetLocationX(int locationIndex)
+    {
+        return locationIndex switch
+        {
+            0 => 20f,  // Sewer Entrance - left side
+            1 => 35f,  // Industrial Pipes - moving right and down
+            2 => 50f,  // Chemical Plant - center
+            3 => 65f,  // Underground Market - right side
+            4 => 80f,  // Bridge to Piltover - far right
+            _ => 50f
+        };
+    }
+    
+    private float GetLocationY(int locationIndex)
+    {
+        return locationIndex switch
+        {
+            0 => 80f,  // Sewer Entrance - bottom (underground)
+            1 => 65f,  // Industrial Pipes - moving up
+            2 => 50f,  // Chemical Plant - middle level
+            3 => 35f,  // Underground Market - higher up
+            4 => 20f,  // Bridge to Piltover - top (surface level)
+            _ => 50f
+        };
+    }
+    
+    public NavigationGameState GetGameState()
+    {
+        return new NavigationGameState
+        {
+            CurrentLocationId = CurrentLocationId,
+            TotalLocations = LocationBank.Length,
+            IsCompleted = IsCompleted,
+            IsGameOver = IsGameOver,
+            PlayerCount = Players.Count,
+            PlayersNeeded = 2 - Players.Count,
+            GameOverMessage = GameOverMessage
+        };
+    }
+    
+    public void Reset()
+    {
+        CurrentLocationId = 0;
+        IsCompleted = false;
+        IsGameOver = false;
+        GameOverMessage = null;
     }
 }
