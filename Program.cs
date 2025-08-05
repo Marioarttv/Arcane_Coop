@@ -3,6 +3,7 @@ using Arcane_Coop.Hubs;
 using Arcane_Coop.Data;
 using Arcane_Coop.Services;
 using Microsoft.EntityFrameworkCore;
+using Plk.Blazor.DragDrop;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ builder.Services.AddRazorComponents()
 
 // Add SignalR
 builder.Services.AddSignalR();
+
+// Add Blazor DragDrop
+builder.Services.AddBlazorDragDrop();
 
 // Add Entity Framework
 builder.Services.AddDbContext<GameDbContext>(options =>

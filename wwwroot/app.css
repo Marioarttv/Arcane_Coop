@@ -50,3 +50,42 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Test Navigation Buttons - Temporary Styling */
+.btn-outline-light {
+    background: rgba(0, 15, 25, 0.85);
+    border: 1px solid rgba(67, 200, 255, 0.6);
+    color: #43c8ff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-outline-light:hover {
+    background: rgba(67, 200, 255, 0.15);
+    border-color: #43c8ff;
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(67, 200, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-outline-light:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(67, 200, 255, 0.2);
+}
+
+/* Test button container styling */
+div[style*="position: fixed"][style*="top: 10px"] {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(3px);
+    border: 1px solid rgba(67, 200, 255, 0.2);
+}

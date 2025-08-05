@@ -10,7 +10,13 @@
       "Bash(powershell:*)",
       "Bash(rm:*)",
       "Bash(mkdir:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(copy HealingPotion_Simple.razor HealingPotion.razor)",
+      "Bash(cp:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:blazordragdrop.azurewebsites.net)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

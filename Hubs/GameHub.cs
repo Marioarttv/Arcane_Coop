@@ -10,6 +10,7 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
     private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
     private static readonly ConcurrentDictionary<string, NavigationMazeGame> _navigationMazeGames = new();
+    private static readonly ConcurrentDictionary<string, AlchemyGame> _alchemyGames = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
 
     public async Task JoinRoom(string roomId, string playerName)
@@ -374,6 +375,126 @@ public class GameHub : Hub
         }
     }
 
+    // Alchemy Lab specific methods
+    public async Task JoinAlchemyGame(string roomId, string playerName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _alchemyGames.GetOrAdd(roomId, _ => new AlchemyGame());
+        
+        var playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("AlchemyGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("AlchemyGameStateUpdated", game.GetGameState());
+            
+            // Start game if both players are connected
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("AlchemyGameFull");
+        }
+    }
+
+    public async Task ProcessIngredient(string roomId, string ingredientId, string stationName)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.ProcessIngredient(Context.ConnectionId, ingredientId, stationName);
+            if (result.Success)
+            {
+                // Update player views with new ingredient state
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+        }
+    }
+
+    public async Task AddToCauldron(string roomId, string ingredientId, int position)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.AddToCauldron(Context.ConnectionId, ingredientId, position);
+            if (result.Success)
+            {
+                // Update player views with new cauldron state
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+        }
+    }
+
+    public async Task SubmitPotion(string roomId)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.SubmitPotion(Context.ConnectionId);
+            if (result.Success)
+            {
+                if (game.IsCompleted)
+                {
+                    // Success!
+                    await Clients.Group(roomId).SendAsync("AlchemyGameCompleted", result.Message, game.Score);
+                    await Clients.Group(roomId).SendAsync("AlchemyGameStateUpdated", game.GetGameState());
+                    
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+                else
+                {
+                    // Failed attempt - give feedback on mistakes
+                    await Clients.Group(roomId).SendAsync("AlchemyPotionIncorrect", result.Message, game.GetMistakes());
+                    game.ResetCauldron(); // Clear cauldron for retry
+                    
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+        }
+    }
+
+    public async Task RestartAlchemyGame(string roomId)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            game.Reset();
+            await Clients.Group(roomId).SendAsync("AlchemyGameStateUpdated", game.GetGameState());
+            
+            // Send updated player views
+            foreach (var player in game.GetConnectedPlayers())
+            {
+                await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+            }
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove player from room tracking
@@ -430,7 +551,386 @@ public class GameHub : Hub
             }
         }
         
+        // Remove player from alchemy games
+        foreach (var kvp in _alchemyGames)
+        {
+            if (kvp.Value.RemovePlayer(Context.ConnectionId))
+            {
+                await Clients.Group(kvp.Key).SendAsync("AlchemyGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        
         await base.OnDisconnectedAsync(exception);
+    }
+}
+
+public class AlchemyGame
+{
+    public enum PlayerRole { Piltover, Zaunite }
+    
+    // Healing Potion Recipe for Vi
+    private static readonly AlchemyRecipe HealingPotionRecipe = new AlchemyRecipe
+    {
+        Name = "Vi's Healing Potion",
+        Description = "A powerful healing elixir to restore Vi's strength after her latest undercity adventure.",
+        RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey", "piltover_mint", "vial_of_tears" },
+        Steps = new[]
+        {
+            new RecipeStep
+            {
+                StepNumber = 1,
+                Instruction = "Step 1: Prepare the base",
+                IngredientId = "shimmer_crystal",
+                RequiredStation = ProcessingStation.MortarPestle,
+                RequiredState = IngredientState.Ground,
+                DetailedDescription = "Grind the Shimmer Crystal into fine powder using the mortar and pestle. The crystal should sparkle like stardust when properly ground."
+            },
+            new RecipeStep
+            {
+                StepNumber = 2,
+                Instruction = "Step 2: Extract berry essence",
+                IngredientId = "hex_berries",
+                RequiredStation = ProcessingStation.HeatingStation,
+                RequiredState = IngredientState.Heated,
+                DetailedDescription = "Heat the Hex Berries until they release their magical essence. They should glow with a soft blue light when ready."
+            },
+            new RecipeStep
+            {
+                StepNumber = 3,
+                Instruction = "Step 3: Prepare the mushroom",
+                IngredientId = "zaun_grey",
+                RequiredStation = ProcessingStation.CuttingBoard,
+                RequiredState = IngredientState.Chopped,
+                DetailedDescription = "Carefully chop the Zaun Grey mushroom into small pieces. Be precise - uneven cuts will affect the potion's potency."
+            },
+            new RecipeStep
+            {
+                StepNumber = 4,
+                Instruction = "Step 4: Purify the mint",
+                IngredientId = "piltover_mint",
+                RequiredStation = ProcessingStation.FilteringStation,
+                RequiredState = IngredientState.Filtered,
+                DetailedDescription = "Filter the Piltover Mint to remove impurities. The mint should have a crystal-clear appearance when properly filtered."
+            },
+            new RecipeStep
+            {
+                StepNumber = 5,
+                Instruction = "Step 5: Combine in order",
+                IngredientId = "vial_of_tears",
+                RequiredStation = ProcessingStation.Cauldron,
+                RequiredState = IngredientState.Raw,
+                DetailedDescription = "Add ingredients to cauldron in this exact order: Ground Shimmer Crystal, Heated Hex Berries, Chopped Zaun Grey, Filtered Piltover Mint, and finally the Vial of Tears (unprocessed)."
+            }
+        }
+    };
+    
+    private static readonly AlchemyIngredient[] IngredientBank = new[]
+    {
+        new AlchemyIngredient
+        {
+            Id = "shimmer_crystal",
+            Name = "Shimmer Crystal",
+            Description = "A crystalline fragment that glows with inner light",
+            ImagePath = "images/alchemy/shimmer_crystal_raw.png"
+        },
+        new AlchemyIngredient
+        {
+            Id = "hex_berries",
+            Name = "Hex Berries",
+            Description = "Magical berries from Piltover's hextech gardens",
+            ImagePath = "images/alchemy/hex_berries_raw.png"
+        },
+        new AlchemyIngredient
+        {
+            Id = "zaun_grey",
+            Name = "Zaun Grey Mushroom",
+            Description = "A hardy mushroom that grows in the undercity's toxic soil",
+            ImagePath = "images/alchemy/zaun_grey_raw.png"
+        },
+        new AlchemyIngredient
+        {
+            Id = "piltover_mint",
+            Name = "Piltover Mint",
+            Description = "A pure mint leaf from Piltover's pristine gardens",
+            ImagePath = "images/alchemy/piltover_mint_raw.png"
+        },
+        new AlchemyIngredient
+        {
+            Id = "vial_of_tears",
+            Name = "Vial of Tears",
+            Description = "Precious tears collected from the Grey - use sparingly",
+            ImagePath = "images/alchemy/vial_of_tears_raw.png"
+        }
+    };
+    
+    public Dictionary<string, PlayerRole> Players { get; set; } = new();
+    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public List<AlchemyIngredient> AvailableIngredients { get; set; } = new();
+    public List<AlchemyIngredient> CauldronContents { get; set; } = new();
+    public bool IsCompleted { get; set; } = false;
+    public int Score { get; set; } = 100;
+    public int Attempts { get; set; } = 0;
+    public List<string> ProcessingErrors { get; set; } = new();
+    
+    public int PlayerCount => Players.Count;
+    
+    public AlchemyGame()
+    {
+        // Initialize available ingredients
+        AvailableIngredients = IngredientBank.Select(ingredient => new AlchemyIngredient
+        {
+            Id = ingredient.Id,
+            Name = ingredient.Name,
+            Description = ingredient.Description,
+            ImagePath = ingredient.ImagePath,
+            State = IngredientState.Raw,
+            IsUsed = false
+        }).ToList();
+    }
+    
+    public PlayerRole? AddPlayer(string connectionId, string playerName)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        Players[connectionId] = role;
+        PlayerNames[connectionId] = playerName;
+        return role;
+    }
+    
+    public bool RemovePlayer(string connectionId)
+    {
+        var removed = Players.Remove(connectionId);
+        PlayerNames.Remove(connectionId);
+        return removed;
+    }
+    
+    public List<string> GetConnectedPlayers()
+    {
+        return Players.Keys.ToList();
+    }
+    
+    public (bool Success, string Message) ProcessIngredient(string connectionId, string ingredientId, string stationName)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+            
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return (false, "Only the Zaunite player can process ingredients");
+            
+        var ingredient = AvailableIngredients.FirstOrDefault(i => i.Id == ingredientId);
+        if (ingredient == null || ingredient.IsUsed)
+            return (false, "Ingredient not available");
+            
+        // Parse station enum
+        if (!Enum.TryParse<ProcessingStation>(stationName, out var station))
+            return (false, "Invalid processing station");
+            
+        // Process the ingredient based on station
+        var newState = station switch
+        {
+            ProcessingStation.MortarPestle => IngredientState.Ground,
+            ProcessingStation.HeatingStation => IngredientState.Heated,
+            ProcessingStation.CuttingBoard => IngredientState.Chopped,
+            ProcessingStation.FilteringStation => IngredientState.Filtered,
+            _ => ingredient.State
+        };
+        
+        ingredient.State = newState;
+        ingredient.ImagePath = GetProcessedImagePath(ingredient.Id, newState);
+        
+        return (true, $"{ingredient.Name} processed successfully");
+    }
+    
+    public (bool Success, string Message) AddToCauldron(string connectionId, string ingredientId, int position)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+            
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return (false, "Only the Zaunite player can add ingredients to cauldron");
+            
+        var ingredient = AvailableIngredients.FirstOrDefault(i => i.Id == ingredientId);
+        if (ingredient == null || ingredient.IsUsed)
+            return (false, "Ingredient not available");
+            
+        // Add to cauldron
+        ingredient.IsUsed = true;
+        
+        // Insert at specified position or add to end
+        if (position >= 0 && position < CauldronContents.Count)
+        {
+            CauldronContents.Insert(position, ingredient);
+        }
+        else
+        {
+            CauldronContents.Add(ingredient);
+        }
+        
+        return (true, $"{ingredient.Name} added to cauldron");
+    }
+    
+    public (bool Success, string Message) SubmitPotion(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+            
+        Attempts++;
+        Score = Math.Max(0, 100 - (Attempts - 1) * 10); // Lose 10 points per failed attempt
+        
+        var mistakes = ValidatePotion();
+        
+        if (mistakes.Count == 0)
+        {
+            IsCompleted = true;
+            return (true, $"Perfect! Vi's healing potion is complete! Potion potency: {Score}%");
+        }
+        else
+        {
+            ProcessingErrors = mistakes;
+            return (true, $"The potion failed... Something went wrong. Attempt {Attempts}");
+        }
+    }
+    
+    private List<string> ValidatePotion()
+    {
+        var mistakes = new List<string>();
+        var recipe = HealingPotionRecipe;
+        
+        // Check if all ingredients are present
+        if (CauldronContents.Count != recipe.Steps.Length)
+        {
+            mistakes.Add($"Wrong number of ingredients (expected {recipe.Steps.Length}, got {CauldronContents.Count})");
+            return mistakes; // Can't validate further without correct count
+        }
+        
+        // Check order and processing
+        for (int i = 0; i < recipe.Steps.Length; i++)
+        {
+            var step = recipe.Steps[i];
+            var cauldronIngredient = CauldronContents[i];
+            
+            // Check correct ingredient
+            if (cauldronIngredient.Id != step.IngredientId)
+            {
+                var expectedName = IngredientBank.First(ing => ing.Id == step.IngredientId).Name;
+                mistakes.Add($"Step {step.StepNumber}: Expected {expectedName}, but got {cauldronIngredient.Name}");
+            }
+            
+            // Check correct processing state
+            if (cauldronIngredient.State != step.RequiredState)
+            {
+                mistakes.Add($"Step {step.StepNumber}: {cauldronIngredient.Name} should be {step.RequiredState}, but was {cauldronIngredient.State}");
+            }
+        }
+        
+        return mistakes;
+    }
+    
+    public List<string> GetMistakes()
+    {
+        return ProcessingErrors;
+    }
+    
+    public void ResetCauldron()
+    {
+        // Return ingredients to available state
+        foreach (var ingredient in CauldronContents)
+        {
+            var originalIngredient = AvailableIngredients.First(i => i.Id == ingredient.Id);
+            originalIngredient.IsUsed = false;
+            // Keep processing state - they don't need to reprocess
+        }
+        
+        CauldronContents.Clear();
+    }
+    
+    private string GetProcessedImagePath(string ingredientId, IngredientState state)
+    {
+        var stateSuffix = state.ToString().ToLower();
+        return $"images/alchemy/{ingredientId}_{stateSuffix}.png";
+    }
+    
+    public AlchemyPlayerView GetPlayerView(string connectionId)
+    {
+        if (!Players.TryGetValue(connectionId, out var role))
+            return new AlchemyPlayerView();
+            
+        if (role == PlayerRole.Piltover)
+        {
+            // Piltover player sees the recipe
+            return new AlchemyPlayerView
+            {
+                Role = "Piltover",
+                DisplayName = "Caitlyn (Master Alchemist)",
+                Instruction = IsCompleted ? "Excellent work! Vi's healing potion is ready!" : 
+                             "Guide your partner through brewing Vi's healing potion:",
+                Recipe = HealingPotionRecipe,
+                CurrentStepIndex = 0, // Show all steps
+                IsCompleted = IsCompleted,
+                Score = Score,
+                CompletionMessage = IsCompleted ? $"Perfect brewing! Potion potency: {Score}%" : null,
+                Mistakes = ProcessingErrors.ToArray()
+            };
+        }
+        else
+        {
+            // Zaunite player sees the lab
+            return new AlchemyPlayerView
+            {
+                Role = "Zaunite",
+                DisplayName = "Vi (Lab Assistant)",
+                Instruction = IsCompleted ? "Potion complete! Vi will recover quickly now!" :
+                             "Follow Caitlyn's recipe instructions to brew the healing potion:",
+                AvailableIngredients = AvailableIngredients.Where(i => !i.IsUsed).ToArray(),
+                CauldronContents = CauldronContents.ToArray(),
+                AvailableStations = new[] { ProcessingStation.MortarPestle, ProcessingStation.HeatingStation, 
+                                          ProcessingStation.CuttingBoard, ProcessingStation.FilteringStation, ProcessingStation.Cauldron },
+                IsCompleted = IsCompleted,
+                Score = Score,
+                CompletionMessage = IsCompleted ? $"Perfect brewing! Potion potency: {Score}%" : null,
+                Mistakes = ProcessingErrors.ToArray()
+            };
+        }
+    }
+    
+    public AlchemyGameState GetGameState()
+    {
+        return new AlchemyGameState
+        {
+            CurrentStepIndex = 0,
+            TotalSteps = HealingPotionRecipe.Steps.Length,
+            IsCompleted = IsCompleted,
+            Score = Score,
+            PlayerCount = Players.Count,
+            PlayersNeeded = 2 - Players.Count,
+            HasStarted = Players.Count == 2
+        };
+    }
+    
+    public void Reset()
+    {
+        AvailableIngredients = IngredientBank.Select(ingredient => new AlchemyIngredient
+        {
+            Id = ingredient.Id,
+            Name = ingredient.Name,
+            Description = ingredient.Description,
+            ImagePath = ingredient.ImagePath,
+            State = IngredientState.Raw,
+            IsUsed = false
+        }).ToList();
+        
+        CauldronContents.Clear();
+        IsCompleted = false;
+        Score = 100;
+        Attempts = 0;
+        ProcessingErrors.Clear();
     }
 }
 
@@ -1292,3 +1792,4 @@ public class NavigationMazeGame
         GameOverMessage = null;
     }
 }
+
