@@ -76,16 +76,38 @@ Three specialized stations for ingredient transformation:
 
 ### Recipe Solution
 
-**Vi's Healing Potion** requires exactly 3 processed ingredients in the correct order:
+**Vi's Healing Potion** now requires a complex 4-step process with ingredient combination:
 
-1. **Shimmer Crystal** → Ground (using Mortar & Pestle)
-2. **Hex Berries** → Heated (using Heating Station)  
-3. **Zaun Grey Mushroom** → Chopped (using Cutting Board)
+#### **Step 1: Magical Combination**
+- **Ingredients**: Shimmer Crystal + Hex Berries
+- **Station**: ⚗️ Mixing Station (NEW!)
+- **Action**: Drag both ingredients to mixing station → Click "✨ Combine"
+- **Result**: Creates **Shimmer Essence** (Mixed state)
+
+#### **Step 2: Essence Stabilization**
+- **Ingredient**: Shimmer Essence (from Step 1)
+- **Station**: 🔥 Heating Station
+- **Action**: Heat the volatile essence to stabilize it
+- **Result**: **Heated Shimmer Essence**
+
+#### **Step 3: Mushroom Preparation**
+- **Ingredient**: Zaun Grey Mushroom
+- **Station**: 🔪 Cutting Board
+- **Action**: Precisely chop into uniform pieces
+- **Result**: **Chopped Zaun Grey**
+
+#### **Step 4: Final Brewing**
+- **Cauldron Contents** (in order):
+  1. Heated Shimmer Essence
+  2. Chopped Zaun Grey  
+  3. Vial of Tears (Raw - acts as catalyst)
+- **Action**: Click "✨ Brew Potion"
 
 **Success Criteria**:
-- All 3 ingredients must be processed correctly
-- Ingredients must be added to cauldron in the specified order
-- Recipe validation occurs server-side for accuracy
+- Must complete combination step first (2 ingredients → 1 combined ingredient)
+- Combined ingredient must be further processed (heated)
+- All 3 final ingredients must be added to cauldron in correct order
+- Server validates the complete 4-step process
 
 ## Technical Implementation
 
@@ -155,7 +177,11 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 - **Arcane Theme Integration**: Consistent color palette and typography
 - **Smooth Animations**: 60fps hardware-accelerated transitions
 - **State Indicators**: Clear visual feedback for all interactions
-- **Responsive Design**: Optimized for desktop and mobile devices
+- **Desktop-Optimized Layout**: Horizontal 4-station layout for maximum efficiency
+- **Station Color Coding**: Each station has unique visual identity
+  - Purple: Mixing Station (magical combination)
+  - Golden: Standard processing stations
+  - Amber: Cauldron (final brewing)
 
 ### Accessibility Features
 - **High Contrast**: Clear distinction between interactive elements
@@ -163,11 +189,24 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 - **Clear Instructions**: Step-by-step guidance for both players
 - **Error Messages**: Descriptive feedback for invalid actions
 
+### Layout Optimization
+- **Desktop-First Design**: Optimized for desktop gameplay experience
+- **Compact Single-Screen Layout**: All elements fit within 100vh viewport
+- **No Scrolling Required**: Drag-and-drop works seamlessly without page scrolling
+- **Horizontal Station Layout**: 4 stations arranged side-by-side for maximum efficiency
+- **Perfect Viewport Management**: 
+  - 25vh: Ingredient pool (top)
+  - 50vh: Processing stations (middle)
+  - 25vh: Cauldron section (bottom)
+- **Button Accessibility**: All process buttons always visible and clickable
+- **Flexbox Architecture**: Stations use flexible layouts preventing UI cutoff
+
 ### Educational Value
-- **Process Understanding**: Learn ingredient transformation techniques
+- **Complex Process Understanding**: Learn multi-step ingredient transformation
 - **Collaboration Skills**: Requires clear communication between players
 - **Following Instructions**: Practice reading and implementing complex procedures
 - **Problem Solving**: Troubleshoot mistakes and retry failed attempts
+- **Chemical Combination Logic**: Understanding how ingredients interact
 
 ## Development Lessons Learned
 
@@ -208,6 +247,21 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 
 ## Conclusion
 
-The Alchemy Lab demonstrates how modern web technologies can create engaging, collaborative puzzle experiences. The combination of **blazor-dragdrop** for intuitive interactions, **SignalR** for real-time multiplayer, and careful **UX design** results in a premium educational game that feels both magical and technically sophisticated.
+The Alchemy Lab demonstrates how modern web technologies can create engaging, collaborative puzzle experiences with sophisticated gameplay mechanics. The evolution from simple 3-ingredient recipes to complex 4-step combination processes showcases the flexibility of the **blazor-dragdrop** library and **SignalR** multiplayer architecture.
 
-The drag-and-drop implementation serves as a excellent reference for future interactive components, showing how proper state management, visual feedback, and server synchronization can create seamless user experiences in Blazor applications.
+### **Key Technical Achievements**:
+- **Complex Recipe Logic**: Multi-step processes with ingredient combination
+- **Advanced Drag-and-Drop**: Multi-item dropzones with validation
+- **Perfect Layout Optimization**: Single-viewport design with no scrolling
+- **Robust State Management**: Client-server synchronization for multiplayer
+- **Sophisticated Validation**: Order-sensitive recipe checking
+
+### **Design Philosophy**:
+- **Desktop-First**: Optimized for the primary gaming platform
+- **No-Scroll Principle**: Drag-and-drop incompatible with scrolling
+- **Visual Clarity**: Each station and state has distinct visual identity
+- **Immediate Feedback**: Every action provides instant visual response
+
+The drag-and-drop implementation serves as an excellent reference for future interactive components, demonstrating how careful attention to layout, state management, and user experience can create engaging collaborative puzzle games in Blazor applications.
+
+**The mixing station innovation proves that simple drag-and-drop mechanics can support complex, multi-step collaborative gameplay when properly architected.**

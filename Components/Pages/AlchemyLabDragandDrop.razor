@@ -219,6 +219,40 @@
                             <div class="processing-stations">
                                 <h4>⚙️ Processing Stations</h4>
                                 <div class="stations-grid">
+                                    <!-- Mixing Station - NEW! -->
+                                    <div class="processing-station mixing-station">
+                                        <div class="station-header">
+                                            <span class="station-icon">⚗️</span>
+                                            <h5>Mixing Station</h5>
+                                        </div>
+                                        <Dropzone Items="@mixingItems" 
+                                                  Class="station-dropzone mixing-dropzone"
+                                                  MaxItems="2"
+                                                  OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())"
+                                                  Accepts="@((ingredient, targetZone) => CanCombineIngredient(ingredient))">
+                                            @if (context != null)
+                                            {
+                                                <div class="processing-ingredient">
+                                                    <img src="@context.ImagePath" alt="@context.Name" />
+                                                    <span>@context.Name</span>
+                                                </div>
+                                            }
+                                            else if (mixingItems.Count == 0)
+                                            {
+                                                <div class="station-placeholder">
+                                                    <p>Drop Shimmer Crystal + Hex Berries</p>
+                                                    <small>(2 ingredients required)</small>
+                                                </div>
+                                            }
+                                        </Dropzone>
+                                        @if (mixingItems.Count == 2)
+                                        {
+                                            <button class="process-btn combine-btn" @onclick="() => CombineAtMixing()">
+                                                ✨ Combine
+                                            </button>
+                                        }
+                                    </div>
+                                    
                                     <!-- Mortar & Pestle Station -->
                                     <div class="processing-station mortar-station">
                                         <div class="station-header">
@@ -419,6 +453,7 @@
     private List<string> connectedPlayers = new List<string>();
     
     // Drag and Drop collections for processing stations and cauldron
+    private List<AlchemyIngredient> mixingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> mortarItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> heatingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> cuttingItems = new List<AlchemyIngredient>();
@@ -578,6 +613,17 @@
         }
     }
     
+    private async Task CombineAtMixing()
+    {
+        if (mixingItems.Count == 2 && hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            var ingredient1 = mixingItems[0];
+            var ingredient2 = mixingItems[1];
+            await hubConnection.SendAsync("CombineIngredients", roomId, ingredient1.Id, ingredient2.Id);
+            mixingItems.Clear();
+        }
+    }
+    
     // Helper method to check if ingredient can be processed at station
     private bool CanProcessAtStation(AlchemyIngredient ingredient, ProcessingStation station)
     {
@@ -585,6 +631,13 @@
         return station == ProcessingStation.MortarPestle || 
                station == ProcessingStation.HeatingStation || 
                station == ProcessingStation.CuttingBoard;
+    }
+    
+    // Helper method to check if ingredient can be combined at mixing station
+    private bool CanCombineIngredient(AlchemyIngredient ingredient)
+    {
+        // Only accept shimmer_crystal and hex_berries for combination
+        return ingredient.Id == "shimmer_crystal" || ingredient.Id == "hex_berries";
     }
 
     private async Task SubmitPotion()
@@ -664,6 +717,7 @@
             IngredientState.Heated => "state-heated",
             IngredientState.Chopped => "state-chopped",
             IngredientState.Filtered => "state-filtered",
+            IngredientState.Mixed => "state-mixed",
             _ => "state-raw"
         };
     }
@@ -677,6 +731,7 @@
             IngredientState.Heated => "Heated",
             IngredientState.Chopped => "Chopped", 
             IngredientState.Filtered => "Filtered",
+            IngredientState.Mixed => "Mixed",
             _ => state.ToString()
         };
     }
@@ -1096,20 +1151,25 @@
     border: 1px solid #ffc107;
 }
 
-/* Drag and Drop Laboratory Layout */
+/* Drag and Drop Laboratory Layout - Compact Version */
 .dragdrop-laboratory {
     display: grid;
-    grid-template-rows: auto auto 1fr;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    min-height: 600px;
+    grid-template-rows: 25vh 50vh 25vh;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    padding: 0.5rem;
 }
 
 .ingredients-pool {
     background: rgba(0, 153, 153, 0.08);
     border: 2px solid rgba(0, 200, 200, 0.3);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
+    max-height: 25vh;
+    overflow-y: auto;
 }
 
 .ingredients-pool h4 {
@@ -1219,7 +1279,9 @@
     background: rgba(200, 155, 60, 0.08);
     border: 2px solid rgba(200, 170, 110, 0.3);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
+    max-height: 50vh;
+    overflow: visible;
 }
 
 .processing-stations h4 {
@@ -1230,17 +1292,23 @@
 
 .stations-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    max-height: 45vh;
+    min-height: 45vh;
 }
 
 .processing-station {
     background: rgba(200, 155, 60, 0.1);
     border: 2px solid rgba(200, 170, 110, 0.4);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 0.75rem;
     text-align: center;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100%;
 }
 
 .processing-station:hover {
@@ -1266,15 +1334,19 @@
 }
 
 .station-dropzone {
-    min-height: 100px;
+    min-height: 120px;
+    max-height: 120px;
     border: 2px dashed rgba(200, 170, 110, 0.5);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.5rem;
     background: rgba(200, 155, 60, 0.05);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1;
 }
 
 .station-dropzone.plk-dd-dragging-over {
@@ -1317,13 +1389,14 @@
     color: #0a0e27;
     border: none;
     border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .process-btn:hover {
@@ -1333,15 +1406,15 @@
 
 /* Cauldron Dropzone */
 .cauldron-dropzone {
-    min-height: 200px;
+    min-height: 120px;
     border: 3px dashed rgba(255, 193, 7, 0.4);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
     background: rgba(255, 193, 7, 0.05);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
     align-items: center;
     justify-content: center;
 }
@@ -1416,19 +1489,99 @@
     background: rgba(40, 167, 69, 0.15);
 }
 
+.draggable-ingredient.state-mixed {
+    border-color: #9c27b0;
+    background: rgba(156, 39, 176, 0.15);
+}
+
+/* Mixing Station Specific Styling */
+.mixing-station {
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(233, 30, 99, 0.05));
+    border-color: rgba(156, 39, 176, 0.4);
+}
+
+.mixing-dropzone {
+    border-color: rgba(156, 39, 176, 0.5) !important;
+    background: rgba(156, 39, 176, 0.05) !important;
+}
+
+.mixing-dropzone.plk-dd-dragging-over {
+    border-color: #9c27b0 !important;
+    background: rgba(156, 39, 176, 0.2) !important;
+    box-shadow: 0 0 20px rgba(156, 39, 176, 0.3) !important;
+}
+
+.combine-btn {
+    background: linear-gradient(45deg, #9c27b0, #e91e63) !important;
+    color: #ffffff !important;
+}
+
+.combine-btn:hover {
+    box-shadow: 0 2px 8px rgba(156, 39, 176, 0.4) !important;
+}
+
 /* Responsive Design */
 @@media (max-width: 768px) {
     .stations-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .ingredients-dropzone {
-        justify-content: flex-start;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 0.5rem;
+        max-height: 55vh;
+        min-height: 55vh;
     }
     
     .dragdrop-laboratory {
-        gap: 1rem;
+        grid-template-rows: 20vh 60vh 20vh;
+        gap: 0.5rem;
+        padding: 0.25rem;
+    }
+    
+    .ingredients-pool {
+        max-height: 18vh;
+        padding: 0.5rem;
+    }
+    
+    .processing-stations {
+        max-height: 58vh;
+        padding: 0.5rem;
+    }
+    
+    .cauldron-section {
+        max-height: 18vh;
+        padding: 0.5rem;
+    }
+    
+    .station-dropzone {
+        min-height: 80px;
+        max-height: 80px;
+    }
+    
+    .process-btn {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.5rem;
+    }
+    
+    .processing-station {
+        padding: 0.5rem;
+    }
+}
+
+@@media (max-width: 480px) {
+    .stations-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(4, 1fr);
+        gap: 0.5rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .dragdrop-laboratory {
+        grid-template-rows: 15vh 70vh 15vh;
+    }
+    
+    .processing-stations {
+        max-height: 68vh;
+        overflow-y: auto;
     }
 }
 
@@ -1436,7 +1589,8 @@
     background: rgba(255, 193, 7, 0.08);
     border: 2px solid rgba(255, 193, 7, 0.3);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
+    max-height: 20vh;
 }
 
 .cauldron-section h4 {

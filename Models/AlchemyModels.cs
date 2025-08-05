@@ -23,6 +23,7 @@ public enum IngredientState
     Heated,     // After heating station
     Chopped,    // After cutting board
     Filtered,   // After filtering station
+    Mixed,      // After mixing station (combined ingredients)
     Processed   // Generic processed state
 }
 
@@ -32,6 +33,7 @@ public enum ProcessingStation
     HeatingStation,
     CuttingBoard,
     FilteringStation,
+    MixingStation,
     Cauldron
 }
 

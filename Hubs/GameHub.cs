@@ -422,6 +422,29 @@ public class GameHub : Hub
             }
         }
     }
+    
+    public async Task CombineIngredients(string roomId, string ingredient1Id, string ingredient2Id)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.CombineIngredients(Context.ConnectionId, ingredient1Id, ingredient2Id);
+            if (result.Success)
+            {
+                // Update player views with new ingredient state
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+                
+                // Send success message
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+        }
+    }
 
     public async Task AddToCauldron(string roomId, string ingredientId, int position)
     {
@@ -569,31 +592,31 @@ public class AlchemyGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Healing Potion Recipe for Vi - Simplified 3-Ingredient Version
+    // Healing Potion Recipe for Vi - Advanced 4-Ingredient Version with Combination
     private static readonly AlchemyRecipe HealingPotionRecipe = new AlchemyRecipe
     {
         Name = "Vi's Healing Potion",
-        Description = "A powerful healing elixir to restore Vi's strength after her latest undercity adventure. This concentrated version uses only the most essential ingredients.",
-        RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey" },
+        Description = "A powerful healing elixir requiring precise combination techniques. The Shimmer Crystal and Hex Berries must be combined first, then further processed for maximum potency.",
+        RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey", "vial_of_tears" },
         Steps = new[]
         {
             new RecipeStep
             {
                 StepNumber = 1,
-                Instruction = "Step 1: Prepare the base",
-                IngredientId = "shimmer_crystal",
-                RequiredStation = ProcessingStation.MortarPestle,
-                RequiredState = IngredientState.Ground,
-                DetailedDescription = "Grind the Shimmer Crystal into fine powder using the mortar and pestle. The crystal should sparkle like stardust when properly ground."
+                Instruction = "Step 1: Combine magical components",
+                IngredientId = "shimmer_essence", // This will be created by combining shimmer_crystal + hex_berries
+                RequiredStation = ProcessingStation.MixingStation,
+                RequiredState = IngredientState.Mixed,
+                DetailedDescription = "Place both Shimmer Crystal and Hex Berries into the mixing station. The combination will create a volatile Shimmer Essence that requires further processing."
             },
             new RecipeStep
             {
                 StepNumber = 2,
-                Instruction = "Step 2: Extract berry essence",
-                IngredientId = "hex_berries",
+                Instruction = "Step 2: Stabilize the essence",
+                IngredientId = "shimmer_essence",
                 RequiredStation = ProcessingStation.HeatingStation,
                 RequiredState = IngredientState.Heated,
-                DetailedDescription = "Heat the Hex Berries until they release their magical essence. They should glow with a soft blue light when ready."
+                DetailedDescription = "Heat the unstable Shimmer Essence until it glows with steady blue light. This stabilizes the magical properties."
             },
             new RecipeStep
             {
@@ -602,7 +625,16 @@ public class AlchemyGame
                 IngredientId = "zaun_grey",
                 RequiredStation = ProcessingStation.CuttingBoard,
                 RequiredState = IngredientState.Chopped,
-                DetailedDescription = "Carefully chop the Zaun Grey mushroom into small pieces. Be precise - uneven cuts will affect the potion's potency. Add all three processed ingredients to the cauldron in the correct order."
+                DetailedDescription = "Carefully chop the Zaun Grey mushroom into small, uniform pieces. Precision is crucial for proper dissolution."
+            },
+            new RecipeStep
+            {
+                StepNumber = 4,
+                Instruction = "Step 4: Final catalyst",
+                IngredientId = "vial_of_tears",
+                RequiredStation = ProcessingStation.Cauldron,
+                RequiredState = IngredientState.Raw,
+                DetailedDescription = "Add ingredients to cauldron in this order: Heated Shimmer Essence, Chopped Zaun Grey, and finally the Vial of Tears (unprocessed) as a catalyst."
             }
         }
     };
@@ -629,6 +661,21 @@ public class AlchemyGame
             Name = "Zaun Grey Mushroom",
             Description = "A hardy mushroom that grows in the undercity's toxic soil",
             ImagePath = "images/alchemy/zaun_grey_raw.png"
+        },
+        new AlchemyIngredient
+        {
+            Id = "vial_of_tears",
+            Name = "Vial of Tears",
+            Description = "Precious tears collected from the Grey - adds emotional potency",
+            ImagePath = "images/alchemy/vial_of_tears_raw.png"
+        },
+        // Combined ingredients (created by mixing station)
+        new AlchemyIngredient
+        {
+            Id = "shimmer_essence",
+            Name = "Shimmer Essence",
+            Description = "A volatile combination of crystal and berries - requires further processing",
+            ImagePath = "images/alchemy/shimmer_essence_raw.png"
         }
     };
     
@@ -700,6 +747,12 @@ public class AlchemyGame
         if (!Enum.TryParse<ProcessingStation>(stationName, out var station))
             return (false, "Invalid processing station");
             
+        // Handle mixing station differently (requires 2 ingredients)
+        if (station == ProcessingStation.MixingStation)
+        {
+            return (false, "Use CombineIngredients method for mixing station");
+        }
+        
         // Process the ingredient based on station
         var newState = station switch
         {
@@ -714,6 +767,48 @@ public class AlchemyGame
         ingredient.ImagePath = GetProcessedImagePath(ingredient.Id, newState);
         
         return (true, $"{ingredient.Name} processed successfully");
+    }
+    
+    public (bool Success, string Message) CombineIngredients(string connectionId, string ingredient1Id, string ingredient2Id)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+            
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return (false, "Only the Zaunite player can combine ingredients");
+            
+        var ingredient1 = AvailableIngredients.FirstOrDefault(i => i.Id == ingredient1Id && !i.IsUsed);
+        var ingredient2 = AvailableIngredients.FirstOrDefault(i => i.Id == ingredient2Id && !i.IsUsed);
+        
+        if (ingredient1 == null || ingredient2 == null)
+            return (false, "One or both ingredients not available");
+            
+        // Check for valid combination: Shimmer Crystal + Hex Berries = Shimmer Essence
+        var validCombination = (ingredient1Id == "shimmer_crystal" && ingredient2Id == "hex_berries") ||
+                              (ingredient1Id == "hex_berries" && ingredient2Id == "shimmer_crystal");
+                              
+        if (!validCombination)
+            return (false, "These ingredients cannot be combined. Try Shimmer Crystal + Hex Berries.");
+            
+        // Mark original ingredients as used
+        ingredient1.IsUsed = true;
+        ingredient2.IsUsed = true;
+        
+        // Create the combined ingredient
+        var shimmerEssence = IngredientBank.First(i => i.Id == "shimmer_essence");
+        var combinedIngredient = new AlchemyIngredient
+        {
+            Id = shimmerEssence.Id,
+            Name = shimmerEssence.Name,
+            Description = shimmerEssence.Description,
+            ImagePath = shimmerEssence.ImagePath,
+            State = IngredientState.Mixed,
+            IsUsed = false
+        };
+        
+        AvailableIngredients.Add(combinedIngredient);
+        
+        return (true, $"Successfully combined {ingredient1.Name} and {ingredient2.Name} into {combinedIngredient.Name}!");
     }
     
     public (bool Success, string Message) AddToCauldron(string connectionId, string ingredientId, int position)
@@ -771,30 +866,38 @@ public class AlchemyGame
         var mistakes = new List<string>();
         var recipe = HealingPotionRecipe;
         
-        // Check if all ingredients are present
-        if (CauldronContents.Count != recipe.Steps.Length)
+        // Expected cauldron contents: Heated Shimmer Essence, Chopped Zaun Grey, Raw Vial of Tears
+        var expectedCauldronIngredients = new[]
         {
-            mistakes.Add($"Wrong number of ingredients (expected {recipe.Steps.Length}, got {CauldronContents.Count})");
+            new { Id = "shimmer_essence", State = IngredientState.Heated },  // Step 2 result
+            new { Id = "zaun_grey", State = IngredientState.Chopped },        // Step 3 result  
+            new { Id = "vial_of_tears", State = IngredientState.Raw }          // Step 4 (raw catalyst)
+        };
+        
+        // Check if correct number of ingredients are present
+        if (CauldronContents.Count != expectedCauldronIngredients.Length)
+        {
+            mistakes.Add($"Wrong number of ingredients (expected {expectedCauldronIngredients.Length}, got {CauldronContents.Count})");
             return mistakes; // Can't validate further without correct count
         }
         
         // Check order and processing
-        for (int i = 0; i < recipe.Steps.Length; i++)
+        for (int i = 0; i < expectedCauldronIngredients.Length; i++)
         {
-            var step = recipe.Steps[i];
+            var expected = expectedCauldronIngredients[i];
             var cauldronIngredient = CauldronContents[i];
             
             // Check correct ingredient
-            if (cauldronIngredient.Id != step.IngredientId)
+            if (cauldronIngredient.Id != expected.Id)
             {
-                var expectedName = IngredientBank.First(ing => ing.Id == step.IngredientId).Name;
-                mistakes.Add($"Step {step.StepNumber}: Expected {expectedName}, but got {cauldronIngredient.Name}");
+                var expectedName = IngredientBank.First(ing => ing.Id == expected.Id).Name;
+                mistakes.Add($"Position {i + 1}: Expected {expectedName}, but got {cauldronIngredient.Name}");
             }
             
             // Check correct processing state
-            if (cauldronIngredient.State != step.RequiredState)
+            if (cauldronIngredient.State != expected.State)
             {
-                mistakes.Add($"Step {step.StepNumber}: {cauldronIngredient.Name} should be {step.RequiredState}, but was {cauldronIngredient.State}");
+                mistakes.Add($"Position {i + 1}: {cauldronIngredient.Name} should be {expected.State}, but was {cauldronIngredient.State}");
             }
         }
         
