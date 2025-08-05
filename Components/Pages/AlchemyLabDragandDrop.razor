@@ -323,33 +323,32 @@
                             <!-- Cauldron Section -->
                             <div class="cauldron-section">
                                 <h4>🍯 Brewing Cauldron</h4>
-                                <div class="cauldron-container">
-                                    @if (playerView.CauldronContents != null && playerView.CauldronContents.Length > 0)
+                                <Dropzone Items="@cauldronItems" 
+                                          Class="cauldron-dropzone"
+                                          MaxItems="3"
+                                          OnItemDrop="@((AlchemyIngredient item) => OnCauldronDrop(item))"
+                                          Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && ingredient.State != IngredientState.Raw)">
+                                    @if (context != null)
                                     {
-                                        @foreach (var cauldronIngredient in playerView.CauldronContents)
-                                        {
-                                            <div class="cauldron-ingredient">
-                                                <img src="@cauldronIngredient.ImagePath" alt="@cauldronIngredient.Name" />
-                                                <span>@cauldronIngredient.Name (@GetStateDisplayName(cauldronIngredient.State))</span>
-                                            </div>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <div class="cauldron-empty">
-                                            <div class="cauldron-placeholder">
-                                                <span>🍯</span>
-                                                <p>Process ingredients and drag them here</p>
-                                                <small>(Max 3 ingredients)</small>
-                                            </div>
+                                        <div class="cauldron-ingredient">
+                                            <img src="@context.ImagePath" alt="@context.Name" />
+                                            <span>@context.Name (@GetStateDisplayName(context.State))</span>
                                         </div>
                                     }
-                                </div>
+                                    else if (cauldronItems.Count == 0)
+                                    {
+                                        <div class="cauldron-placeholder">
+                                            <span>🍯</span>
+                                            <p>Drop processed ingredients here</p>
+                                            <small>(Max 3 ingredients - only processed ingredients allowed)</small>
+                                        </div>
+                                    }
+                                </Dropzone>
                                 
-                                @if (playerView.CauldronContents != null && playerView.CauldronContents.Length > 0)
+                                @if (cauldronItems.Count > 0)
                                 {
                                     <button class="arcane-btn arcane-btn-success submit-potion-btn" @onclick="SubmitPotion">
-                                        ✨ Brew Potion (@playerView.CauldronContents.Length/3)
+                                        ✨ Brew Potion (@cauldronItems.Count/3)
                                     </button>
                                 }
                             </div>
@@ -419,10 +418,11 @@
     // Player tracking
     private List<string> connectedPlayers = new List<string>();
     
-    // Drag and Drop collections for processing stations
+    // Drag and Drop collections for processing stations and cauldron
     private List<AlchemyIngredient> mortarItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> heatingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> cuttingItems = new List<AlchemyIngredient>();
+    private List<AlchemyIngredient> cauldronItems = new List<AlchemyIngredient>();
     
     protected override async Task OnInitializedAsync()
     {
@@ -529,6 +529,21 @@
         }
     }
 
+    // Cauldron drop handler - sync with SignalR backend
+    private async void OnCauldronDrop(AlchemyIngredient ingredient)
+    {
+        // Only allow processed ingredients (not raw) into the cauldron
+        if (ingredient.State == IngredientState.Raw)
+        {
+            ShowStatus("Only processed ingredients can be added to the cauldron!", "warning");
+            return;
+        }
+        
+        // Add ingredient to cauldron via SignalR
+        await AddToCauldronViaSignalR(ingredient);
+        StateHasChanged();
+    }
+    
     // Note: blazor-dragdrop automatically handles item movement between dropzones
     // We override this behavior for cauldron to use SignalR
     
@@ -1316,7 +1331,74 @@
     box-shadow: 0 2px 8px rgba(200, 155, 60, 0.3);
 }
 
-/* Cauldron styling is now handled above in .cauldron-section */
+/* Cauldron Dropzone */
+.cauldron-dropzone {
+    min-height: 200px;
+    border: 3px dashed rgba(255, 193, 7, 0.4);
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: rgba(255, 193, 7, 0.05);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.cauldron-dropzone.plk-dd-dragging-over {
+    border-color: #ffc107;
+    background: rgba(255, 193, 7, 0.15);
+    transform: scale(1.02);
+    box-shadow: 0 0 25px rgba(255, 193, 7, 0.4);
+}
+
+.cauldron-dropzone .cauldron-ingredient {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 250px;
+}
+
+.cauldron-dropzone .cauldron-ingredient img {
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.cauldron-dropzone .cauldron-ingredient span {
+    color: #f0e6d2;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.cauldron-dropzone .cauldron-placeholder {
+    text-align: center;
+    color: #cdbe91;
+    opacity: 0.7;
+}
+
+.cauldron-dropzone .cauldron-placeholder span {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.cauldron-dropzone .cauldron-placeholder p {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.cauldron-dropzone .cauldron-placeholder small {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
 
 /* State-specific styling for draggable ingredients */
 .draggable-ingredient.state-ground {
