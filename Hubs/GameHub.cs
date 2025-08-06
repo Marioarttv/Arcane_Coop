@@ -2267,7 +2267,7 @@ public class RuneProtocolGame
         // Level 1 rule validation
         if (CurrentLevel == 0)
         {
-            return rule.Id switch
+            var result = rule.Id switch
             {
                 "P1" => !RuneStates[0] || !RuneStates[4], // If R1 active, R5 must be offline (R1 → ¬R5)
                 "P2" => !(RuneStates[1] && RuneStates[5]), // R2 and R6 cannot both be active (¬(R2 ∧ R6))
@@ -2277,6 +2277,9 @@ public class RuneProtocolGame
                 "Z3" => RuneStates[5] || RuneStates[6], // Either R6 or R7 must be online (R6 ∨ R7)
                 _ => false
             };
+            
+            Console.WriteLine($"[DEBUG] Rule {rule.Id} validation: R1={RuneStates[0]}, R2={RuneStates[1]}, R3={RuneStates[2]}, R4={RuneStates[3]}, R5={RuneStates[4]}, R6={RuneStates[5]}, R7={RuneStates[6]}, R8={RuneStates[7]} → {result}");
+            return result;
         }
         
         // Level 2 rule validation
@@ -2356,6 +2359,15 @@ public class RuneProtocolGame
         var level = CurrentLevelData;
         var validation = ValidateCurrentState();
 
+        // Generate individual rule validation status for this player's role
+        var ruleValidationStatus = new Dictionary<string, bool>();
+        var playerRules = role == PlayerRole.Piltover ? level.PiltoverRules : level.ZauniteRules;
+        
+        foreach (var rule in playerRules)
+        {
+            ruleValidationStatus[rule.Id] = ValidateRule(rule);
+        }
+
         if (role == PlayerRole.Piltover)
         {
             return new RuneProtocolPlayerView
@@ -2372,7 +2384,8 @@ public class RuneProtocolGame
                 IsCompleted = IsCompleted,
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
-                MaxLevel = LevelBank.Length
+                MaxLevel = LevelBank.Length,
+                RuleValidationStatus = ruleValidationStatus
             };
         }
         else
@@ -2391,7 +2404,8 @@ public class RuneProtocolGame
                 IsCompleted = IsCompleted,
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
-                MaxLevel = LevelBank.Length
+                MaxLevel = LevelBank.Length,
+                RuleValidationStatus = ruleValidationStatus
             };
         }
     }
@@ -2474,6 +2488,7 @@ public class RuneProtocolPlayerView
     public int Score { get; set; }
     public int CurrentLevel { get; set; }
     public int MaxLevel { get; set; }
+    public Dictionary<string, bool> RuleValidationStatus { get; set; } = new();
 }
 
 public class RuneProtocolGameState

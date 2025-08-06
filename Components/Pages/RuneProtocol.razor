@@ -360,6 +360,7 @@
         hubConnection.On<RuneProtocolPlayerView>("RuneProtocolPlayerViewUpdated", (newView) =>
         {
             Console.WriteLine($"[CLIENT DEBUG] RuneProtocolPlayerViewUpdated received - Role: {newView.Role}");
+            Console.WriteLine($"[CLIENT DEBUG] Rule validation status: {string.Join(", ", newView.RuleValidationStatus?.Select(kvp => $"{kvp.Key}={kvp.Value}") ?? new[] { "null" })}");
             playerView = newView;
             InvokeAsync(StateHasChanged);
         });
@@ -523,14 +524,14 @@
 
     private bool ValidateRule(ConditionalRule rule)
     {
-        // The actual validation is done on the backend
-        // For UI purposes, we'll show rules as satisfied when progress is being made
-        // This is a placeholder until we get real-time rule satisfaction status from backend
-        if (gameState == null) return false;
+        // Use the real validation status from the backend
+        if (playerView?.RuleValidationStatus != null && playerView.RuleValidationStatus.ContainsKey(rule.Id))
+        {
+            return playerView.RuleValidationStatus[rule.Id];
+        }
         
-        // For now, randomly validate some rules based on game progress to show the UI working
-        var hash = rule.Id.GetHashCode() + gameState.SatisfiedRules;
-        return (hash % 3) == 0; // Roughly 1/3 of rules will show as satisfied
+        // Fallback to false if validation status not available
+        return false;
     }
 
     private string GetRuneImagePath(int runeIndex, bool isActive)
@@ -1346,7 +1347,7 @@
 @@keyframes celebration {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.2); }
-}
+}f
 
 .level-complete-panel h3 {
     color: #00ff88;
