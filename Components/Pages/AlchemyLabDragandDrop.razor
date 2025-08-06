@@ -190,9 +190,8 @@
                                 <div class="ingredients-draggable-container">
                                     @if (playerView.AvailableIngredients != null)
                                     {
-                                        <Dropzone Items="@playerView.AvailableIngredients.ToList()" 
+                                        <Dropzone Items="@ingredientPoolItems" 
                                                   Class="ingredients-dropzone" 
-                                                  InstantReplace="true"
                                                   Accepts="@((ingredient, targetZone) => true)">
                                             <div class="draggable-ingredient @GetIngredientStateClass(context.State)" 
                                                  draggable="true">
@@ -361,7 +360,7 @@
                                           Class="cauldron-dropzone"
                                           MaxItems="3"
                                           OnItemDrop="@((AlchemyIngredient item) => OnCauldronDrop(item))"
-                                          Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && ingredient.State != IngredientState.Raw)">
+                                          Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && CanAddToCauldron(ingredient))">
                                     @if (context != null)
                                     {
                                         <div class="cauldron-ingredient">
@@ -385,6 +384,10 @@
                                         ✨ Brew Potion (@cauldronItems.Count/3)
                                     </button>
                                 }
+                                
+                                <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
+                                    🔄 Reset Game
+                                </button>
                             </div>
                         </div>
                     }
@@ -453,6 +456,7 @@
     private List<string> connectedPlayers = new List<string>();
     
     // Drag and Drop collections for processing stations and cauldron
+    private List<AlchemyIngredient> ingredientPoolItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> mixingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> mortarItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> heatingItems = new List<AlchemyIngredient>();
@@ -512,6 +516,28 @@
         hubConnection.On<AlchemyPlayerView>("AlchemyPlayerViewUpdated", (newView) =>
         {
             playerView = newView;
+            
+            // Update client-side ingredient pool from server state
+            if (newView.AvailableIngredients != null)
+            {
+                ingredientPoolItems.Clear();
+                ingredientPoolItems.AddRange(newView.AvailableIngredients.Where(i => !i.IsUsed));
+            }
+            
+            InvokeAsync(StateHasChanged);
+        });
+        
+        hubConnection.On<string, AlchemyPlayerView>("AlchemyGameJoined", (role, view) =>
+        {
+            playerView = view;
+            
+            // Initialize client-side ingredient pool
+            if (view.AvailableIngredients != null)
+            {
+                ingredientPoolItems.Clear();
+                ingredientPoolItems.AddRange(view.AvailableIngredients.Where(i => !i.IsUsed));
+            }
+            
             InvokeAsync(StateHasChanged);
         });
 
@@ -590,6 +616,7 @@
             var ingredient = mortarItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "MortarPestle");
             mortarItems.Clear();
+            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -600,6 +627,7 @@
             var ingredient = heatingItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "HeatingStation");
             heatingItems.Clear();
+            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -610,6 +638,7 @@
             var ingredient = cuttingItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "CuttingBoard");
             cuttingItems.Clear();
+            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -621,6 +650,7 @@
             var ingredient2 = mixingItems[1];
             await hubConnection.SendAsync("CombineIngredients", roomId, ingredient1.Id, ingredient2.Id);
             mixingItems.Clear();
+            // Combined ingredient will be added to pool via server update
         }
     }
     
@@ -638,6 +668,13 @@
     {
         // Only accept shimmer_crystal and hex_berries for combination
         return ingredient.Id == "shimmer_crystal" || ingredient.Id == "hex_berries";
+    }
+    
+    // Helper method to check if ingredient can be added to cauldron
+    private bool CanAddToCauldron(AlchemyIngredient ingredient)
+    {
+        // Accept processed ingredients OR raw vial_of_tears (catalyst)
+        return ingredient.State != IngredientState.Raw || ingredient.Id == "vial_of_tears";
     }
 
     private async Task SubmitPotion()
@@ -657,13 +694,24 @@
             await hubConnection.SendAsync("AddToCauldron", roomId, ingredient.Id, position);
         }
     }
+    
 
     private async Task RestartGame()
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
             await hubConnection.SendAsync("RestartAlchemyGame", roomId);
-            ShowStatus("Lab reset", "info");
+            
+            // Clear local collections
+            ingredientPoolItems.Clear();
+            mixingItems.Clear();
+            mortarItems.Clear();
+            heatingItems.Clear();
+            cuttingItems.Clear();
+            cauldronItems.Clear();
+            
+            ShowStatus("Lab reset - ready for new experiments!", "info");
+            StateHasChanged();
         }
     }
 
@@ -753,6 +801,7 @@
     color: #ffffff;
     font-family: 'Orbitron', 'Rajdhani', sans-serif;
     padding: 20px;
+    padding-bottom: 3rem;
 }
 
 .header-section {
@@ -1154,12 +1203,12 @@
 /* Drag and Drop Laboratory Layout - Compact Version */
 .dragdrop-laboratory {
     display: grid;
-    grid-template-rows: 25vh 50vh 25vh;
+    grid-template-rows: 18vh 40vh 42vh;
     gap: 1rem;
     margin-bottom: 1rem;
     min-height: 100vh;
-    max-height: 100vh;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
     padding: 0.5rem;
 }
 
@@ -1168,7 +1217,7 @@
     border: 2px solid rgba(0, 200, 200, 0.3);
     border-radius: 12px;
     padding: 1rem;
-    max-height: 25vh;
+    max-height: 18vh;
     overflow-y: auto;
 }
 
@@ -1280,7 +1329,7 @@
     border: 2px solid rgba(200, 170, 110, 0.3);
     border-radius: 12px;
     padding: 1rem;
-    max-height: 50vh;
+    max-height: 40vh;
     overflow: visible;
 }
 
@@ -1294,8 +1343,8 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    max-height: 45vh;
-    min-height: 45vh;
+    max-height: 35vh;
+    min-height: 35vh;
 }
 
 .processing-station {
@@ -1406,7 +1455,8 @@
 
 /* Cauldron Dropzone */
 .cauldron-dropzone {
-    min-height: 120px;
+    min-height: 200px;
+    flex: 1;
     border: 3px dashed rgba(255, 193, 7, 0.4);
     border-radius: 12px;
     padding: 1rem;
@@ -1414,9 +1464,10 @@
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    overflow-y: visible;
 }
 
 .cauldron-dropzone.plk-dd-dragging-over {
@@ -1531,24 +1582,28 @@
     }
     
     .dragdrop-laboratory {
-        grid-template-rows: 20vh 60vh 20vh;
+        grid-template-rows: 15vh 45vh 40vh;
         gap: 0.5rem;
         padding: 0.25rem;
+        max-height: none;
+        overflow: visible;
     }
     
     .ingredients-pool {
-        max-height: 18vh;
+        max-height: 14vh;
         padding: 0.5rem;
     }
     
     .processing-stations {
-        max-height: 58vh;
+        max-height: 43vh;
         padding: 0.5rem;
     }
     
     .cauldron-section {
-        max-height: 18vh;
+        min-height: 38vh;
+        max-height: none;
         padding: 0.5rem;
+        overflow-y: visible;
     }
     
     .station-dropzone {
@@ -1576,12 +1631,20 @@
     }
     
     .dragdrop-laboratory {
-        grid-template-rows: 15vh 70vh 15vh;
+        grid-template-rows: 10vh 50vh 40vh;
+        max-height: none;
+        overflow: visible;
     }
     
     .processing-stations {
-        max-height: 68vh;
+        max-height: 48vh;
         overflow-y: auto;
+    }
+    
+    .cauldron-section {
+        min-height: 38vh;
+        max-height: none;
+        overflow-y: visible;
     }
 }
 
@@ -1590,7 +1653,11 @@
     border: 2px solid rgba(255, 193, 7, 0.3);
     border-radius: 12px;
     padding: 1rem;
-    max-height: 20vh;
+    min-height: 42vh;
+    max-height: none;
+    overflow-y: visible;
+    display: flex;
+    flex-direction: column;
 }
 
 .cauldron-section h4 {
@@ -1665,10 +1732,34 @@
 }
 
 .submit-potion-btn {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
     width: 100%;
     font-size: 1.1rem;
     padding: 1rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.reset-btn {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.75rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(45deg, #ff6b35, #f7931e) !important;
+    color: #ffffff !important;
+    border: 2px solid #ff6b35 !important;
+}
+
+.reset-btn:hover {
+    background: linear-gradient(45deg, #ff5722, #f57c00) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
 }
 
 .completion-panel {

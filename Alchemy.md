@@ -25,8 +25,10 @@ After Vi's latest undercity adventure, she needs a powerful healing potion to re
 - **Role**: Hands-on alchemist performing the brewing process
 - **Capabilities**:
   - Drag-and-drop ingredient manipulation
-  - Access to 3 processing stations (Mortar & Pestle, Heating Station, Cutting Board)
+  - Access to 4 processing stations (Mixing, Mortar & Pestle, Heating, Cutting Board)
+  - Advanced combination mechanics for creating new ingredients
   - Cauldron management with 3-ingredient capacity
+  - Reset functionality for experimentation
   - Real-time feedback on processing actions and mistakes
 
 ## Game Mechanics
@@ -37,27 +39,38 @@ The core interaction system uses the **blazor-dragdrop** library to provide smoo
 
 #### **Ingredient Pool**
 - **Layout**: Centralized grid displaying all available ingredients
+- **Dynamic Content**: Pool updates as ingredients are combined and processed
 - **Visual States**: Color-coded borders indicating processing state
   - Blue: Raw ingredients
   - Yellow: Ground ingredients
   - Red: Heated ingredients  
   - Green: Chopped ingredients
-- **Interaction**: Ingredients can be dragged to processing stations or (when processed) to the cauldron
+  - **Purple: Mixed ingredients (from combination)**
+- **True Movement**: Ingredients move between pool and stations (no duplication)
+- **Smart Updates**: Pool syncs with server state via SignalR events
 
 #### **Processing Stations**
-Three specialized stations for ingredient transformation:
+Four specialized stations arranged horizontally for maximum efficiency:
 
-1. **🥣 Mortar & Pestle Station**
+1. **⚗️ Mixing Station (NEW!)**
+   - **Function**: Combines 2 specific ingredients into new compounds
+   - **Capacity**: Exactly 2 ingredients (Shimmer Crystal + Hex Berries)
+   - **Output**: Creates Shimmer Essence (consumes original ingredients)
+   - **Visual**: Purple alchemical flask with magical gradient
+   - **Unique Feature**: Only station that creates entirely new ingredients
+
+2. **🥣 Mortar & Pestle Station**
    - **Function**: Grinds ingredients into powder
    - **Output State**: Ground
    - **Visual**: Traditional mortar and pestle icon with earthy colors
 
-2. **🔥 Heating Station**
-   - **Function**: Applies heat to extract essences
+3. **🔥 Heating Station**
+   - **Function**: Applies heat to extract/stabilize essences
    - **Output State**: Heated
    - **Visual**: Flame icon with warm color palette
+   - **Enhanced Role**: Now used to stabilize combined ingredients
 
-3. **🔪 Cutting Board Station**
+4. **🔪 Cutting Board Station**
    - **Function**: Precisely chops ingredients
    - **Output State**: Chopped
    - **Visual**: Knife icon with sharp, clean aesthetics
