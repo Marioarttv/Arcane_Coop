@@ -602,18 +602,6 @@ public class GameHub : Hub
         }
     }
 
-    public async Task RequestRuneProtocolHint(string roomId, string ruleId)
-    {
-        if (_runeProtocolGames.TryGetValue(roomId, out var game))
-        {
-            var hint = game.GetHint(Context.ConnectionId, ruleId);
-            if (hint != null)
-            {
-                await Clients.Caller.SendAsync("RuneProtocolHintReceived", hint);
-                await Clients.Group(roomId).SendAsync("RuneProtocolGameStateUpdated", game.GetGameState());
-            }
-        }
-    }
 
     public async Task AdvanceRuneProtocolLevel(string roomId)
     {
@@ -2014,91 +2002,76 @@ public class RuneProtocolGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // 4 Progressive difficulty levels
-    private static readonly RuneProtocolLevel[] LevelBank = new[]
+    // Multi-level logic puzzle system with your specific puzzle
+    private static readonly Arcane_Coop.Models.RuneProtocolLevel[] LevelBank = new[]
     {
-        // Level 1: Basic Conditionals (Tutorial)
-        new RuneProtocolLevel
+        new Arcane_Coop.Models.RuneProtocolLevel
         {
             LevelNumber = 1,
-            Title = "Emergency Protocol Activation",
-            Description = "Critical system instability detected. Two engineers must coordinate to safely activate the emergency stabilization protocol.",
-            PiltoverRules = new[]
+            Title = "Logic Gateway Protocol - Alpha",
+            Description = "The first barrier requires precise logical coordination. Each team must satisfy their own conditions while working together.",
+            // Player A (Piltover) controls R1-R4 (indices 0-3)
+            AlphaRules = new[]
             {
-                new ConditionalRule("P1", "Safety Protocol 1.1: If Primary Stabilizer (R1) is active, Backup Dampener (R5) must be offline", new[] { 0, 4 }),
-                new ConditionalRule("P2", "Resonance Prevention 2.3: Power Regulator (R2) and Energy Buffer (R6) cannot operate simultaneously", new[] { 1, 5 }),
-                new ConditionalRule("P3", "Activation Sequence 3.7: When Main Controller (R3) is offline, Emergency Override (R4) must be active", new[] { 2, 3 })
+                new Arcane_Coop.Models.LogicRule("A1", Arcane_Coop.Models.RuleType.COUNT_EXACT, 
+                    "Exactly three of your runes (R1-R4) must be active", new[] { 0, 1, 2, 3 }) 
+                    { RequiredCount = 3 },
+                new Arcane_Coop.Models.LogicRule("A2", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R5 is active, THEN R1 must be inactive", new[] { 4, 0 })
+                    { RequiredStates = new[] { 1, 0 } }, // IF R5=UP THEN R1=DOWN
+                new Arcane_Coop.Models.LogicRule("A3", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R7 is inactive, THEN R2 and R4 must match", new[] { 6, 1, 3 })
+                    { RequiredStates = new[] { 0, -1, -1 } } // Special handling for "same state"
             },
-            ZauniteRules = new[]
+            // Player B (Zaunite) controls R5-R8 (indices 4-7)
+            BetaRules = new[]
             {
-                new ConditionalRule("Z1", "Observation Log #15: The Blue Catalyst (R7) only stabilizes when Primary Stabilizer (R1) is running", new[] { 0, 6 }),
-                new ConditionalRule("Z2", "Warning Report #22: If Red Inhibitor (R8) is active, Power Regulator (R2) will overload and must be shut down", new[] { 1, 7 }),
-                new ConditionalRule("Z3", "System Balance #9: Either Energy Buffer (R6) or Blue Catalyst (R7) must be online, never both offline", new[] { 5, 6 })
+                new Arcane_Coop.Models.LogicRule("B1", Arcane_Coop.Models.RuleType.COUNT_EXACT,
+                    "Exactly one of your runes (R5-R8) must be active", new[] { 4, 5, 6, 7 })
+                    { RequiredCount = 1 },
+                new Arcane_Coop.Models.LogicRule("B2", Arcane_Coop.Models.RuleType.EITHER_OR,
+                    "Either R5 or R7 must be active (but not both)", new[] { 4, 6 }),
+                new Arcane_Coop.Models.LogicRule("B3", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R1 is inactive, THEN R5 must be active", new[] { 0, 4 })
+                    { RequiredStates = new[] { 0, 1 } } // IF R1=DOWN THEN R5=UP
             },
-            Solution = new[] { true, true, false, true, false, false, true, false } // R1=ON, R2=ON, R3=OFF, R4=ON, R5=OFF, R6=OFF, R7=ON, R8=OFF
+            // The unique solution: R1=DOWN, R2=UP, R3=UP, R4=UP, R5=UP, R6=DOWN, R7=DOWN, R8=DOWN
+            Solution = new[] { false, true, true, true, true, false, false, false },
+            SolutionExplanation = "R5 must be active (only Beta rune UP), which forces R1 inactive and the remaining Alpha runes (R2,R3,R4) active to satisfy the count rule."
         },
-        
-        // Level 2: Compound Logic (Intermediate)
-        new RuneProtocolLevel
+        // Advanced Level 2 - Complex interdependent logic puzzle
+        new Arcane_Coop.Models.RuneProtocolLevel
         {
             LevelNumber = 2,
-            Title = "Hextech Resonance Stabilization",
-            Description = "Multiple cascade failures detected. Advanced coordination required to establish stable hextech resonance patterns.",
-            PiltoverRules = new[]
+            Title = "Logic Gateway Protocol - Beta",
+            Description = "Advanced interdependent logic requiring deep deduction. Hidden cascades of forced moves await discovery.",
+            AlphaRules = new[]
             {
-                new ConditionalRule("P1", "Hextech Protocol 4.2: If both Crystal Matrix (R1) and Harmonic Lens (R2) are active, then Power Core (R5) must be offline", new[] { 0, 1, 4 }),
-                new ConditionalRule("P2", "Safety Override 7.1: Either Thermal Regulator (R3) or Cooling System (R4) must be active, but not both", new[] { 2, 3 }),
-                new ConditionalRule("P3", "Matrix Stability 8.5: When Crystal Matrix (R1) is offline, Backup Generator (R6) must compensate", new[] { 0, 5 })
+                new Arcane_Coop.Models.LogicRule("A1", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R5 and R6 are different positions, THEN R1 must equal R7", new[] { 4, 5, 6, 0 })
+                    { RequiredStates = new[] { -2, -2, 6, 0 } }, // Special: -2 means "different check", 6=R7, 0=R1
+                new Arcane_Coop.Models.LogicRule("A2", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R3 is active, THEN exactly 5 total runes must be active", new[] { 2 })
+                    { RequiredStates = new[] { 1 }, RequiredCount = 5 }, // Special: global count check
+                new Arcane_Coop.Models.LogicRule("A3", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "Alpha UP count must equal Beta DOWN count", new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
+                    { RequiredStates = new[] { -3 } } // Special: -3 means "alpha UP = beta DOWN"
             },
-            ZauniteRules = new[]
+            BetaRules = new[]
             {
-                new ConditionalRule("Z1", "Field Test #31: Shimmer Conduit (R7) requires both Thermal Regulator (R3) and Power Core (R5) to be active", new[] { 2, 4, 6 }),
-                new ConditionalRule("Z2", "Chemical Analysis #18: If Neutralizer (R8) is active, then Harmonic Lens (R2) must be offline to prevent reaction", new[] { 1, 7 }),
-                new ConditionalRule("Z3", "Power Grid #12: When Backup Generator (R6) is active, exactly one of {R7, R8} must be online for balance", new[] { 5, 6, 7 })
+                new Arcane_Coop.Models.LogicRule("B1", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R1 equals R4, THEN R6 must be active", new[] { 0, 3, 5 })
+                    { RequiredStates = new[] { -4, -4, 1 } }, // Special: -4 means "same state check"
+                new Arcane_Coop.Models.LogicRule("B2", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "IF R8 is inactive, THEN R2 and R3 must be different", new[] { 7, 1, 2 })
+                    { RequiredStates = new[] { 0, -2, -2 } }, // Special: IF R8=DOWN THEN R2≠R3
+                new Arcane_Coop.Models.LogicRule("B3", Arcane_Coop.Models.RuleType.CONDITIONAL_IF,
+                    "Either R5 is active OR (R7 is inactive AND R4 is active)", new[] { 4, 6, 3 })
+                    { RequiredStates = new[] { -5 } } // Special: -5 means "complex OR condition"
             },
-            Solution = new[] { false, false, true, false, true, true, true, false } // R1=OFF, R2=OFF, R3=ON, R4=OFF, R5=ON, R6=ON, R7=ON, R8=OFF
-        },
-        
-        // Level 3: Complex Dependencies (Advanced)  
-        new RuneProtocolLevel
-        {
-            LevelNumber = 3,
-            Title = "Cascade Prevention Protocol",
-            Description = "Critical cascade failures throughout the system. Master-level coordination required to prevent total collapse.",
-            PiltoverRules = new[]
-            {
-                new ConditionalRule("P1", "Master Protocol 9.7: If Primary Array (R1,R2) has exactly one active unit, then Secondary Array (R5,R6) must have exactly two active units", new[] { 0, 1, 4, 5 }),
-                new ConditionalRule("P2", "Cascade Prevention 10.3: When Control Node (R3) activates, then either (R4 and R6) or (R7 and R8) must form active pairs", new[] { 2, 3, 5, 6, 7 }),
-                new ConditionalRule("P3", "Critical Balance 11.1: The total number of active runes in positions 1-4 must equal the total in positions 5-8", new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
-            },
-            ZauniteRules = new[]
-            {
-                new ConditionalRule("Z1", "Catalyst Chain #47: When Reaction Trigger (R7) and Stabilizer (R8) both activate, Primary Array (R1,R2) must have exactly one unit offline", new[] { 0, 1, 6, 7 }),
-                new ConditionalRule("Z2", "Overflow Protection #28: If more than 2 runes in the Secondary Array (R5,R6,R7,R8) are active, then R1 must be offline as safety measure", new[] { 0, 4, 5, 6, 7 }),
-                new ConditionalRule("Z3", "System Harmony #55: Exactly 4 runes total must be active for stable operation", new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
-            },
-            Solution = new[] { false, true, false, true, true, true, false, false } // R1=OFF, R2=ON, R3=OFF, R4=ON, R5=ON, R6=ON, R7=OFF, R8=OFF
-        },
-        
-        // Level 4: Master Protocol (Expert)
-        new RuneProtocolLevel
-        {
-            LevelNumber = 4,
-            Title = "Master Synchronization Protocol",
-            Description = "Ultimate test of coordination. Perfect synchronization required to achieve master-level system harmony.",
-            PiltoverRules = new[]
-            {
-                new ConditionalRule("P1", "Master Theorem 12.9: If not(R1 or R2) then (R3 if and only if R4)", new[] { 0, 1, 2, 3 }),
-                new ConditionalRule("P2", "Harmonic Resolution 13.4: The sum of active runes in each row {R1,R2,R3,R4} and {R5,R6,R7,R8} must be equal", new[] { 0, 1, 2, 3, 4, 5, 6, 7 }),
-                new ConditionalRule("P3", "Resonance Lock 14.2: If exactly 3 runes are active in total, then R5 and R6 cannot both be active", new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
-            },
-            ZauniteRules = new[]
-            {
-                new ConditionalRule("Z1", "Quantum Entanglement #61: If (R7 and R8) are both active, then exactly one of (R1, R2) must be active", new[] { 0, 1, 6, 7 }),
-                new ConditionalRule("Z2", "Phase Alignment #73: When R3 is active, then R7 must be active, and when R4 is active, then R8 must be active", new[] { 2, 3, 6, 7 }),
-                new ConditionalRule("Z3", "Master Balance #88: Exactly 3 runes must be active, and they must form a symmetric pattern", new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
-            },
-            Solution = new[] { true, false, false, false, false, false, true, true } // R1=ON, R2=OFF, R3=OFF, R4=OFF, R5=OFF, R6=OFF, R7=ON, R8=ON
+            // The unique solution: R1=DOWN, R2=UP, R3=DOWN, R4=UP, R5=UP, R6=UP, R7=DOWN, R8=DOWN
+            Solution = new[] { false, true, false, true, true, true, false, false },
+            SolutionExplanation = "R3 must be DOWN (prevents impossible 5-UP requirement), forcing a cascade: Alpha UP = Beta DOWN = 2, leading to the unique solution through Beta Rule 3."
         }
     };
     
@@ -2108,11 +2081,11 @@ public class RuneProtocolGame
     public int CurrentLevel { get; set; } = 0;
     public bool IsCompleted { get; set; } = false;
     public int Score { get; set; } = 0;
-    public int HintsUsed { get; set; } = 0;
     public List<string> AttemptHistory { get; set; } = new();
+    public int ToggleCount { get; set; } = 0; // Track number of rune toggles for scoring
     
     public int PlayerCount => Players.Count;
-    public RuneProtocolLevel CurrentLevelData => LevelBank[CurrentLevel];
+    public Arcane_Coop.Models.RuneProtocolLevel CurrentLevelData => LevelBank[CurrentLevel];
     
     public PlayerRole? AddPlayer(string connectionId, string playerName)
     {
@@ -2144,45 +2117,48 @@ public class RuneProtocolGame
     public (bool Success, string Message) ToggleRune(string connectionId, int runeIndex)
     {
         Console.WriteLine($"[DEBUG] RuneProtocolGame.ToggleRune - ConnectionId: {connectionId}, RuneIndex: {runeIndex}");
-        Console.WriteLine($"[DEBUG] Players in game: {string.Join(", ", Players.Keys)}");
         
         if (!Players.ContainsKey(connectionId))
         {
-            Console.WriteLine($"[DEBUG] Player not in game. Available players: {string.Join(", ", Players.Keys)}");
             return (false, "You are not in this game");
         }
             
         if (runeIndex < 0 || runeIndex > 7)
         {
-            Console.WriteLine($"[DEBUG] Invalid rune index: {runeIndex}");
             return (false, $"Invalid rune index: {runeIndex} (must be 0-7)");
         }
             
         var role = Players[connectionId];
-        Console.WriteLine($"[DEBUG] Player role: {role}");
         
-        // Check if player can control this rune
+        // Check if player can control this rune (Piltover: R1-R4, Zaunite: R5-R8)
         if ((role == PlayerRole.Piltover && runeIndex > 3) || 
             (role == PlayerRole.Zaunite && runeIndex < 4))
         {
-            Console.WriteLine($"[DEBUG] Player cannot control rune. Role: {role}, RuneIndex: {runeIndex}");
-            return (false, $"You can only control your assigned runes. Role: {role}, attempted rune: R{runeIndex + 1}");
+            return (false, $"You can only control your assigned runes ({(role == PlayerRole.Piltover ? "R1-R4" : "R5-R8")})");
         }
             
-        Console.WriteLine($"[DEBUG] Toggling rune R{runeIndex + 1} from {RuneStates[runeIndex]} to {!RuneStates[runeIndex]}");
+        // Toggle the rune
         RuneStates[runeIndex] = !RuneStates[runeIndex];
+        ToggleCount++;
         
-        var validation = ValidateCurrentState();
-        Console.WriteLine($"[DEBUG] Validation result - IsComplete: {validation.IsComplete}, Satisfied: {validation.SatisfiedRules}/{validation.TotalRules}");
+        var toggleMessage = $"R{runeIndex + 1} toggled to {(RuneStates[runeIndex] ? "ON" : "OFF")}";
         
-        if (validation.IsComplete)
+        // Check if puzzle is solved by validating all rules are satisfied
+        var (alphaSatisfied, alphaTotal, _) = ValidatePlayerRules(PlayerRole.Piltover);
+        var (betaSatisfied, betaTotal, _) = ValidatePlayerRules(PlayerRole.Zaunite);
+        
+        var allRulesSatisfied = (alphaSatisfied == alphaTotal) && (betaSatisfied == betaTotal) && 
+                               (alphaTotal > 0) && (betaTotal > 0); // Ensure both players have rules
+        
+        if (allRulesSatisfied)
         {
             IsCompleted = true;
-            Score += Math.Max(100 - HintsUsed * 10 - AttemptHistory.Count * 5, 20);
-            return (true, $"🎉 Level {CurrentLevel + 1} Complete! Perfect synchronization achieved! Score: {Score}");
+            Score = Math.Max(100 - (ToggleCount - 8) * 5, 10); // Bonus for efficiency
+            var level = CurrentLevelData;
+            return (true, $"{toggleMessage} | 🎉 PUZZLE SOLVED! All rules satisfied! Score: {Score}");
         }
         
-        return (true, $"Rune R{runeIndex + 1} toggled. {validation.SatisfiedRules}/{validation.TotalRules} conditions satisfied.");
+        return (true, toggleMessage);
     }
 
     public (bool Success, string Message) AdvanceLevel(string connectionId)
@@ -2199,235 +2175,251 @@ public class RuneProtocolGame
         CurrentLevel++;
         IsCompleted = false;
         RuneStates = new bool[8];
-        HintsUsed = 0;
         AttemptHistory.Clear();
+        ToggleCount = 0;
         
         return (true, $"Advanced to Level {CurrentLevel + 1}: {CurrentLevelData.Title}");
     }
 
-    public string? GetHint(string connectionId, string ruleId)
+    private (int satisfied, int total, string[] messages) ValidatePlayerRules(PlayerRole role)
     {
-        if (!Players.ContainsKey(connectionId) || HintsUsed >= 3)
-            return null;
-
-        HintsUsed++;
-        
         var level = CurrentLevelData;
-        var allRules = level.PiltoverRules.Concat(level.ZauniteRules).ToList();
-        var rule = allRules.FirstOrDefault(r => r.Id == ruleId);
-        
-        if (rule != null)
+        var rules = role == PlayerRole.Piltover ? level.AlphaRules : level.BetaRules;
+        var messages = new List<string>();
+        int satisfied = 0;
+
+        foreach (var rule in rules)
         {
-            return HintsUsed switch
-            {
-                1 => $"💡 Focus on runes: {string.Join(", ", rule.RelatedRunes.Select(r => $"R{r + 1}"))}",
-                2 => $"🔍 This rule is currently: {(ValidateRule(rule) ? "✅ SATISFIED" : "❌ VIOLATED")}",
-                3 => $"🎯 Try toggling: {GetSuggestedToggle(rule)}",
-                _ => null
-            };
+            var result = ValidateSpecialRule(rule, RuneStates);
+            if (result.IsValid) satisfied++;
+            messages.Add($"{rule.Id}: {result.Message}");
         }
-        
-        return "General hint: Check which conditions are not yet satisfied";
+
+        return (satisfied, rules.Length, messages.ToArray());
     }
 
-    private ValidationResult ValidateCurrentState()
+    private Arcane_Coop.Models.RuleValidationResult ValidateSpecialRule(Arcane_Coop.Models.LogicRule rule, bool[] runeStates)
     {
-        var level = CurrentLevelData;
-        var allRules = level.PiltoverRules.Concat(level.ZauniteRules).ToList();
+        var result = new Arcane_Coop.Models.RuleValidationResult();
         
-        Console.WriteLine($"[DEBUG] ValidateCurrentState - Level {CurrentLevel + 1}, Total rules: {allRules.Count}");
-        Console.WriteLine($"[DEBUG] Current rune states: [{string.Join(", ", RuneStates.Select((state, i) => $"R{i+1}={state}"))}]");
-        
-        int satisfiedCount = 0;
-        foreach (var rule in allRules)
+        // Level 1 special rules
+        if (rule.Id == "A3" && CurrentLevel == 0)
         {
-            var isValid = ValidateRule(rule);
-            Console.WriteLine($"[DEBUG] Rule {rule.Id}: {(isValid ? "✅ SATISFIED" : "❌ VIOLATED")} - {rule.Description}");
-            if (isValid)
-            {
-                satisfiedCount++;
-            }
-        }
-        
-        Console.WriteLine($"[DEBUG] Validation summary: {satisfiedCount}/{allRules.Count} rules satisfied. Complete: {satisfiedCount == allRules.Count}");
-        
-        return new ValidationResult
-        {
-            IsComplete = satisfiedCount == allRules.Count,
-            SatisfiedRules = satisfiedCount,
-            TotalRules = allRules.Count
-        };
-    }
-
-    private bool ValidateRule(ConditionalRule rule)
-    {
-        // Implement actual rule validation based on rule IDs and current level
-        var level = CurrentLevelData;
-        
-        // Level 1 rule validation
-        if (CurrentLevel == 0)
-        {
-            var result = rule.Id switch
-            {
-                "P1" => !RuneStates[0] || !RuneStates[4], // If R1 active, R5 must be offline (R1 → ¬R5)
-                "P2" => !(RuneStates[1] && RuneStates[5]), // R2 and R6 cannot both be active (¬(R2 ∧ R6))
-                "P3" => RuneStates[2] || RuneStates[3], // If R3 offline, R4 must be active (¬R3 → R4) ≡ (R3 ∨ R4)
-                "Z1" => !RuneStates[6] || RuneStates[0], // R7 only stable when R1 running (R7 → R1)
-                "Z2" => !RuneStates[7] || !RuneStates[1], // If R8 active, R2 must be shut down (R8 → ¬R2)
-                "Z3" => RuneStates[5] || RuneStates[6], // Either R6 or R7 must be online (R6 ∨ R7)
-                _ => false
-            };
+            var r7State = runeStates[6]; // R7 (index 6)
             
-            Console.WriteLine($"[DEBUG] Rule {rule.Id} validation: R1={RuneStates[0]}, R2={RuneStates[1]}, R3={RuneStates[2]}, R4={RuneStates[3]}, R5={RuneStates[4]}, R6={RuneStates[5]}, R7={RuneStates[6]}, R8={RuneStates[7]} → {result}");
+            if (!r7State) // R7 is DOWN
+            {
+                var r2State = runeStates[1]; // R2 (index 1)
+                var r4State = runeStates[3]; // R4 (index 3)
+                result.IsValid = r2State == r4State;
+                result.Message = result.IsValid
+                    ? "✓ R7 is inactive, and R2 and R4 match"
+                    : "✗ R7 is inactive, so R2 and R4 must be in the same state";
+            }
+            else
+            {
+                result.IsValid = true;
+                result.Message = "✓ R7 is active, condition not triggered";
+            }
+            result.AffectedRunes = new[] { 6, 1, 3 };
             return result;
         }
         
-        // Level 2 rule validation
-        if (CurrentLevel == 1)
+        // Level 2 advanced rules
+        if (CurrentLevel == 1) // Level 2 (0-indexed)
         {
-            return rule.Id switch
+            switch (rule.Id)
             {
-                "P1" => !(RuneStates[0] && RuneStates[1]) || !RuneStates[4], // If R1 and R2 active, R5 offline
-                "P2" => RuneStates[2] ^ RuneStates[3], // Either R3 or R4, but not both
-                "P3" => RuneStates[0] || RuneStates[5], // If R1 offline, R6 must compensate
-                "Z1" => !RuneStates[6] || (RuneStates[2] && RuneStates[4]), // R7 requires R3 and R5
-                "Z2" => !RuneStates[7] || !RuneStates[1], // If R8 active, R2 offline
-                "Z3" => !RuneStates[5] || (RuneStates[6] ^ RuneStates[7]), // If R6 active, exactly one of R7,R8
-                _ => false
-            };
+                case "A1": // IF R5 and R6 are different positions, THEN R1 must equal R7
+                    var r5StateA1 = runeStates[4];
+                    var r6StateA1 = runeStates[5];
+                    if (r5StateA1 != r6StateA1) // Different positions
+                    {
+                        var r1StateA1 = runeStates[0];
+                        var r7StateA1 = runeStates[6];
+                        result.IsValid = r1StateA1 == r7StateA1;
+                        result.Message = result.IsValid
+                            ? "✓ R5≠R6, and R1 equals R7"
+                            : "✗ R5≠R6, so R1 must equal R7";
+                    }
+                    else
+                    {
+                        result.IsValid = true;
+                        result.Message = "✓ R5=R6, condition not triggered";
+                    }
+                    result.AffectedRunes = new[] { 4, 5, 0, 6 };
+                    return result;
+                    
+                case "A2": // IF R3 is active, THEN exactly 5 total runes must be active
+                    var r3StateA2 = runeStates[2];
+                    if (r3StateA2) // R3 is UP
+                    {
+                        var totalUpA2 = runeStates.Count(s => s);
+                        result.IsValid = totalUpA2 == 5;
+                        result.Message = result.IsValid
+                            ? "✓ R3 is active, and exactly 5 total runes are active"
+                            : $"✗ R3 is active, so exactly 5 total must be active (currently {totalUpA2})";
+                    }
+                    else
+                    {
+                        result.IsValid = true;
+                        result.Message = "✓ R3 is inactive, condition not triggered";
+                    }
+                    result.AffectedRunes = new[] { 2 };
+                    return result;
+                    
+                case "A3": // Alpha UP count must equal Beta DOWN count
+                    var alphaUpA3 = runeStates.Take(4).Count(s => s); // R1-R4
+                    var betaDownA3 = runeStates.Skip(4).Take(4).Count(s => !s); // R5-R8 DOWN
+                    result.IsValid = alphaUpA3 == betaDownA3;
+                    result.Message = result.IsValid
+                        ? $"✓ Alpha UP count ({alphaUpA3}) equals Beta DOWN count ({betaDownA3})"
+                        : $"✗ Alpha UP count ({alphaUpA3}) must equal Beta DOWN count ({betaDownA3})";
+                    result.AffectedRunes = new[] { 0, 1, 2, 3, 4, 5, 6, 7 };
+                    return result;
+                    
+                case "B1": // IF R1 equals R4, THEN R6 must be active
+                    var r1StateB1 = runeStates[0];
+                    var r4StateB1 = runeStates[3];
+                    if (r1StateB1 == r4StateB1) // Same state
+                    {
+                        var r6StateB1 = runeStates[5];
+                        result.IsValid = r6StateB1;
+                        result.Message = result.IsValid
+                            ? "✓ R1=R4, and R6 is active"
+                            : "✗ R1=R4, so R6 must be active";
+                    }
+                    else
+                    {
+                        result.IsValid = true;
+                        result.Message = "✓ R1≠R4, condition not triggered";
+                    }
+                    result.AffectedRunes = new[] { 0, 3, 5 };
+                    return result;
+                    
+                case "B2": // IF R8 is inactive, THEN R2 and R3 must be different
+                    var r8StateB2 = runeStates[7];
+                    if (!r8StateB2) // R8 is DOWN
+                    {
+                        var r2StateB2 = runeStates[1];
+                        var r3StateB2 = runeStates[2];
+                        result.IsValid = r2StateB2 != r3StateB2;
+                        result.Message = result.IsValid
+                            ? "✓ R8 is inactive, and R2≠R3"
+                            : "✗ R8 is inactive, so R2 and R3 must be different";
+                    }
+                    else
+                    {
+                        result.IsValid = true;
+                        result.Message = "✓ R8 is active, condition not triggered";
+                    }
+                    result.AffectedRunes = new[] { 7, 1, 2 };
+                    return result;
+                    
+                case "B3": // Either R5 is active OR (R7 is inactive AND R4 is active)
+                    var r5StateB3 = runeStates[4];
+                    var r7StateB3 = runeStates[6];
+                    var r4StateB3 = runeStates[3];
+                    
+                    var condition1B3 = r5StateB3; // R5 is UP
+                    var condition2B3 = !r7StateB3 && r4StateB3; // R7 is DOWN AND R4 is UP
+                    result.IsValid = condition1B3 || condition2B3;
+                    
+                    if (result.IsValid)
+                    {
+                        if (condition1B3)
+                            result.Message = "✓ R5 is active (satisfies OR condition)";
+                        else
+                            result.Message = "✓ R7 is inactive AND R4 is active (satisfies OR condition)";
+                    }
+                    else
+                    {
+                        result.Message = "✗ Either R5 must be active OR (R7 inactive AND R4 active)";
+                    }
+                    result.AffectedRunes = new[] { 4, 6, 3 };
+                    return result;
+            }
         }
         
-        // Level 3 rule validation
-        if (CurrentLevel == 2)
-        {
-            var r1r2Count = (RuneStates[0] ? 1 : 0) + (RuneStates[1] ? 1 : 0);
-            var r5r6Count = (RuneStates[4] ? 1 : 0) + (RuneStates[5] ? 1 : 0);
-            var r1r4Count = (RuneStates[0] ? 1 : 0) + (RuneStates[1] ? 1 : 0) + (RuneStates[2] ? 1 : 0) + (RuneStates[3] ? 1 : 0);
-            var r5r8Count = (RuneStates[4] ? 1 : 0) + (RuneStates[5] ? 1 : 0) + (RuneStates[6] ? 1 : 0) + (RuneStates[7] ? 1 : 0);
-            var totalActive = RuneStates.Count(x => x);
-            
-            return rule.Id switch
-            {
-                "P1" => (r1r2Count == 1) ? (r5r6Count == 2) : true, // If exactly one of R1,R2 then exactly two of R5,R6
-                "P2" => !RuneStates[2] || ((RuneStates[3] && RuneStates[5]) || (RuneStates[6] && RuneStates[7])), // If R3 then (R4&R6) or (R7&R8)
-                "P3" => r1r4Count == r5r8Count, // Equal active runes in each half
-                "Z1" => !(RuneStates[6] && RuneStates[7]) || (r1r2Count == 1), // If R7&R8 then exactly one of R1,R2 offline
-                "Z2" => (r5r8Count <= 2) || !RuneStates[0], // If >2 in R5-R8, then R1 offline
-                "Z3" => totalActive == 4, // Exactly 4 runes active
-                _ => false
-            };
-        }
-        
-        // Level 4 rule validation
-        if (CurrentLevel == 3)
-        {
-            var r1r4Count = (RuneStates[0] ? 1 : 0) + (RuneStates[1] ? 1 : 0) + (RuneStates[2] ? 1 : 0) + (RuneStates[3] ? 1 : 0);
-            var r5r8Count = (RuneStates[4] ? 1 : 0) + (RuneStates[5] ? 1 : 0) + (RuneStates[6] ? 1 : 0) + (RuneStates[7] ? 1 : 0);
-            var totalActive = RuneStates.Count(x => x);
-            
-            return rule.Id switch
-            {
-                "P1" => !(RuneStates[0] || RuneStates[1]) ? (RuneStates[2] == RuneStates[3]) : true, // If not(R1 or R2) then (R3 iff R4)
-                "P2" => r1r4Count == r5r8Count, // Equal active in each row
-                "P3" => (totalActive != 3) || !(RuneStates[4] && RuneStates[5]), // If exactly 3 active, not both R5&R6
-                "Z1" => !(RuneStates[6] && RuneStates[7]) || ((RuneStates[0] ? 1 : 0) + (RuneStates[1] ? 1 : 0) == 1), // If R7&R8 then exactly one of R1,R2
-                "Z2" => (!RuneStates[2] || RuneStates[6]) && (!RuneStates[3] || RuneStates[7]), // R3->R7 and R4->R8
-                "Z3" => totalActive == 3, // Exactly 3 active and symmetric pattern
-                _ => false
-            };
-        }
-        
-        return false;
+        // Use the standard validator for other rules
+        return Arcane_Coop.Models.LogicPuzzleSolver.ValidateRule(rule, runeStates);
     }
 
-    private string GetSuggestedToggle(ConditionalRule rule)
-    {
-        var relatedRunes = rule.RelatedRunes;
-        if (relatedRunes.Any())
-        {
-            var rune = relatedRunes.First();
-            return $"R{rune + 1}";
-        }
-        return "R1";
-    }
-
-    public RuneProtocolPlayerView GetPlayerView(string connectionId)
+    public Arcane_Coop.Models.RuneProtocolPlayerView GetPlayerView(string connectionId)
     {
         if (!Players.TryGetValue(connectionId, out var role))
-            return new RuneProtocolPlayerView();
+            return new Arcane_Coop.Models.RuneProtocolPlayerView();
 
         var level = CurrentLevelData;
-        var validation = ValidateCurrentState();
-
-        // Generate individual rule validation status for this player's role
-        var ruleValidationStatus = new Dictionary<string, bool>();
-        var playerRules = role == PlayerRole.Piltover ? level.PiltoverRules : level.ZauniteRules;
-        
-        foreach (var rule in playerRules)
-        {
-            ruleValidationStatus[rule.Id] = ValidateRule(rule);
-        }
+        var (satisfied, total, messages) = ValidatePlayerRules(role);
 
         if (role == PlayerRole.Piltover)
         {
-            return new RuneProtocolPlayerView
+            return new Arcane_Coop.Models.RuneProtocolPlayerView
             {
                 Role = "Piltover",
-                DisplayName = "Caitlyn (Hextech Protocol Engineer)",
-                Instruction = IsCompleted ? $"Level {CurrentLevel + 1} Complete! Ready for next challenge?" : 
-                    $"Configure the hextech protocol using official maintenance procedures:",
-                Rules = level.PiltoverRules,
+                DisplayName = "Caitlyn (Alpha Protocol Engineer)",
+                Instruction = IsCompleted ? "🎉 Protocol synchronized! All conditions satisfied." : 
+                             "Satisfy all Alpha conditions using your runes (R1-R4). Coordinate with Vi!",
+                Rules = level.AlphaRules,
                 ControllableRunes = new[] { 0, 1, 2, 3 }, // R1-R4
                 RuneStates = RuneStates,
-                SatisfiedRules = validation.SatisfiedRules,
-                TotalRules = validation.TotalRules,
+                SatisfiedRules = satisfied,
+                TotalRules = total,
                 IsCompleted = IsCompleted,
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
                 MaxLevel = LevelBank.Length,
-                RuleValidationStatus = ruleValidationStatus
+                RuleValidationMessages = messages
             };
         }
         else
         {
-            return new RuneProtocolPlayerView
+            return new Arcane_Coop.Models.RuneProtocolPlayerView
             {
                 Role = "Zaunite",
-                DisplayName = "Vi (Chemtech Systems Analyst)",
-                Instruction = IsCompleted ? $"Level {CurrentLevel + 1} Complete! System synchronized!" :
-                    $"Analyze chemtech reactions and coordinate with your partner:",
-                Rules = level.ZauniteRules,
+                DisplayName = "Vi (Beta Protocol Analyst)",
+                Instruction = IsCompleted ? "🎉 Protocol synchronized! All conditions satisfied." :
+                             "Satisfy all Beta conditions using your runes (R5-R8). Coordinate with Caitlyn!",
+                Rules = level.BetaRules,
                 ControllableRunes = new[] { 4, 5, 6, 7 }, // R5-R8
                 RuneStates = RuneStates,
-                SatisfiedRules = validation.SatisfiedRules,
-                TotalRules = validation.TotalRules,
+                SatisfiedRules = satisfied,
+                TotalRules = total,
                 IsCompleted = IsCompleted,
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
                 MaxLevel = LevelBank.Length,
-                RuleValidationStatus = ruleValidationStatus
+                RuleValidationMessages = messages
             };
         }
     }
 
-    public RuneProtocolGameState GetGameState()
+    public Arcane_Coop.Models.RuneProtocolGameState GetGameState()
     {
-        var validation = ValidateCurrentState();
+        var level = CurrentLevelData;
+        var (alphaSatisfied, alphaTotal, _) = ValidatePlayerRules(PlayerRole.Piltover);
+        var (betaSatisfied, betaTotal, _) = ValidatePlayerRules(PlayerRole.Zaunite);
         
-        return new RuneProtocolGameState
+        var totalSatisfied = alphaSatisfied + betaSatisfied;
+        var totalRules = alphaTotal + betaTotal;
+        var allSatisfied = totalSatisfied == totalRules;
+        
+        return new Arcane_Coop.Models.RuneProtocolGameState
         {
             RuneStates = RuneStates,
             CurrentLevel = CurrentLevel + 1,
             MaxLevel = LevelBank.Length,
             IsCompleted = IsCompleted,
             Score = Score,
-            HintsUsed = HintsUsed,
             PlayerCount = Players.Count,
             PlayersNeeded = 2 - Players.Count,
-            SatisfiedRules = validation.SatisfiedRules,
-            TotalRules = validation.TotalRules,
-            LevelTitle = CurrentLevelData.Title,
-            LevelDescription = CurrentLevelData.Description
+            SatisfiedRules = totalSatisfied,
+            TotalRules = totalRules,
+            LevelTitle = level.Title,
+            LevelDescription = level.Description,
+            AllRulesSatisfied = allSatisfied,
+            CompletionMessage = IsCompleted ? $"🎉 {level.SolutionExplanation}" : ""
         };
     }
 
@@ -2437,74 +2429,9 @@ public class RuneProtocolGame
         CurrentLevel = 0;
         IsCompleted = false;
         Score = 0;
-        HintsUsed = 0;
         AttemptHistory.Clear();
+        ToggleCount = 0;
     }
-}
-
-// Helper classes for Rune Protocol
-public class RuneProtocolLevel
-{
-    public int LevelNumber { get; set; }
-    public string Title { get; set; } = "";
-    public string Description { get; set; } = "";
-    public ConditionalRule[] PiltoverRules { get; set; } = Array.Empty<ConditionalRule>();
-    public ConditionalRule[] ZauniteRules { get; set; } = Array.Empty<ConditionalRule>();
-    public bool[] Solution { get; set; } = new bool[8];
-}
-
-public class ConditionalRule
-{
-    public string Id { get; set; }
-    public string Description { get; set; }
-    public int[] RelatedRunes { get; set; }
-
-    public ConditionalRule(string id, string description, int[] relatedRunes)
-    {
-        Id = id;
-        Description = description;
-        RelatedRunes = relatedRunes;
-    }
-}
-
-public class ValidationResult
-{
-    public bool IsComplete { get; set; }
-    public int SatisfiedRules { get; set; }
-    public int TotalRules { get; set; }
-}
-
-public class RuneProtocolPlayerView
-{
-    public string Role { get; set; } = "";
-    public string DisplayName { get; set; } = "";
-    public string Instruction { get; set; } = "";
-    public ConditionalRule[] Rules { get; set; } = Array.Empty<ConditionalRule>();
-    public int[] ControllableRunes { get; set; } = Array.Empty<int>();
-    public bool[] RuneStates { get; set; } = new bool[8];
-    public int SatisfiedRules { get; set; }
-    public int TotalRules { get; set; }
-    public bool IsCompleted { get; set; }
-    public int Score { get; set; }
-    public int CurrentLevel { get; set; }
-    public int MaxLevel { get; set; }
-    public Dictionary<string, bool> RuleValidationStatus { get; set; } = new();
-}
-
-public class RuneProtocolGameState
-{
-    public bool[] RuneStates { get; set; } = new bool[8];
-    public int CurrentLevel { get; set; }
-    public int MaxLevel { get; set; }
-    public bool IsCompleted { get; set; }
-    public int Score { get; set; }
-    public int HintsUsed { get; set; }
-    public int PlayerCount { get; set; }
-    public int PlayersNeeded { get; set; }
-    public int SatisfiedRules { get; set; }
-    public int TotalRules { get; set; }
-    public string LevelTitle { get; set; } = "";
-    public string LevelDescription { get; set; } = "";
 }
 
 // Helper class for array comparison
