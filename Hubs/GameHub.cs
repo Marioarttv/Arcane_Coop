@@ -626,6 +626,31 @@ public class GameHub : Hub
         }
     }
 
+    public async Task ToggleRuneProtocolValidationHints(string roomId)
+    {
+        if (_runeProtocolGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.ToggleValidationHints(Context.ConnectionId);
+            if (result.Success)
+            {
+                // Update all players with new hint state
+                await Clients.Group(roomId).SendAsync("RuneProtocolGameStateUpdated", game.GetGameState());
+                
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("RuneProtocolPlayerViewUpdated", game.GetPlayerView(player));
+                }
+                
+                // Send status message to all players
+                await Clients.Group(roomId).SendAsync("RuneProtocolValidationToggled", result.Message);
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("RuneProtocolInvalidAction", result.Message);
+            }
+        }
+    }
+
     public async Task RestartRuneProtocolGame(string roomId)
     {
         if (_runeProtocolGames.TryGetValue(roomId, out var game))
@@ -2083,6 +2108,7 @@ public class RuneProtocolGame
     public int Score { get; set; } = 0;
     public List<string> AttemptHistory { get; set; } = new();
     public int ToggleCount { get; set; } = 0; // Track number of rune toggles for scoring
+    public bool ShowValidationStates { get; set; } = false; // Toggle for validation feedback
     
     public int PlayerCount => Players.Count;
     public Arcane_Coop.Models.RuneProtocolLevel CurrentLevelData => LevelBank[CurrentLevel];
@@ -2179,6 +2205,20 @@ public class RuneProtocolGame
         ToggleCount = 0;
         
         return (true, $"Advanced to Level {CurrentLevel + 1}: {CurrentLevelData.Title}");
+    }
+
+    public (bool Success, string Message) ToggleValidationHints(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+
+        ShowValidationStates = !ShowValidationStates;
+        
+        var statusMessage = ShowValidationStates 
+            ? "🔍 Validation hints ENABLED - You can see rule status" 
+            : "🎯 Validation hints DISABLED - Pure puzzle mode";
+            
+        return (true, statusMessage);
     }
 
     private (int satisfied, int total, string[] messages) ValidatePlayerRules(PlayerRole role)
@@ -2370,7 +2410,8 @@ public class RuneProtocolGame
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
                 MaxLevel = LevelBank.Length,
-                RuleValidationMessages = messages
+                RuleValidationMessages = messages,
+                ShowValidationStates = ShowValidationStates
             };
         }
         else
@@ -2390,7 +2431,8 @@ public class RuneProtocolGame
                 Score = Score,
                 CurrentLevel = CurrentLevel + 1,
                 MaxLevel = LevelBank.Length,
-                RuleValidationMessages = messages
+                RuleValidationMessages = messages,
+                ShowValidationStates = ShowValidationStates
             };
         }
     }
@@ -2419,7 +2461,8 @@ public class RuneProtocolGame
             LevelTitle = level.Title,
             LevelDescription = level.Description,
             AllRulesSatisfied = allSatisfied,
-            CompletionMessage = IsCompleted ? $"🎉 {level.SolutionExplanation}" : ""
+            CompletionMessage = IsCompleted ? $"🎉 {level.SolutionExplanation}" : "",
+            ShowValidationStates = ShowValidationStates
         };
     }
 

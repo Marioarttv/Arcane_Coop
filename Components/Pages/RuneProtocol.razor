@@ -220,10 +220,17 @@
             <div class="rules-panel @(playerView.Role.ToLower())-rules">
                 <div class="rules-header">
                     <h4>📋 @(playerView.Role == "Piltover" ? "Alpha Protocol Rules" : "Beta Protocol Rules")</h4>
-                    <div class="rules-progress">
-                        <span class="progress-text">@playerView.SatisfiedRules/@playerView.TotalRules Rules Satisfied</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: @(playerView.TotalRules > 0 ? (playerView.SatisfiedRules * 100 / playerView.TotalRules) : 0)%"></div>
+                    <div class="rules-controls">
+                        <button class="arcane-btn-small @(playerView.ShowValidationStates ? "arcane-btn-warning" : "arcane-btn-secondary")" 
+                                @onclick="ToggleValidationHints" 
+                                title="@(playerView.ShowValidationStates ? "Hide validation hints for harder challenge" : "Show validation hints for assistance")">
+                            @(playerView.ShowValidationStates ? "🔍 Hide Hints" : "💡 Show Hints")
+                        </button>
+                        <div class="rules-progress">
+                            <span class="progress-text">@playerView.SatisfiedRules/@playerView.TotalRules Rules Satisfied</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: @(playerView.TotalRules > 0 ? (playerView.SatisfiedRules * 100 / playerView.TotalRules) : 0)%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -234,17 +241,24 @@
                         @for (int i = 0; i < playerView.Rules.Length; i++)
                         {
                             var rule = playerView.Rules[i];
-                            var isValidated = playerView.RuleValidationMessages != null && 
+                            var isValidated = playerView.ShowValidationStates && 
+                                            playerView.RuleValidationMessages != null && 
                                             playerView.RuleValidationMessages.Length > i && 
                                             playerView.RuleValidationMessages[i].StartsWith($"{rule.Id}: ✓");
                             
-                            <div class="rule-item @(isValidated ? "validated" : "pending")">
+                            var showStatus = playerView.ShowValidationStates;
+                            var statusClass = showStatus ? (isValidated ? "validated" : "pending") : "neutral";
+                            
+                            <div class="rule-item @statusClass">
                                 <div class="rule-header-item">
                                     <span class="rule-id">@rule.Id</span>
-                                    <span class="rule-status">@(isValidated ? "✓" : "○")</span>
+                                    @if (showStatus)
+                                    {
+                                        <span class="rule-status">@(isValidated ? "✓" : "○")</span>
+                                    }
                                 </div>
                                 <div class="rule-description">@rule.Description</div>
-                                @if (playerView.RuleValidationMessages != null && playerView.RuleValidationMessages.Length > i)
+                                @if (showStatus && playerView.RuleValidationMessages != null && playerView.RuleValidationMessages.Length > i)
                                 {
                                     var message = playerView.RuleValidationMessages[i].Replace($"{rule.Id}: ", "");
                                     <div class="rule-feedback @(message.StartsWith("✓") ? "success" : "warning")">
@@ -427,6 +441,12 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string>("RuneProtocolValidationToggled", (message) =>
+        {
+            ShowStatus(message, "info");
+            InvokeAsync(StateHasChanged);
+        });
+
         await hubConnection.StartAsync();
     }
 
@@ -528,6 +548,22 @@
             {
                 Console.WriteLine($"[CLIENT DEBUG] Error advancing level: {ex.Message}");
                 ShowStatus($"Error advancing level: {ex.Message}", "danger");
+            }
+        }
+    }
+
+    private async Task ToggleValidationHints()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("ToggleRuneProtocolValidationHints", roomId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CLIENT DEBUG] Error toggling validation hints: {ex.Message}");
+                ShowStatus($"Error toggling hints: {ex.Message}", "danger");
             }
         }
     }
@@ -967,6 +1003,50 @@
     display: none;
 }
 
+/* Small button variant for inline controls */
+.arcane-btn-small {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.arcane-btn-small.arcane-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f0e6d2;
+    border: 1px solid rgba(240, 230, 210, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+.arcane-btn-small.arcane-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(240, 230, 210, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(240, 230, 210, 0.2);
+}
+
+.arcane-btn-small.arcane-btn-warning {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    color: #ffffff;
+    border: 1px solid #ff6b6b;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.arcane-btn-small.arcane-btn-warning:hover {
+    background: linear-gradient(45deg, #ff7a7a, #ff6161);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(255, 107, 107, 0.4);
+}
+
 /* Custom alert styles */
 .arcane-alert {
     border: none;
@@ -1385,6 +1465,12 @@
     border-bottom: 1px solid rgba(200, 170, 110, 0.3);
 }
 
+.rules-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .rules-header h4 {
     color: #c8aa6e;
     font-size: 1.2rem;
@@ -1442,6 +1528,11 @@
 .rule-item.pending {
     border-color: rgba(255, 193, 7, 0.5);
     background: rgba(255, 193, 7, 0.05);
+}
+
+.rule-item.neutral {
+    border-color: rgba(200, 170, 110, 0.3);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .rule-header-item {

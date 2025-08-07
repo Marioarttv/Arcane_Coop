@@ -16,9 +16,15 @@ The **Rune Protocol Synchronizer** is a sophisticated cooperative logic puzzle s
 ### Gameplay Flow
 1. Players join the same room and start the protocol
 2. Each player sees their specific rules and can only toggle their assigned runes
-3. Real-time validation shows which rules are satisfied (✓) or violated (✗)
-4. Players must communicate and coordinate to find the unique solution
-5. Success unlocks the next level with increased complexity
+3. **Default Mode**: Rules are shown without validation status for maximum challenge
+4. **Optional Hints**: Players can toggle "💡 Show Hints" to see real-time rule validation (✓/✗)
+5. Players must communicate and coordinate to find valid solutions
+6. Success unlocks the next level with increased complexity
+
+### Difficulty Modes
+- **Pure Puzzle Mode** (Default): No validation feedback - players must deduce rule satisfaction through logic and communication
+- **Assisted Mode**: Toggle hints to show which rules are currently satisfied/violated
+- Both modes offer the same logical challenge but different levels of feedback
 
 ## Level 1: Logic Gateway Protocol - Alpha
 
@@ -174,6 +180,7 @@ if (allRulesSatisfied)
 #### Hub Methods
 - `JoinRuneProtocolGame(roomId, playerName)`: Role assignment and game initialization
 - `ToggleRune(roomId, runeIndex)`: Rune state changes with validation
+- `ToggleRuneProtocolValidationHints(roomId)`: Toggle validation feedback display
 - `AdvanceRuneProtocolLevel(roomId)`: Progress to next difficulty level
 - `RestartRuneProtocolGame(roomId)`: Reset current level
 
@@ -182,6 +189,7 @@ if (allRulesSatisfied)
 - `RuneProtocolGameStateUpdated`: Global game state synchronization  
 - `RuneProtocolPlayerViewUpdated`: Individual rule validation updates
 - `RuneProtocolGameCompleted`: Victory notification with scoring
+- `RuneProtocolValidationToggled`: Validation hint display toggle notification
 
 ### Advanced Rule Validation Engine
 

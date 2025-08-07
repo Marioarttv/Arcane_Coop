@@ -71,6 +71,7 @@ public class RuneProtocolPlayerView
     public string[] RuleValidationMessages { get; set; } = Array.Empty<string>();
     public bool ShowHint { get; set; } = false;
     public string HintMessage { get; set; } = "";
+    public bool ShowValidationStates { get; set; } = false;
 }
 
 public class RuneProtocolGameState
@@ -88,6 +89,7 @@ public class RuneProtocolGameState
     public string LevelDescription { get; set; } = "";
     public bool AllRulesSatisfied { get; set; } = false;
     public string CompletionMessage { get; set; } = "";
+    public bool ShowValidationStates { get; set; } = false;
 }
 
 public class LogicPuzzleSolver
