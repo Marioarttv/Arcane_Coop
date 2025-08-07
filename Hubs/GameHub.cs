@@ -13,6 +13,8 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, NavigationMazeGame> _navigationMazeGames = new();
     private static readonly ConcurrentDictionary<string, AlchemyGame> _alchemyGames = new();
     private static readonly ConcurrentDictionary<string, RuneProtocolGame> _runeProtocolGames = new();
+    private static readonly ConcurrentDictionary<string, PictureExplanationGame> _pictureExplanationGames = new();
+    private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
 
     public async Task JoinRoom(string roomId, string playerName)
@@ -666,6 +668,248 @@ public class GameHub : Hub
         }
     }
 
+    // Picture Explanation Game methods
+    public async Task JoinPictureExplanationGame(string roomId, string playerName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _pictureExplanationGames.GetOrAdd(roomId, _ => new PictureExplanationGame());
+        
+        try
+        {
+            var role = game.AddPlayer(Context.ConnectionId, playerName);
+            if (!string.IsNullOrEmpty(role))
+            {
+                var playerView = game.GetPlayerView(Context.ConnectionId);
+                var gameState = game.GetGameState();
+                
+                await Clients.Caller.SendAsync("PictureExplanationGameJoined", role, playerView);
+                await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+                
+                // Update all player views
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("PictureExplanationGameFull");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
+        }
+    }
+
+    public async Task FinishDescribing(string roomId)
+    {
+        if (_pictureExplanationGames.TryGetValue(roomId, out var game))
+        {
+            try
+            {
+                var result = game.FinishDescribing(Context.ConnectionId);
+                if (result.Success)
+                {
+                    var gameState = game.GetGameState();
+                    await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+                    
+                    // Update player views
+                    foreach (var playerId in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+                    }
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("PictureExplanationInvalidAction", result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
+            }
+        }
+    }
+
+    public async Task SubmitPictureChoice(string roomId, int choiceIndex)
+    {
+        if (_pictureExplanationGames.TryGetValue(roomId, out var game))
+        {
+            try
+            {
+                var result = game.SubmitChoice(Context.ConnectionId, choiceIndex);
+                if (result.Success)
+                {
+                    var gameState = game.GetGameState();
+                    await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+                    
+                    // If round is complete, show results
+                    if (result.RoundComplete)
+                    {
+                        var roundResult = game.GetLastRoundResult();
+                        await Clients.Group(roomId).SendAsync("PictureExplanationRoundCompleted", roundResult);
+                    }
+                    
+                    // Update player views
+                    foreach (var playerId in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+                    }
+                    
+                    // Check if game is complete
+                    if (game.IsCompleted())
+                    {
+                        await Clients.Group(roomId).SendAsync("PictureExplanationGameCompleted", 
+                            $"Game completed! Final score: {game.GetScore()}/{game.TotalRounds * 10}", game.GetScore());
+                    }
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("PictureExplanationInvalidAction", result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
+            }
+        }
+    }
+
+    public async Task NextPictureRound(string roomId)
+    {
+        if (_pictureExplanationGames.TryGetValue(roomId, out var game))
+        {
+            try
+            {
+                var result = game.NextRound();
+                if (result.Success)
+                {
+                    var gameState = game.GetGameState();
+                    await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+                    
+                    // Update player views
+                    foreach (var playerId in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+                    }
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("PictureExplanationInvalidAction", result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
+            }
+        }
+    }
+
+    public async Task RestartPictureExplanationGame(string roomId)
+    {
+        if (_pictureExplanationGames.TryGetValue(roomId, out var game))
+        {
+            game.Reset();
+            var gameState = game.GetGameState();
+            await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+            
+            // Update player views
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+        }
+    }
+
+    // Word-Forge (Affix Workshop) specific methods
+    public async Task JoinWordForgeGame(string roomId, string playerName, string gameMode = "Assisted")
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _wordForgeGames.GetOrAdd(roomId, _ => new WordForgeGame());
+        var mode = Enum.Parse<GameMode>(gameMode, true);
+        
+        var playerRole = game.AddPlayer(Context.ConnectionId, playerName, mode);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("WordForgeGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("WordForgeGameFull");
+        }
+    }
+
+    public async Task PlaceElementOnAnvil(string roomId, string elementId, string slotType)
+    {
+        if (_wordForgeGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.PlaceElement(Context.ConnectionId, elementId, slotType);
+            if (result.Success)
+            {
+                // Update player views
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+                
+                await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("WordForgeInvalidAction", result.Message);
+            }
+        }
+    }
+
+    public async Task ForgeWordCombination(string roomId)
+    {
+        if (_wordForgeGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.ForgeAttempt(Context.ConnectionId);
+            if (result.IsSuccess)
+            {
+                // Update all players
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+                
+                await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+                await Clients.Group(roomId).SendAsync("WordForgeCombinationSuccess", result.ResultMessage);
+                
+                // Check if game completed
+                if (game.IsCompleted())
+                {
+                    await Clients.Group(roomId).SendAsync("WordForgeGameCompleted", "🎉 All words forged! The workshop is complete!");
+                }
+            }
+            else
+            {
+                await Clients.Group(roomId).SendAsync("WordForgeCombinationFailed", result.ResultMessage);
+            }
+        }
+    }
+
+    public async Task RestartWordForgeGame(string roomId)
+    {
+        if (_wordForgeGames.TryGetValue(roomId, out var game))
+        {
+            game.Reset();
+            
+            // Update all players
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+            
+            await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove player from room tracking
@@ -737,6 +981,24 @@ public class GameHub : Hub
             if (kvp.Value.RemovePlayer(Context.ConnectionId))
             {
                 await Clients.Group(kvp.Key).SendAsync("RuneProtocolGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from picture explanation games
+        foreach (var kvp in _pictureExplanationGames)
+        {
+            if (kvp.Value.RemovePlayer(Context.ConnectionId))
+            {
+                await Clients.Group(kvp.Key).SendAsync("PictureExplanationGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from word forge games
+        foreach (var kvp in _wordForgeGames)
+        {
+            if (kvp.Value.RemovePlayer(Context.ConnectionId))
+            {
+                await Clients.Group(kvp.Key).SendAsync("WordForgeGameStateUpdated", kvp.Value.GetGameState());
             }
         }
         
@@ -2488,6 +2750,539 @@ public static class Arrays
             if (!a[i].Equals(b[i])) return false;
         }
         return true;
+    }
+}
+
+// Picture Explanation Game Implementation
+public class PictureExplanationGame
+{
+    public enum PlayerRole { Piltover, Zaunite }
+    
+    // Picture bank with Arcane-themed images
+    private static readonly List<PictureData> PictureBank = new()
+    {
+        new PictureData
+        {
+            ImageUrl = "/images/pictures/hextech_crystal.jpg",
+            Title = "Hextech Crystal",
+            Category = "Technology",
+            DistractorImages = new() { "/images/pictures/shimmer_crystal.jpg", "/images/pictures/zaun_pipe.jpg", "/images/pictures/piltover_gear.jpg" },
+            Description = "A glowing blue crystal with intricate geometric patterns"
+        },
+        new PictureData
+        {
+            ImageUrl = "/images/pictures/zaun_undercity.jpg", 
+            Title = "Zaun Undercity",
+            Category = "Location",
+            DistractorImages = new() { "/images/pictures/piltover_academy.jpg", "/images/pictures/bridge_progress.jpg", "/images/pictures/hexgate.jpg" },
+            Description = "Dark underground city with green chemical lighting and industrial pipes"
+        },
+        new PictureData
+        {
+            ImageUrl = "/images/pictures/vi_gauntlets.jpg",
+            Title = "Vi's Gauntlets", 
+            Category = "Weapon",
+            DistractorImages = new() { "/images/pictures/jayce_hammer.jpg", "/images/pictures/caitlyn_rifle.jpg", "/images/pictures/viktor_staff.jpg" },
+            Description = "Large metal gauntlets with blue energy cores and mechanical joints"
+        },
+        new PictureData
+        {
+            ImageUrl = "/images/pictures/piltover_council.jpg",
+            Title = "Piltover Council Chamber",
+            Category = "Location", 
+            DistractorImages = new() { "/images/pictures/zaun_factory.jpg", "/images/pictures/bridge_progress.jpg", "/images/pictures/hexgate.jpg" },
+            Description = "Elegant golden chamber with circular seating and ornate architecture"
+        },
+        new PictureData
+        {
+            ImageUrl = "/images/pictures/shimmer_vial.jpg",
+            Title = "Shimmer Vial",
+            Category = "Chemistry",
+            DistractorImages = new() { "/images/pictures/hextech_potion.jpg", "/images/pictures/zaun_medicine.jpg", "/images/pictures/healing_elixir.jpg" },
+            Description = "Small glass vial containing glowing purple-pink liquid"
+        }
+    };
+
+    private readonly Dictionary<string, PlayerRole> Players = new();
+    private readonly Dictionary<string, string> PlayerNames = new();
+    
+    public int CurrentRound { get; private set; } = 1;
+    public int TotalRounds { get; private set; } = 5;
+    public int Score { get; private set; } = 0;
+    public bool IsGameCompleted { get; private set; } = false;
+    
+    private PictureData? CurrentPicture;
+    private List<string> CurrentChoices = new();
+    private int CorrectChoiceIndex = -1;
+    private bool DescriptionFinished = false; // Piltover player pressed "Finished Describing"
+    private bool ImageVisible = true; // Whether Piltover player can see the image
+    private int? SubmittedChoice;
+    private bool RoundComplete = false;
+    private PictureRoundResult? LastRoundResult;
+
+    public class GameActionResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public bool RoundComplete { get; set; } = false;
+    }
+
+    public string AddPlayer(string connectionId, string playerName)
+    {
+        if (Players.Count >= 2)
+            return "";
+
+        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        Players[connectionId] = role;
+        PlayerNames[connectionId] = playerName;
+        
+        if (Players.Count == 2)
+        {
+            StartNewRound();
+        }
+        
+        return role == PlayerRole.Piltover ? "Piltover" : "Zaunite";
+    }
+
+    public bool RemovePlayer(string connectionId)
+    {
+        var removed = Players.Remove(connectionId);
+        PlayerNames.Remove(connectionId);
+        return removed;
+    }
+
+    public List<string> GetConnectedPlayers()
+    {
+        return Players.Keys.ToList();
+    }
+
+    private void StartNewRound()
+    {
+        if (CurrentRound > TotalRounds)
+        {
+            IsGameCompleted = true;
+            return;
+        }
+
+        var random = new Random();
+        CurrentPicture = PictureBank[random.Next(PictureBank.Count)];
+        
+        // Create shuffled choices (correct + 3 distractors)
+        CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
+        CurrentChoices.AddRange(CurrentPicture.DistractorImages);
+        
+        // Shuffle the choices
+        for (int i = CurrentChoices.Count - 1; i > 0; i--)
+        {
+            int j = random.Next(i + 1);
+            (CurrentChoices[i], CurrentChoices[j]) = (CurrentChoices[j], CurrentChoices[i]);
+        }
+        
+        // Find correct answer index after shuffling
+        CorrectChoiceIndex = CurrentChoices.IndexOf(CurrentPicture.ImageUrl);
+        
+        // Reset round state
+        DescriptionFinished = false;
+        ImageVisible = true; // Image is visible at start of round
+        SubmittedChoice = null;
+        RoundComplete = false;
+        LastRoundResult = null;
+    }
+
+    public GameActionResult FinishDescribing(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return new GameActionResult { Success = false, Message = "Player not in game" };
+            
+        if (Players[connectionId] != PlayerRole.Piltover)
+            return new GameActionResult { Success = false, Message = "Only Piltover player can finish describing" };
+            
+        if (DescriptionFinished)
+            return new GameActionResult { Success = false, Message = "Description already finished for this round" };
+
+        DescriptionFinished = true;
+        ImageVisible = false; // Hide the image once description is finished
+        
+        return new GameActionResult { Success = true, Message = "Description finished - image hidden" };
+    }
+
+    public GameActionResult SubmitChoice(string connectionId, int choiceIndex)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return new GameActionResult { Success = false, Message = "Player not in game" };
+            
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return new GameActionResult { Success = false, Message = "Only Zaunite player can choose" };
+            
+        if (!DescriptionFinished)
+            return new GameActionResult { Success = false, Message = "Wait for partner to finish describing" };
+            
+        if (choiceIndex < 0 || choiceIndex >= CurrentChoices.Count)
+            return new GameActionResult { Success = false, Message = "Invalid choice index" };
+            
+        if (SubmittedChoice.HasValue)
+            return new GameActionResult { Success = false, Message = "Choice already submitted for this round" };
+
+        SubmittedChoice = choiceIndex;
+        bool isCorrect = choiceIndex == CorrectChoiceIndex;
+        int pointsEarned = isCorrect ? 10 : 0;
+        
+        if (isCorrect)
+        {
+            Score += pointsEarned;
+        }
+
+        LastRoundResult = new PictureRoundResult
+        {
+            IsCorrect = isCorrect,
+            CorrectImageUrl = CurrentPicture?.ImageUrl ?? "",
+            Description = "", // No written description in voice chat mode
+            PointsEarned = pointsEarned,
+            ResultMessage = isCorrect ? "🎉 Correct! Great teamwork!" : "❌ Incorrect. Better luck next round!"
+        };
+
+        RoundComplete = true;
+
+        return new GameActionResult 
+        { 
+            Success = true, 
+            Message = isCorrect ? "Correct answer!" : "Incorrect answer",
+            RoundComplete = true
+        };
+    }
+
+    public GameActionResult NextRound()
+    {
+        if (!RoundComplete)
+            return new GameActionResult { Success = false, Message = "Current round not complete" };
+
+        CurrentRound++;
+        
+        if (CurrentRound <= TotalRounds)
+        {
+            StartNewRound();
+            return new GameActionResult { Success = true, Message = $"Starting round {CurrentRound}" };
+        }
+        else
+        {
+            IsGameCompleted = true;
+            return new GameActionResult { Success = true, Message = "Game completed!" };
+        }
+    }
+
+    public PictureExplanationPlayerView GetPlayerView(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return new PictureExplanationPlayerView();
+
+        var role = Players[connectionId];
+        var playerName = PlayerNames.GetValueOrDefault(connectionId, "Unknown");
+        
+        return new PictureExplanationPlayerView
+        {
+            Role = role == PlayerRole.Piltover ? "Piltover" : "Zaunite",
+            DisplayName = playerName,
+            CurrentImageUrl = role == PlayerRole.Piltover && ImageVisible ? (CurrentPicture?.ImageUrl ?? "") : "",
+            ChoiceImages = role == PlayerRole.Zaunite && DescriptionFinished ? CurrentChoices : new(),
+            CanFinishDescribing = role == PlayerRole.Piltover && ImageVisible && !DescriptionFinished && !RoundComplete,
+            CanChoose = role == PlayerRole.Zaunite && DescriptionFinished && !SubmittedChoice.HasValue && !RoundComplete,
+            SelectedChoice = SubmittedChoice,
+            RoundCompleted = RoundComplete,
+            RoundResult = LastRoundResult?.ResultMessage ?? "",
+            Score = Score,
+            ImageVisible = ImageVisible
+        };
+    }
+
+    public PictureExplanationGameState GetGameState()
+    {
+        return new PictureExplanationGameState
+        {
+            CurrentRound = CurrentRound,
+            TotalRounds = TotalRounds,
+            Score = Score,
+            IsCompleted = IsGameCompleted,
+            GameStatus = IsGameCompleted ? "Completed" : (Players.Count < 2 ? "Waiting for players" : "In Progress"),
+            PlayerCount = Players.Count,
+            RoundStatus = GetRoundStatus(),
+            ShowingResult = RoundComplete
+        };
+    }
+
+    private string GetRoundStatus()
+    {
+        if (IsGameCompleted)
+            return "Game Complete";
+        if (Players.Count < 2)
+            return "Waiting for players";
+        if (!DescriptionFinished)
+            return "Describing in progress (voice chat)";
+        if (!SubmittedChoice.HasValue)
+            return "Waiting for choice";
+        if (RoundComplete)
+            return "Round complete - ready for next";
+        return "In progress";
+    }
+
+    public PictureRoundResult? GetLastRoundResult()
+    {
+        return LastRoundResult;
+    }
+
+    public int GetScore()
+    {
+        return Score;
+    }
+
+    public bool IsCompleted()
+    {
+        return IsGameCompleted;
+    }
+
+    public void Reset()
+    {
+        Players.Clear();
+        PlayerNames.Clear();
+        CurrentRound = 1;
+        Score = 0;
+        IsGameCompleted = false;
+        CurrentPicture = null;
+        CurrentChoices.Clear();
+        CorrectChoiceIndex = -1;
+        DescriptionFinished = false;
+        ImageVisible = true;
+        SubmittedChoice = null;
+        RoundComplete = false;
+        LastRoundResult = null;
+    }
+}
+
+public class WordForgeGame
+{
+    public enum PlayerRole { Piltover, Zaunite }
+    
+    // A2-B2 Level Word Bank - 5 combinations
+    private static readonly WordElement[] RootBank = new[]
+    {
+        new WordElement { Id = "rely", Text = "rely", Description = "to depend on", Type = WordElementType.Root },
+        new WordElement { Id = "help", Text = "help", Description = "to assist", Type = WordElementType.Root },
+        new WordElement { Id = "care", Text = "care", Description = "to look after", Type = WordElementType.Root },
+        new WordElement { Id = "use", Text = "use", Description = "to utilize", Type = WordElementType.Root },
+        new WordElement { Id = "read", Text = "read", Description = "to look at text", Type = WordElementType.Root }
+    };
+    
+    private static readonly WordElement[] AffixBank = new[]
+    {
+        new WordElement { Id = "able", Text = "-able", Description = "capable of being", Type = WordElementType.Suffix },
+        new WordElement { Id = "er", Text = "-er", Description = "one who does", Type = WordElementType.Suffix },
+        new WordElement { Id = "ful", Text = "-ful", Description = "full of", Type = WordElementType.Suffix },
+        new WordElement { Id = "re", Text = "re-", Description = "again", Type = WordElementType.Prefix },
+        new WordElement { Id = "un", Text = "un-", Description = "not", Type = WordElementType.Prefix }
+    };
+    
+    private static readonly WordCombination[] TargetCombinations = new[]
+    {
+        new WordCombination { Id = "reliable", RootId = "rely", AffixId = "able", ResultWord = "reliable", Definition = "can be trusted or depended on", Order = 1 },
+        new WordCombination { Id = "helper", RootId = "help", AffixId = "er", ResultWord = "helper", Definition = "a person who helps", Order = 2 },
+        new WordCombination { Id = "careful", RootId = "care", AffixId = "ful", ResultWord = "careful", Definition = "taking care to avoid mistakes", Order = 3 },
+        new WordCombination { Id = "reuse", RootId = "use", AffixId = "re", ResultWord = "reuse", Definition = "to use again", Order = 4 },
+        new WordCombination { Id = "unreadable", RootId = "read", AffixId = "un", ResultWord = "unreadable", Definition = "not able to be read", Order = 5 }
+    };
+
+    public Dictionary<string, PlayerRole> Players { get; set; } = new();
+    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public List<WordCombination> CompletedCombinations { get; set; } = new();
+    public AnvilSlot CurrentAnvil { get; set; } = new();
+    public GameMode Mode { get; set; } = GameMode.Assisted;
+    public bool IsGameCompleted { get; set; } = false;
+
+    public string? AddPlayer(string connectionId, string playerName, GameMode mode)
+    {
+        if (Players.Count >= 2)
+            return null;
+
+        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        Players[connectionId] = role;
+        PlayerNames[connectionId] = playerName;
+        Mode = mode;
+
+        return role.ToString();
+    }
+
+    public (bool Success, string Message) PlaceElement(string connectionId, string elementId, string slotType)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+
+        var playerRole = Players[connectionId];
+        
+        // Validate element belongs to player
+        var availableElements = GetPlayerElements(playerRole);
+        var element = availableElements.FirstOrDefault(e => e.Id == elementId && !e.IsUsed);
+        
+        if (element == null)
+            return (false, "Element not found or already used");
+
+        // Place element on anvil
+        if (slotType == "root" && element.Type == WordElementType.Root)
+        {
+            if (CurrentAnvil.RootElement != null)
+                return (false, "Root slot already occupied");
+            CurrentAnvil.RootElement = element;
+        }
+        else if (slotType == "affix" && (element.Type == WordElementType.Prefix || element.Type == WordElementType.Suffix))
+        {
+            if (CurrentAnvil.AffixElement != null)
+                return (false, "Affix slot already occupied");
+            CurrentAnvil.AffixElement = element;
+        }
+        else
+        {
+            return (false, "Invalid element for this slot");
+        }
+
+        return (true, "Element placed on anvil");
+    }
+
+    public ForgeAttempt ForgeAttempt(string connectionId)
+    {
+        if (!CurrentAnvil.IsComplete)
+            return new ForgeAttempt { IsSuccess = false, ResultMessage = "Anvil needs both root and affix elements" };
+
+        var rootId = CurrentAnvil.RootElement!.Id;
+        var affixId = CurrentAnvil.AffixElement!.Id;
+
+        var targetCombo = TargetCombinations.FirstOrDefault(tc => 
+            tc.RootId == rootId && tc.AffixId == affixId && !tc.IsCompleted);
+
+        if (targetCombo != null)
+        {
+            // Success! Mark elements as used and combination as completed
+            CurrentAnvil.RootElement.IsUsed = true;
+            CurrentAnvil.AffixElement.IsUsed = true;
+            targetCombo.IsCompleted = true;
+            CompletedCombinations.Add(targetCombo);
+
+            // Clear anvil
+            CurrentAnvil.RootElement = null;
+            CurrentAnvil.AffixElement = null;
+
+            if (CompletedCombinations.Count >= TargetCombinations.Length)
+            {
+                IsGameCompleted = true;
+            }
+
+            return new ForgeAttempt 
+            { 
+                RootId = rootId,
+                AffixId = affixId,
+                ExpectedResult = targetCombo.ResultWord,
+                IsSuccess = true, 
+                ResultMessage = $"✨ Forged '{targetCombo.ResultWord}'! {targetCombo.Definition}"
+            };
+        }
+        else
+        {
+            // Failed attempt - return elements to pools
+            CurrentAnvil.RootElement = null;
+            CurrentAnvil.AffixElement = null;
+
+            return new ForgeAttempt 
+            { 
+                RootId = rootId,
+                AffixId = affixId,
+                IsSuccess = false, 
+                ResultMessage = "❌ These elements don't combine into a valid word. Try again!" 
+            };
+        }
+    }
+
+    public bool IsCompleted()
+    {
+        return IsGameCompleted;
+    }
+
+    public WordForgePlayerView GetPlayerView(string connectionId)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return new WordForgePlayerView();
+
+        var role = Players[connectionId];
+        var playerName = PlayerNames[connectionId];
+
+        return new WordForgePlayerView
+        {
+            Role = role.ToString(),
+            DisplayName = $"{(role == PlayerRole.Piltover ? "Caitlyn" : "Vi")} ({playerName})",
+            Instruction = role == PlayerRole.Piltover 
+                ? "Drag root words to the anvil to forge new vocabulary!"
+                : "Drag affixes to the anvil to combine with roots!",
+            AvailableElements = GetPlayerElements(role).Where(e => !e.IsUsed).ToArray(),
+            AnvilState = CurrentAnvil,
+            TargetCombinations = Mode == GameMode.Assisted ? TargetCombinations : Array.Empty<WordCombination>(),
+            CompletedCombinations = CompletedCombinations.ToArray(),
+            ElementsRemaining = GetPlayerElements(role).Count(e => !e.IsUsed),
+            IsCompleted = IsGameCompleted,
+            Mode = Mode
+        };
+    }
+
+    public WordForgeGameState GetGameState()
+    {
+        return new WordForgeGameState
+        {
+            CompletedCombinations = CompletedCombinations.Count,
+            TotalCombinations = TargetCombinations.Length,
+            IsCompleted = IsGameCompleted,
+            PlayerCount = Players.Count,
+            PlayersNeeded = 2,
+            HasStarted = Players.Count == 2,
+            Mode = Mode
+        };
+    }
+
+    public List<string> GetConnectedPlayers()
+    {
+        return Players.Keys.ToList();
+    }
+
+    public bool RemovePlayer(string connectionId)
+    {
+        var removed = Players.Remove(connectionId);
+        if (removed)
+        {
+            PlayerNames.Remove(connectionId);
+            if (Players.Count == 0)
+            {
+                Reset(); // Reset game if no players left
+            }
+        }
+        return removed;
+    }
+
+    private WordElement[] GetPlayerElements(PlayerRole role)
+    {
+        return role == PlayerRole.Piltover ? RootBank : AffixBank;
+    }
+
+    public void Reset()
+    {
+        CompletedCombinations.Clear();
+        CurrentAnvil.RootElement = null;
+        CurrentAnvil.AffixElement = null;
+        IsGameCompleted = false;
+
+        // Reset all elements to unused
+        foreach (var element in RootBank.Concat(AffixBank))
+        {
+            element.IsUsed = false;
+        }
+
+        // Reset all combinations
+        foreach (var combo in TargetCombinations)
+        {
+            combo.IsCompleted = false;
+        }
     }
 }
 

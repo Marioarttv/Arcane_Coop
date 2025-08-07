@@ -1,0 +1,1570 @@
+@page "/picture-explanation"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Arcane_Coop.Hubs
+@using Arcane_Coop.Models
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>Picture Explanation Challenge</PageTitle>
+
+<div class="picture-explanation-container">
+    <div class="header-section">
+        <h2 class="game-title">🖼️ Picture Explanation Challenge</h2>
+        <p class="game-subtitle">Voice Chat Visual Communication - Describe, Hide, Choose!</p>
+    </div>
+    
+    <div class="connection-status mb-3">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    @if (!inGame)
+    {
+        <div class="instructions-panel">
+            <div class="instruction-header">
+                <h3>📸 How to Play Picture Explanation Challenge</h3>
+            </div>
+            <div class="instruction-content">
+                <div class="step-by-step">
+                    <div class="instruction-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Share Room Code</h4>
+                            <p>Both players enter the <strong>same Room ID</strong> below. Choose any code like "pictures123" or "visual".</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Join Together</h4>
+                            <p>Click <strong>"Join Room"</strong> then <strong>"Start Challenge"</strong>. First player becomes Piltover (Describer), second becomes Zaunite (Guesser).</p>
+                        </div>
+                    </div>
+                    <div class="instruction-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Play Together</h4>
+                            <p><strong>Piltover</strong> describes archive images over voice chat, then hides the image. <strong>Zaunite</strong> chooses from 4 options. Work through 5 rounds!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="role-preview">
+                    <div class="role-card piltover-preview">
+                        <h4>📋 Caitlyn (Archive Analyst)</h4>
+                        <p>You analyze Piltover's visual archives:</p>
+                        <ul class="preview-clues">
+                            <li><strong>🖼️ Image Analysis:</strong> View detailed archive images</li>
+                            <li><strong>📢 Voice Description:</strong> Describe over Discord/voice chat</li>
+                            <li><strong>👁️ Strategic Choice:</strong> Hide image after describing</li>
+                        </ul>
+                    </div>
+                    <div class="role-card zaunite-preview">
+                        <h4>🕵️ Vi (Intelligence Agent)</h4>
+                        <p>You receive field intelligence reports:</p>
+                        <ul class="preview-clues">
+                            <li><strong>👂 Active Listening:</strong> Listen carefully over voice chat</li>
+                            <li><strong>🔍 Image Selection:</strong> Choose from 4 options</li>
+                            <li><strong>⚡ Quick Decisions:</strong> Image disappears after description</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!inGame)
+    {
+        <div class="game-setup mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="roomInput" class="form-label">Room ID:</label>
+                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+            </div>
+            <div class="col-md-6">
+                <label for="nameInput" class="form-label">Player Name:</label>
+                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+            </div>
+        </div>
+
+        <div class="setup-buttons">
+            <button class="arcane-btn arcane-btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                🚪 Join Room
+            </button>
+            <button class="arcane-btn arcane-btn-secondary" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                🚶 Leave Room
+            </button>
+            <button class="arcane-btn arcane-btn-success" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                🎯 Start Challenge
+            </button>
+            @if (inGame)
+            {
+                <button class="arcane-btn arcane-btn-warning" @onclick="RestartGame">
+                    🔄 Restart Challenge
+                </button>
+            }
+        </div>
+        
+        @if (inRoom && !inGame)
+        {
+            <div class="arcane-alert arcane-alert-info">
+                <strong>📡 In Room:</strong> @roomId - Waiting for challenge to start...
+            </div>
+        }
+        @if (inGame && playerView != null)
+        {
+            <div class="arcane-alert arcane-alert-success">
+                <strong>🎮 Playing as:</strong> @playerView.DisplayName (@playerView.Role)
+            </div>
+        }
+    </div>
+
+    @if (inRoom && !inGame)
+    {
+        <div class="players-section">
+            <div class="players-header">
+                <h4>👥 Challenge Team</h4>
+            </div>
+            <div class="players-list">
+                @foreach (var player in connectedPlayers)
+                {
+                    <div class="player-card">
+                        <div class="player-icon">👤</div>
+                        <div class="player-name">@player</div>
+                    </div>
+                }
+                @if (connectedPlayers.Count < 2)
+                {
+                    <div class="player-card waiting">
+                        <div class="player-icon">⏳</div>
+                        <div class="player-name">Waiting for partner...</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    }
+
+    @if (inGame && playerView != null && gameState != null)
+    {
+        <div class="game-interface @playerView.Role.ToLower()">
+            <div class="interface-header">
+                <div class="character-info">
+                    <img src="@(playerView.Role == "Piltover" ? "/images/cait.jpeg" : "/images/vi.jpeg")" 
+                         alt="@(playerView.Role == "Piltover" ? "Caitlyn" : "Vi")" class="character-portrait" />
+                    <div class="character-details">
+                        <h3>@playerView.DisplayName</h3>
+                        <p class="role-subtitle">@(playerView.Role == "Piltover" ? "Archive Analyst" : "Intelligence Agent")</p>
+                    </div>
+                </div>
+                <div class="mission-status">
+                    <div class="progress-info">
+                        <span class="level-counter">Round @gameState.CurrentRound/@gameState.TotalRounds</span>
+                        <span class="status-badge @(gameState.IsCompleted ? "completed" : "active")">@gameState.GameStatus</span>
+                        <div class="score-display">Score: @gameState.Score/@(gameState.TotalRounds * 10)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="round-info-panel">
+                <h4>@gameState.RoundStatus</h4>
+                <div class="round-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @((gameState.CurrentRound - 1) * 100.0 / gameState.TotalRounds)%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Piltover (Describer) Interface -->
+            @if (playerView.Role == "Piltover")
+            {
+                <div class="piltover-interface">
+                    <div class="archive-panel">
+                        <div class="panel-header">
+                            <h4>📂 Archive Image Analysis</h4>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(playerView.CurrentImageUrl))
+                        {
+                            <div class="image-display-container">
+                                <img src="@playerView.CurrentImageUrl" alt="Archive Image" class="main-image" />
+                                <div class="image-overlay">
+                                    <div class="image-info">
+                                        <span class="image-label">Classified Archive Image</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (playerView.CanFinishDescribing)
+                        {
+                            <div class="voice-description-panel">
+                                <div class="voice-instructions">
+                                    <h5>📢 Describe this image to your partner over voice chat</h5>
+                                    <p>Take your time to describe what you see in detail. Once you're finished explaining, press the button below to hide the image and show your partner the choices.</p>
+                                </div>
+                                <button class="arcane-btn arcane-btn-success" @onclick="FinishDescribing">
+                                    ✅ Finished Describing
+                                </button>
+                            </div>
+                        }
+                        else if (!playerView.ImageVisible && !playerView.RoundCompleted)
+                        {
+                            <div class="description-finished">
+                                <div class="status-text">Image hidden - waiting for partner's selection...</div>
+                                <div class="voice-reminder">
+                                    <small>💬 Continue discussing over voice chat if needed</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <!-- Zaunite (Guesser) Interface -->
+            @if (playerView.Role == "Zaunite")
+            {
+                <div class="zaunite-interface">
+                    <div class="intelligence-panel">
+                        <div class="panel-header">
+                            <h4>🕵️ Intelligence Report</h4>
+                        </div>
+                        
+                        @if (!playerView.CanChoose && !playerView.RoundCompleted)
+                        {
+                            <div class="waiting-description">
+                                <div class="loading-spinner">👂</div>
+                                <p>Your partner is describing the image over voice chat...</p>
+                                <small class="voice-reminder">💬 Listen carefully! They can only show you the image once.</small>
+                            </div>
+                        }
+                        
+                        @if (playerView.CanChoose && playerView.ChoiceImages.Any())
+                        {
+                            <div class="choices-container">
+                                <div class="choices-header">
+                                    <strong>Select the matching image:</strong>
+                                </div>
+                                <div class="image-choices">
+                                    @for (int i = 0; i < playerView.ChoiceImages.Count; i++)
+                                    {
+                                        var index = i;
+                                        var imageUrl = playerView.ChoiceImages[i];
+                                        var isSelected = playerView.SelectedChoice == index;
+                                        
+                                        <div class="choice-item @(isSelected ? "selected" : "")" @onclick="() => SelectChoice(index)">
+                                            <img src="@imageUrl" alt="Choice @(index + 1)" class="choice-image" />
+                                            <div class="choice-label">Option @(index + 1)</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else if (playerView.SelectedChoice.HasValue)
+                        {
+                            <div class="choice-submitted">
+                                <div class="status-text">Choice submitted! Selected option @(playerView.SelectedChoice.Value + 1)</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <!-- Round Result Display -->
+            @if (playerView.RoundCompleted && !string.IsNullOrEmpty(playerView.RoundResult))
+            {
+                <div class="round-result-panel @(playerView.RoundResult.Contains("Correct") ? "success" : "incorrect")">
+                    <div class="result-header">
+                        <h4>Round @gameState.CurrentRound Result</h4>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-message">@playerView.RoundResult</div>
+                        @if (lastRoundResult != null)
+                        {
+                            <div class="result-details">
+                                <div class="points-earned">Points: +@lastRoundResult.PointsEarned</div>
+                                <div class="communication-note">Great voice communication!</div>
+                            </div>
+                        }
+                        @if (!gameState.IsCompleted)
+                        {
+                            <button class="arcane-btn arcane-btn-primary" @onclick="NextRound">
+                                ➡️ Next Round
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <!-- Game Completion -->
+            @if (gameState.IsCompleted)
+            {
+                <div class="completion-panel">
+                    <div class="complete-animation">🎉</div>
+                    <h3>Challenge Complete!</h3>
+                    <div class="final-score">
+                        <strong>Final Score: @gameState.Score/@(gameState.TotalRounds * 10)</strong>
+                        <div class="score-percentage">
+                            (@(Math.Round((double)gameState.Score / (gameState.TotalRounds * 10) * 100, 1))% Accuracy)
+                        </div>
+                    </div>
+                    <div class="completion-actions">
+                        <button class="arcane-btn arcane-btn-success" @onclick="RestartGame">
+                            🔄 Play Again
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="status-overlay">
+            <div class="status-message @statusClass">
+                @statusMessage
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Connection and SignalR
+    private HubConnection? hubConnection;
+    private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+    
+    // Game state
+    private string roomId = "";
+    private string playerName = "";
+    private bool inRoom = false;
+    private bool inGame = false;
+    private PictureExplanationPlayerView? playerView;
+    private PictureExplanationGameState? gameState;
+    
+    // UI state
+    private PictureRoundResult? lastRoundResult;
+    
+    // UI feedback
+    private string statusMessage = "";
+    private string statusClass = "";
+    
+    // Player tracking
+    private List<string> connectedPlayers = new List<string>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        // Basic room event handlers
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            if (!connectedPlayers.Contains(name))
+            {
+                connectedPlayers.Add(name);
+            }
+            if (connectionId != hubConnection.ConnectionId)
+            {
+                ShowStatus($"{name} joined the room", "info");
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            connectedPlayers.Remove(name);
+            ShowStatus($"{name} left the room", "info");
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Room state handler
+        hubConnection.On<List<string>>("RoomState", (playerNames) =>
+        {
+            connectedPlayers.Clear();
+            connectedPlayers.AddRange(playerNames);
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Picture Explanation game event handlers
+        hubConnection.On<string, PictureExplanationPlayerView>("PictureExplanationGameJoined", (role, view) =>
+        {
+            inGame = true;
+            playerView = view;
+            ShowStatus($"Joined as {view.DisplayName}", "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<PictureExplanationGameState>("PictureExplanationGameStateUpdated", (newGameState) =>
+        {
+            gameState = newGameState;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<PictureExplanationPlayerView>("PictureExplanationPlayerViewUpdated", (newView) =>
+        {
+            playerView = newView;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<PictureRoundResult>("PictureExplanationRoundCompleted", (roundResult) =>
+        {
+            lastRoundResult = roundResult;
+            ShowStatus(roundResult.ResultMessage, roundResult.IsCorrect ? "success" : "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, int>("PictureExplanationGameCompleted", (message, finalScore) =>
+        {
+            ShowStatus(message, "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("PictureExplanationInvalidAction", (message) =>
+        {
+            ShowStatus(message, "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("PictureExplanationGameFull", () =>
+        {
+            ShowStatus("Game is full - maximum 2 players", "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            inRoom = true;
+            if (!connectedPlayers.Contains(playerName))
+            {
+                connectedPlayers.Add(playerName);
+            }
+            ShowStatus($"Joined room: {roomId}", "info");
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
+            inRoom = false;
+            inGame = false;
+            playerView = null;
+            gameState = null;
+            connectedPlayers.Clear();
+            ShowStatus("Left room", "info");
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            try
+            {
+                await hubConnection.SendAsync("JoinPictureExplanationGame", roomId, playerName);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error joining game: {ex.Message}", "danger");
+            }
+        }
+    }
+
+    private async Task FinishDescribing()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("FinishDescribing", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error finishing description: {ex.Message}", "danger");
+            }
+        }
+    }
+
+    private async Task SelectChoice(int choiceIndex)
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("SubmitPictureChoice", roomId, choiceIndex);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error selecting choice: {ex.Message}", "danger");
+            }
+        }
+    }
+
+    private async Task NextRound()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("NextPictureRound", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error advancing round: {ex.Message}", "danger");
+            }
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartPictureExplanationGame", roomId);
+            lastRoundResult = null;
+            ShowStatus("Challenge restarted", "info");
+        }
+    }
+
+    private void ShowStatus(string message, string type)
+    {
+        statusMessage = message;
+        statusClass = type;
+        
+        // Auto-hide status after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            statusMessage = "";
+            statusClass = "";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+<style>
+.picture-explanation-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
+    color: #ffffff;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    padding: 20px;
+}
+
+/* Header styling */
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem 0;
+}
+
+.game-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #c89b3c, #00c8c8, #c8aa6e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.game-subtitle {
+    font-size: 1.2rem;
+    color: #c8aa6e;
+    margin-bottom: 0;
+}
+
+.connection-status {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 10px;
+    border: 2px solid #c8aa6e;
+    backdrop-filter: blur(10px);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+}
+
+.text-success {
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.text-danger {
+    color: #ff4444 !important;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+/* Instructions panel */
+.instructions-panel {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.instruction-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.instruction-header h3 {
+    color: #c8aa6e;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.step-by-step {
+    margin-bottom: 2rem;
+}
+
+.instruction-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #c89b3c, #c8aa6e);
+    color: #0a0e27;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    color: #f0e6d2;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.step-content p {
+    color: #cdbe91;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.role-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.role-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: left;
+}
+
+.role-card.piltover-preview {
+    border-color: #c89b3c;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
+}
+
+.role-card.zaunite-preview {
+    border-color: #00c8c8;
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.1), rgba(0, 200, 200, 0.05));
+}
+
+.role-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.role-card p {
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.preview-clues {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.preview-clues li {
+    margin-bottom: 0.5rem;
+    padding-left: 0;
+    color: #f0e6d2;
+    font-size: 0.9rem;
+}
+
+/* Game setup form */
+.game-setup {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.form-label {
+    color: #c8aa6e;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    color: #f0e6d2;
+    padding: 0.75rem 1rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: #c8aa6e;
+    box-shadow: 0 0 0 0.2rem rgba(200, 170, 110, 0.25);
+    color: #f0e6d2;
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: rgba(240, 230, 210, 0.5);
+    font-style: italic;
+}
+
+.setup-buttons {
+    text-align: center;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Players Section */
+.players-section {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.players-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(200, 170, 110, 0.3);
+    padding-bottom: 0.75rem;
+}
+
+.players-header h4 {
+    color: #c8aa6e;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.player-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.player-card:not(.waiting) {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.player-card.waiting {
+    border-color: rgba(200, 170, 110, 0.5);
+    background: rgba(200, 170, 110, 0.05);
+    opacity: 0.7;
+}
+
+.player-icon {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+}
+
+.player-card:not(.waiting) .player-icon {
+    color: #00ff88;
+}
+
+.player-card.waiting .player-icon {
+    color: #c8aa6e;
+    animation: pulse-waiting 2s infinite;
+}
+
+.player-name {
+    color: #f0e6d2;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.player-card.waiting .player-name {
+    color: rgba(240, 230, 210, 0.7);
+    font-style: italic;
+}
+
+@@keyframes pulse-waiting {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Arcane-themed custom buttons */
+.arcane-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin: 0.25rem;
+    display: inline-block;
+}
+
+.arcane-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.arcane-btn:hover:not(:disabled):before {
+    left: 100%;
+}
+
+.arcane-btn-primary {
+    background: linear-gradient(45deg, #c89b3c, #c8aa6e);
+    color: #0a0e27;
+    border: 2px solid #c8aa6e;
+    box-shadow: 0 4px 15px rgba(200, 155, 60, 0.3);
+}
+
+.arcane-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(45deg, #d4a749, #d4b57a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 155, 60, 0.4);
+}
+
+.arcane-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f0e6d2;
+    border: 2px solid rgba(240, 230, 210, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+.arcane-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(240, 230, 210, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(240, 230, 210, 0.2);
+}
+
+.arcane-btn-success {
+    background: linear-gradient(45deg, #00ff88, #00cc6a);
+    color: #0a0e27;
+    border: 2px solid #00ff88;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.arcane-btn-success:hover:not(:disabled) {
+    background: linear-gradient(45deg, #1aff94, #1ad676);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.arcane-btn-warning {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    color: #ffffff;
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.arcane-btn-warning:hover:not(:disabled) {
+    background: linear-gradient(45deg, #ff7a7a, #ff6161);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.arcane-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.arcane-btn:disabled:before {
+    display: none;
+}
+
+/* Custom alert styles */
+.arcane-alert {
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    margin-top: 1rem;
+}
+
+.arcane-alert-info {
+    background: rgba(0, 153, 255, 0.15);
+    color: #66b3ff;
+    border: 1px solid rgba(0, 153, 255, 0.3);
+}
+
+.arcane-alert-success {
+    background: rgba(0, 255, 136, 0.15);
+    color: #66ff99;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+/* Game Interface Styles */
+.game-interface {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+}
+
+.interface-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.character-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.character-portrait {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c8aa6e;
+}
+
+.character-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #f0e6d2;
+}
+
+.role-subtitle {
+    margin: 0;
+    color: #c8aa6e;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.mission-status {
+    text-align: right;
+}
+
+.level-counter {
+    font-size: 1rem;
+    color: #c8aa6e;
+    font-weight: 600;
+    display: block;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.status-badge.success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.status-badge.active {
+    background: rgba(200, 155, 60, 0.2);
+    color: #c8aa6e;
+    border: 1px solid #c8aa6e;
+}
+
+.status-badge.completed {
+    background: rgba(0, 255, 136, 0.3);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.score-display {
+    color: #f0e6d2;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+/* Round info panel */
+.round-info-panel {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.round-info-panel h4 {
+    color: #c8aa6e;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.round-progress {
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid rgba(200, 170, 110, 0.3);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c89b3c, #c8aa6e);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+/* Piltover Interface */
+.piltover-interface {
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
+    border: 2px solid #c89b3c;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.archive-panel {
+    background: rgba(200, 155, 60, 0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.panel-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(200, 155, 60, 0.3);
+    padding-bottom: 0.75rem;
+}
+
+.panel-header h4 {
+    color: #c89b3c;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.image-display-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.main-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    border: 3px solid #c89b3c;
+    box-shadow: 0 0 20px rgba(200, 155, 60, 0.3);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(transparent 60%, rgba(200, 155, 60, 0.8));
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.image-info {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid #c89b3c;
+}
+
+.image-label {
+    color: #c8aa6e;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.voice-description-panel {
+    margin-top: 1rem;
+    background: rgba(200, 155, 60, 0.1);
+    border: 1px solid rgba(200, 155, 60, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.voice-instructions {
+    margin-bottom: 1.5rem;
+}
+
+.voice-instructions h5 {
+    color: #c89b3c;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.voice-instructions p {
+    color: #f0e6d2;
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.description-finished {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.voice-reminder {
+    margin-top: 0.5rem;
+}
+
+.voice-reminder small {
+    color: rgba(240, 230, 210, 0.7);
+    font-style: italic;
+}
+
+.status-text {
+    color: #66ff99;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Zaunite Interface */
+.zaunite-interface {
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.1), rgba(0, 200, 200, 0.05));
+    border: 2px solid #00c8c8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.intelligence-panel {
+    background: rgba(0, 200, 200, 0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.zaunite-interface .panel-header h4 {
+    color: #00c8c8;
+}
+
+.description-display {
+    background: rgba(0, 200, 200, 0.1);
+    border: 1px solid rgba(0, 200, 200, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.intel-label {
+    color: #00c8c8;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.intel-text {
+    color: #e0ffff;
+    font-style: italic;
+    line-height: 1.4;
+    font-size: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: 6px;
+    border-left: 3px solid #00c8c8;
+}
+
+.waiting-description {
+    text-align: center;
+    padding: 2rem;
+    color: #00c8c8;
+}
+
+.loading-spinner {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    animation: pulse-waiting 2s infinite;
+}
+
+.choices-container {
+    margin-top: 1rem;
+}
+
+.choices-header {
+    color: #00c8c8;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.image-choices {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.choice-item {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(0, 200, 200, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.choice-item:hover {
+    border-color: #00c8c8;
+    background: rgba(0, 200, 200, 0.1);
+    transform: scale(1.02);
+}
+
+.choice-item.selected {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+}
+
+.choice-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    border: 1px solid rgba(0, 200, 200, 0.3);
+}
+
+.choice-label {
+    color: #00c8c8;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.choice-item.selected .choice-label {
+    color: #00ff88;
+}
+
+.choice-submitted {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+/* Round Result Panel */
+.round-result-panel {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.round-result-panel.success {
+    border-color: #00ff88;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 200, 0.1));
+}
+
+.round-result-panel.incorrect {
+    border-color: #ff6b6b;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 82, 82, 0.1));
+}
+
+.result-header h4 {
+    color: #c8aa6e;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.result-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.result-message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.round-result-panel.success .result-message {
+    color: #00ff88;
+}
+
+.round-result-panel.incorrect .result-message {
+    color: #ff6b6b;
+}
+
+.result-details {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.points-earned {
+    color: #c8aa6e;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.communication-note {
+    color: #f0e6d2;
+    font-style: italic;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Completion Panel */
+.completion-panel {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 200, 0.1));
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin: 2rem 0;
+    animation: victory-pulse 2s infinite;
+}
+
+@@keyframes victory-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+    50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(0, 255, 136, 0.5); }
+}
+
+.complete-animation {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: celebration 2s infinite;
+}
+
+@@keyframes celebration {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(5deg); }
+}
+
+.completion-panel h3 {
+    color: #00ff88;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.final-score {
+    margin: 1.5rem 0;
+}
+
+.final-score strong {
+    color: #f0e6d2;
+    font-size: 1.3rem;
+}
+
+.score-percentage {
+    color: #c8aa6e;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+.completion-actions {
+    margin-top: 2rem;
+}
+
+/* Status Messages */
+.status-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.status-message {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-message.success {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+}
+
+.status-message.warning {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid #ffc107;
+    color: #ffc107;
+}
+
+.status-message.info {
+    background: rgba(0, 123, 255, 0.2);
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+.status-message.danger {
+    background: rgba(255, 68, 68, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .role-preview {
+        grid-template-columns: 1fr;
+    }
+    
+    .interface-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .setup-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .arcane-btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .players-list {
+        gap: 0.5rem;
+    }
+    
+    .player-card {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .image-choices {
+        grid-template-columns: 1fr;
+    }
+    
+    .main-image {
+        max-height: 250px;
+    }
+    
+    .result-content {
+        gap: 0.75rem;
+    }
+}
+
+@@media (max-width: 480px) {
+    .picture-explanation-container {
+        padding: 10px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .image-choices {
+        gap: 0.5rem;
+    }
+    
+    .choice-image {
+        height: 100px;
+    }
+}
+</style>

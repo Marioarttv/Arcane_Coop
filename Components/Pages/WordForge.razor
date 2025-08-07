@@ -1,0 +1,1648 @@
+@page "/word-forge"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Arcane_Coop.Hubs
+@using Arcane_Coop.Models
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<PageTitle>Word-Forge: Affix Workshop</PageTitle>
+
+<div class="wordforge-container">
+    <div class="header-section">
+        <h1 class="game-title">⚒️ Word-Forge</h1>
+        <p class="game-subtitle">Affix Workshop - Caitlyn & Vi</p>
+        <p class="game-description">Forge new words by combining roots and affixes on Jayce's mystical anvil</p>
+    </div>
+    
+    <div class="connection-status">
+        <strong>Connection Status:</strong> 
+        <span class="@(IsConnected ? "text-success" : "text-danger")">
+            @(IsConnected ? "Connected" : "Disconnected")
+        </span>
+    </div>
+
+    @if (!inGame)
+    {
+        <div class="game-setup">
+            <div class="setup-form">
+                <div class="input-group">
+                    <label for="roomInput" class="form-label">Workshop ID:</label>
+                    <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter workshop code" />
+                </div>
+                <div class="input-group">
+                    <label for="nameInput" class="form-label">Wordsmith Name:</label>
+                    <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+                </div>
+                <div class="input-group">
+                    <label for="modeSelect" class="form-label">Workshop Mode:</label>
+                    <select @bind="selectedMode" id="modeSelect" class="form-control">
+                        <option value="Assisted">Assisted Mode - Shows target definitions</option>
+                        <option value="Freeform">Free-form Mode - Discover combinations yourself</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setup-buttons">
+                <button class="arcane-btn arcane-btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    🚪 Join Room
+                </button>
+                <button class="arcane-btn arcane-btn-success" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    ⚒️ Start Forging
+                </button>
+            </div>
+
+            <!-- Instructions Section -->
+            <div class="instructions-section">
+                <h3>🛠️ How to Play</h3>
+                <div class="instruction-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <h4>Join the Workshop</h4>
+                            <p>Both players enter the same Workshop ID and choose their mode</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <h4>Get Your Elements</h4>
+                            <p><strong>Piltover (Caitlyn):</strong> Receives root words to drag<br>
+                            <strong>Zaunite (Vi):</strong> Receives affixes (prefixes/suffixes) to drag</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <h4>Forge on the Anvil</h4>
+                            <p>Drag your elements to the central anvil. When both slots are filled, forge the word!</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <div class="step-content">
+                            <h4>Complete the Collection</h4>
+                            <p>Successfully forge all 5 target words to complete the workshop</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (inRoom && !inGame)
+        {
+            <div class="lobby-section">
+                <div class="lobby-header">
+                    <h4>👥 Workshop Team</h4>
+                </div>
+                <div class="players-list">
+                    @foreach (var player in connectedPlayers)
+                    {
+                        <div class="player-card">
+                            <div class="player-icon">⚒️</div>
+                            <div class="player-name">@player</div>
+                        </div>
+                    }
+                    @if (connectedPlayers.Count < 2)
+                    {
+                        <div class="player-card waiting">
+                            <div class="player-icon">⏳</div>
+                            <div class="player-name">Waiting for forge partner...</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    @if (inGame && playerView != null)
+    {
+        <div class="game-interface @playerView.Role.ToLower()">
+            @if (playerView.Role == "Piltover")
+            {
+                <!-- Piltover Player: Root Words Interface -->
+                <div class="piltover-interface">
+                    <div class="interface-header">
+                        <div class="character-info">
+                            <img src="/images/cait.jpeg" alt="Caitlyn" class="character-portrait" />
+                            <div class="character-details">
+                                <h3>@playerView.DisplayName</h3>
+                                <p class="role-subtitle">Master Wordsmith</p>
+                            </div>
+                        </div>
+                        <div class="progress-info">
+                            @if (gameState != null)
+                            {
+                                <span class="progress-counter">@gameState.CompletedCombinations/@gameState.TotalCombinations Words Forged</span>
+                                @if (gameState.IsCompleted)
+                                {
+                                    <span class="status-badge success">✅ WORKSHOP COMPLETE</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge active">⚒️ FORGING IN PROGRESS</span>
+                                }
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-panel piltover-instruction">
+                        <p>@playerView.Instruction</p>
+                        <p><strong>Elements Remaining:</strong> @playerView.ElementsRemaining</p>
+                    </div>
+                    
+                    <!-- Root Words Pool -->
+                    <div class="elements-pool">
+                        <h4>📚 Root Words</h4>
+                        <div class="elements-draggable-container">
+                            @if (playerView.AvailableElements != null)
+                            {
+                                <Dropzone Items="@rootPoolItems" 
+                                          Class="elements-dropzone piltover-dropzone" 
+                                          Accepts="@((element, targetZone) => true)">
+                                    <div class="draggable-element root-element" draggable="true">
+                                        <div class="element-text">@context.Text</div>
+                                        <div class="element-description">@context.Description</div>
+                                    </div>
+                                </Dropzone>
+                            }
+                        </div>
+                    </div>
+                    
+                    @if (playerView.Mode == GameMode.Assisted && playerView.TargetCombinations != null)
+                    {
+                        <div class="targets-panel">
+                            <h4>🎯 Target Words</h4>
+                            <div class="target-list">
+                                @foreach (var target in playerView.TargetCombinations)
+                                {
+                                    <div class="target-card @(target.IsCompleted ? "completed" : "")">
+                                        <div class="target-word">@target.ResultWord</div>
+                                        <div class="target-definition">@target.Definition</div>
+                                        @if (target.IsCompleted)
+                                        {
+                                            <div class="completed-badge">✅</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (playerView.Role == "Zaunite")
+            {
+                <!-- Zaunite Player: Affixes Interface -->
+                <div class="zaunite-interface">
+                    <div class="interface-header">
+                        <div class="character-info">
+                            <img src="/images/vi.jpeg" alt="Vi" class="character-portrait" />
+                            <div class="character-details">
+                                <h3>@playerView.DisplayName</h3>
+                                <p class="role-subtitle">Affix Specialist</p>
+                            </div>
+                        </div>
+                        <div class="progress-info">
+                            @if (gameState != null)
+                            {
+                                <span class="progress-counter">@gameState.CompletedCombinations/@gameState.TotalCombinations Words Forged</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-panel zaunite-instruction">
+                        <p>@playerView.Instruction</p>
+                        <p><strong>Elements Remaining:</strong> @playerView.ElementsRemaining</p>
+                    </div>
+                    
+                    <!-- Affixes Pool -->
+                    <div class="elements-pool">
+                        <h4>🔧 Affixes</h4>
+                        <div class="elements-draggable-container">
+                            @if (playerView.AvailableElements != null)
+                            {
+                                <Dropzone Items="@affixPoolItems" 
+                                          Class="elements-dropzone zaunite-dropzone" 
+                                          Accepts="@((element, targetZone) => true)">
+                                    <div class="draggable-element affix-element" draggable="true">
+                                        <div class="element-text">@context.Text</div>
+                                        <div class="element-description">@context.Description</div>
+                                    </div>
+                                </Dropzone>
+                            }
+                        </div>
+                    </div>
+                    
+                    @if (playerView.Mode == GameMode.Assisted && playerView.TargetCombinations != null)
+                    {
+                        <div class="targets-panel">
+                            <h4>🎯 Target Words</h4>
+                            <div class="target-list">
+                                @foreach (var target in playerView.TargetCombinations)
+                                {
+                                    <div class="target-card @(target.IsCompleted ? "completed" : "")">
+                                        <div class="target-word">@target.ResultWord</div>
+                                        <div class="target-definition">@target.Definition</div>
+                                        @if (target.IsCompleted)
+                                        {
+                                            <div class="completed-badge">✅</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            
+            <!-- Shared Anvil Section -->
+            <div class="anvil-section">
+                <div class="anvil-container">
+                    <h3>⚔️ Jayce's Mystical Anvil</h3>
+                    <div class="anvil-workspace">
+                        <!-- Root Slot -->
+                        <div class="anvil-slot root-slot">
+                            <h5>Root Word</h5>
+                            <Dropzone Items="@anvilRootItems" 
+                                      Class="slot-dropzone root-dropzone" 
+                                      MaxItems="1"
+                                      OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "root"))"
+                                      Accepts="@((element, targetZone) => element.Type == WordElementType.Root)">
+                                @if (context != null)
+                                {
+                                    <div class="placed-element root-placed">
+                                        <span class="element-text">@context.Text</span>
+                                        <span class="element-desc">@context.Description</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="slot-placeholder">
+                                        <span class="placeholder-icon">📚</span>
+                                        <p>Drop root word here</p>
+                                    </div>
+                                }
+                            </Dropzone>
+                        </div>
+                        
+                        <!-- Forge Symbol -->
+                        <div class="forge-symbol">
+                            <span class="plus-sign">+</span>
+                        </div>
+                        
+                        <!-- Affix Slot -->
+                        <div class="anvil-slot affix-slot">
+                            <h5>Affix</h5>
+                            <Dropzone Items="@anvilAffixItems" 
+                                      Class="slot-dropzone affix-dropzone" 
+                                      MaxItems="1"
+                                      OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "affix"))"
+                                      Accepts="@((element, targetZone) => element.Type == WordElementType.Prefix || element.Type == WordElementType.Suffix)">
+                                @if (context != null)
+                                {
+                                    <div class="placed-element affix-placed">
+                                        <span class="element-text">@context.Text</span>
+                                        <span class="element-desc">@context.Description</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="slot-placeholder">
+                                        <span class="placeholder-icon">🔧</span>
+                                        <p>Drop affix here</p>
+                                    </div>
+                                }
+                            </Dropzone>
+                        </div>
+                        
+                        <!-- Forge Arrow -->
+                        <div class="forge-arrow">
+                            <span class="arrow">→</span>
+                        </div>
+                        
+                        <!-- Result Area -->
+                        <div class="result-area">
+                            <h5>Forged Word</h5>
+                            <div class="result-display">
+                                @if (playerView?.AnvilState?.IsComplete == true)
+                                {
+                                    <div class="potential-word">
+                                        @GetPotentialWord()
+                                        <button class="forge-btn" @onclick="ForgeWord" disabled="@(!playerView.AnvilState.IsComplete)">
+                                            ⚡ FORGE!
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="forge-placeholder">
+                                        <span class="placeholder-text">?</span>
+                                        <p>Place both elements to forge</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            @if (playerView?.IsCompleted == true)
+            {
+                <div class="completion-section">
+                    <div class="completion-animation">
+                        <div class="forge-complete">⚒️✨⚒️</div>
+                        <h3>🎉 Workshop Complete!</h3>
+                        <p>All words have been successfully forged! The mystical anvil gleams with accomplished power.</p>
+                    </div>
+                    
+                    <div class="completed-words">
+                        <h4>🏆 Forged Words:</h4>
+                        <div class="completed-list">
+                            @if (playerView.CompletedCombinations != null)
+                            {
+                                @foreach (var completed in playerView.CompletedCombinations)
+                                {
+                                    <div class="completed-word">
+                                        <span class="word">@completed.ResultWord</span>
+                                        <span class="definition">@completed.Definition</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    
+                    <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
+                        🔄 Forge New Words
+                    </button>
+                </div>
+            }
+            else
+            {
+                <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
+                    🔄 Reset Workshop
+                </button>
+            }
+        </div>
+    }
+    
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="status-overlay">
+            <div class="status-message @statusClass">
+                @statusMessage
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Connection and SignalR
+    private HubConnection? hubConnection;
+    private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+    
+    // Game state
+    private string roomId = "";
+    private string playerName = "";
+    private string selectedMode = "Assisted";
+    private bool inRoom = false;
+    private bool inGame = false;
+    private WordForgePlayerView? playerView;
+    private WordForgeGameState? gameState;
+    
+    // UI feedback
+    private string statusMessage = "";
+    private string statusClass = "";
+    
+    // Player tracking
+    private List<string> connectedPlayers = new List<string>();
+    
+    // Drag and Drop collections for anvil
+    private List<WordElement> rootPoolItems = new List<WordElement>();
+    private List<WordElement> affixPoolItems = new List<WordElement>();
+    private List<WordElement> anvilRootItems = new List<WordElement>();
+    private List<WordElement> anvilAffixItems = new List<WordElement>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
+            .Build();
+
+        // Basic room event handlers
+        hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
+        {
+            if (!connectedPlayers.Contains(name))
+            {
+                connectedPlayers.Add(name);
+            }
+            if (connectionId != hubConnection.ConnectionId)
+            {
+                ShowStatus($"{name} joined the workshop", "info");
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
+        {
+            connectedPlayers.Remove(name);
+            ShowStatus($"{name} left the workshop", "info");
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Room state handler to get all current players when joining
+        hubConnection.On<List<string>>("RoomState", (playerNames) =>
+        {
+            connectedPlayers.Clear();
+            connectedPlayers.AddRange(playerNames);
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Word-Forge game event handlers
+        hubConnection.On<string, WordForgePlayerView>("WordForgeGameJoined", (role, view) =>
+        {
+            inGame = true;
+            playerView = view;
+            UpdateElementPools();
+            ShowStatus($"Joined as {view.DisplayName}", "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<WordForgeGameState>("WordForgeGameStateUpdated", (newGameState) =>
+        {
+            gameState = newGameState;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<WordForgePlayerView>("WordForgePlayerViewUpdated", (newView) =>
+        {
+            playerView = newView;
+            UpdateElementPools();
+            UpdateAnvilSlots();
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("WordForgeCombinationSuccess", (message) =>
+        {
+            ShowStatus($"✨ {message}", "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("WordForgeCombinationFailed", (message) =>
+        {
+            ShowStatus($"❌ {message}", "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("WordForgeGameCompleted", (message) =>
+        {
+            ShowStatus($"🎉 {message}", "success");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("WordForgeInvalidAction", (message) =>
+        {
+            ShowStatus(message, "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("WordForgeGameFull", () =>
+        {
+            ShowStatus("Workshop is full - maximum 2 wordsmiths", "warning");
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinRoom()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinRoom", roomId, playerName);
+            inRoom = true;
+            if (!connectedPlayers.Contains(playerName))
+            {
+                connectedPlayers.Add(playerName);
+            }
+            ShowStatus($"Joined workshop: {roomId}", "info");
+        }
+    }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await hubConnection.SendAsync("JoinWordForgeGame", roomId, playerName, selectedMode);
+        }
+    }
+
+    private async void OnAnvilDrop(WordElement element, string slotType)
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("PlaceElementOnAnvil", roomId, element.Id, slotType);
+        }
+        StateHasChanged();
+    }
+
+    private async Task ForgeWord()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("ForgeWordCombination", roomId);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("RestartWordForgeGame", roomId);
+            
+            // Clear local collections
+            rootPoolItems.Clear();
+            affixPoolItems.Clear();
+            anvilRootItems.Clear();
+            anvilAffixItems.Clear();
+            
+            ShowStatus("Workshop reset - ready for new forging!", "info");
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateElementPools()
+    {
+        if (playerView?.AvailableElements != null)
+        {
+            if (playerView.Role == "Piltover")
+            {
+                rootPoolItems.Clear();
+                rootPoolItems.AddRange(playerView.AvailableElements);
+            }
+            else if (playerView.Role == "Zaunite")
+            {
+                affixPoolItems.Clear();
+                affixPoolItems.AddRange(playerView.AvailableElements);
+            }
+        }
+    }
+
+    private void UpdateAnvilSlots()
+    {
+        if (playerView?.AnvilState != null)
+        {
+            // Update anvil slots
+            anvilRootItems.Clear();
+            anvilAffixItems.Clear();
+            
+            if (playerView.AnvilState.RootElement != null)
+            {
+                anvilRootItems.Add(playerView.AnvilState.RootElement);
+            }
+            
+            if (playerView.AnvilState.AffixElement != null)
+            {
+                anvilAffixItems.Add(playerView.AnvilState.AffixElement);
+            }
+        }
+    }
+
+    private string GetPotentialWord()
+    {
+        if (playerView?.AnvilState?.IsComplete == true)
+        {
+            var root = playerView.AnvilState.RootElement!.Text;
+            var affix = playerView.AnvilState.AffixElement!.Text;
+            
+            // Simple word formation logic
+            if (affix.StartsWith("-")) // suffix
+            {
+                return root + affix.Substring(1);
+            }
+            else if (affix.EndsWith("-")) // prefix
+            {
+                return affix.Substring(0, affix.Length - 1) + root;
+            }
+            
+            return root + affix;
+        }
+        
+        return "?";
+    }
+
+    private void ShowStatus(string message, string type)
+    {
+        statusMessage = message;
+        statusClass = type;
+        
+        // Auto-hide status after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            statusMessage = "";
+            statusClass = "";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+<style>
+/* Word-Forge: Affix Workshop Styling */
+.wordforge-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
+    color: #ffffff;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    padding: 20px;
+    padding-bottom: 3rem;
+}
+
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem 0;
+}
+
+.game-title {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #c89b3c, #f0e6d2, #c8aa6e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 10px rgba(200, 155, 60, 0.3);
+}
+
+.game-subtitle {
+    font-size: 1.4rem;
+    color: #c8aa6e;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.game-description {
+    font-size: 1rem;
+    color: #cdbe91;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.connection-status {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 10px;
+    border: 2px solid #c8aa6e;
+    backdrop-filter: blur(10px);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+}
+
+.text-success {
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.text-danger {
+    color: #ff4444 !important;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+.game-setup {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.setup-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group:last-child {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    color: #c8aa6e;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+    color: #f0e6d2;
+    padding: 0.75rem 1rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: #c8aa6e;
+    box-shadow: 0 0 0 0.2rem rgba(200, 170, 110, 0.25);
+    color: #f0e6d2;
+    outline: none;
+}
+
+.setup-buttons {
+    text-align: center;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.arcane-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.arcane-btn-primary {
+    background: linear-gradient(45deg, #c89b3c, #c8aa6e);
+    color: #0a0e27;
+    border: 2px solid #c8aa6e;
+    box-shadow: 0 4px 15px rgba(200, 155, 60, 0.3);
+}
+
+.arcane-btn-success {
+    background: linear-gradient(45deg, #00ff88, #00cc6a);
+    color: #0a0e27;
+    border: 2px solid #00ff88;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.arcane-btn-warning {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    color: #ffffff;
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.arcane-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.arcane-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Instructions Section */
+.instructions-section {
+    margin-top: 2rem;
+    background: rgba(0, 153, 153, 0.1);
+    border: 1px solid #00c8c8;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.instructions-section h3 {
+    color: #00ff88;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.3rem;
+}
+
+.instruction-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(200, 170, 110, 0.2);
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: #c8aa6e;
+    color: #0a0e27;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    color: #f0e6d2;
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.step-content p {
+    color: #cdbe91;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+/* Lobby Section */
+.lobby-section {
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: 2rem auto 0;
+}
+
+.lobby-header h4 {
+    color: #c8aa6e;
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.player-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid #00ff88;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+.player-card.waiting {
+    background: rgba(200, 170, 110, 0.05);
+    border-color: rgba(200, 170, 110, 0.5);
+    opacity: 0.7;
+}
+
+.player-icon {
+    font-size: 1.2rem;
+    color: #00ff88;
+}
+
+.player-card.waiting .player-icon {
+    color: #c8aa6e;
+    animation: pulse-waiting 2s infinite;
+}
+
+.player-name {
+    color: #f0e6d2;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+@@keyframes pulse-waiting {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Game Interface */
+.game-interface {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    min-height: 80vh;
+}
+
+.piltover-interface, .zaunite-interface {
+    background: rgba(26, 26, 46, 0.6);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.piltover-interface {
+    border: 2px solid #c8aa6e;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
+}
+
+.zaunite-interface {
+    border: 2px solid #00c8c8;
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.1), rgba(0, 200, 200, 0.05));
+}
+
+.interface-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.character-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.character-portrait {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c8aa6e;
+}
+
+.character-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #f0e6d2;
+}
+
+.role-subtitle {
+    margin: 0;
+    color: #c8aa6e;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.progress-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.progress-counter {
+    color: #00ff88;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.status-badge.success {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.status-badge.active {
+    background: rgba(200, 155, 60, 0.2);
+    color: #c8aa6e;
+    border: 1px solid #c8aa6e;
+}
+
+.instruction-panel {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.piltover-instruction {
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.15), rgba(240, 230, 210, 0.05));
+    border: 1px solid #c8aa6e;
+    color: #f0e6d2;
+}
+
+.zaunite-instruction {
+    background: linear-gradient(135deg, rgba(0, 153, 153, 0.15), rgba(0, 200, 200, 0.05));
+    border: 1px solid #00c8c8;
+    color: #e0ffff;
+}
+
+/* Elements Pool */
+.elements-pool {
+    margin-bottom: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.elements-pool h4 {
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.piltover-interface .elements-pool h4 {
+    color: #c8aa6e;
+}
+
+.zaunite-interface .elements-pool h4 {
+    color: #00c8c8;
+}
+
+.elements-draggable-container {
+    min-height: 120px;
+}
+
+.elements-dropzone {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    min-height: 100px;
+    padding: 1rem;
+    border: 2px dashed;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.piltover-dropzone {
+    border-color: rgba(200, 170, 110, 0.5);
+    background: rgba(200, 155, 60, 0.05);
+}
+
+.zaunite-dropzone {
+    border-color: rgba(0, 200, 200, 0.5);
+    background: rgba(0, 200, 200, 0.05);
+}
+
+.elements-dropzone.plk-dd-dragging-over {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(200, 155, 60, 0.3);
+}
+
+.piltover-dropzone.plk-dd-dragging-over {
+    border-color: #c8aa6e;
+    background: rgba(200, 155, 60, 0.15);
+}
+
+.zaunite-dropzone.plk-dd-dragging-over {
+    border-color: #00c8c8;
+    background: rgba(0, 200, 200, 0.15);
+}
+
+/* Draggable Elements */
+.draggable-element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    border: 2px solid;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.root-element {
+    border-color: #c8aa6e;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.2), rgba(240, 230, 210, 0.05));
+}
+
+.affix-element {
+    border-color: #00c8c8;
+    background: linear-gradient(135deg, rgba(0, 200, 200, 0.2), rgba(0, 153, 153, 0.05));
+}
+
+.draggable-element:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
+}
+
+.draggable-element.plk-dd-in-transit {
+    opacity: 0.7;
+    transform: rotate(3deg);
+    cursor: grabbing;
+}
+
+.element-text {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #f0e6d2;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.element-description {
+    font-size: 0.75rem;
+    color: #cdbe91;
+    opacity: 0.9;
+    font-style: italic;
+}
+
+/* Target Words Panel */
+.targets-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.targets-panel h4 {
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #00ff88;
+    font-size: 1.1rem;
+}
+
+.target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.target-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.target-card.completed {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: #00ff88;
+    opacity: 0.8;
+}
+
+.target-word {
+    font-weight: 700;
+    color: #f0e6d2;
+    font-size: 0.9rem;
+}
+
+.target-definition {
+    font-size: 0.8rem;
+    color: #cdbe91;
+    font-style: italic;
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.completed-badge {
+    color: #00ff88;
+    font-size: 1rem;
+}
+
+/* Anvil Section - Spans full width */
+.anvil-section {
+    grid-column: 1 / -1;
+    background: rgba(26, 26, 46, 0.8);
+    border: 3px solid #c8aa6e;
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    margin-top: 2rem;
+}
+
+.anvil-container h3 {
+    text-align: center;
+    color: #c8aa6e;
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 10px rgba(200, 155, 60, 0.3);
+}
+
+.anvil-workspace {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.anvil-slot {
+    text-align: center;
+}
+
+.anvil-slot h5 {
+    color: #c8aa6e;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.slot-dropzone {
+    min-height: 120px;
+    width: 150px;
+    border: 3px dashed;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.root-dropzone {
+    border-color: #c8aa6e;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.02));
+}
+
+.affix-dropzone {
+    border-color: #00c8c8;
+    background: linear-gradient(135deg, rgba(0, 200, 200, 0.1), rgba(0, 153, 153, 0.02));
+}
+
+.slot-dropzone.plk-dd-dragging-over {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(200, 155, 60, 0.4);
+}
+
+.root-dropzone.plk-dd-dragging-over {
+    border-color: #c89b3c;
+    background: rgba(200, 155, 60, 0.2);
+}
+
+.affix-dropzone.plk-dd-dragging-over {
+    border-color: #00ff88;
+    background: rgba(0, 200, 200, 0.2);
+}
+
+.placed-element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.root-placed {
+    background: rgba(200, 155, 60, 0.3);
+    border: 2px solid #c8aa6e;
+}
+
+.affix-placed {
+    background: rgba(0, 200, 200, 0.3);
+    border: 2px solid #00c8c8;
+}
+
+.placed-element .element-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.placed-element .element-desc {
+    font-size: 0.8rem;
+    color: #cdbe91;
+    font-style: italic;
+}
+
+.slot-placeholder {
+    text-align: center;
+    color: #888;
+    opacity: 0.7;
+}
+
+.placeholder-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.slot-placeholder p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* Forge Symbols */
+.forge-symbol, .forge-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c8aa6e;
+    font-size: 2rem;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(200, 155, 60, 0.5);
+}
+
+/* Result Area */
+.result-area {
+    text-align: center;
+}
+
+.result-area h5 {
+    color: #c8aa6e;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.result-display {
+    min-height: 120px;
+    width: 200px;
+    border: 3px dashed #c8aa6e;
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(255, 193, 7, 0.05));
+}
+
+.potential-word {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #f0e6d2;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.forge-btn {
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    color: #ffffff;
+    border: 2px solid #ff6b35;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-family: 'Orbitron', sans-serif;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.forge-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.forge-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.forge-placeholder {
+    text-align: center;
+    color: #888;
+    opacity: 0.7;
+}
+
+.placeholder-text {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.forge-placeholder p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #999;
+}
+
+/* Completion Section */
+.completion-section {
+    grid-column: 1 / -1;
+    background: rgba(0, 255, 136, 0.1);
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.completion-animation {
+    margin-bottom: 2rem;
+}
+
+.forge-complete {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: forge-sparkle 2s infinite;
+}
+
+@@keyframes forge-sparkle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.completion-animation h3 {
+    color: #00ff88;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.completion-animation p {
+    color: #f0e6d2;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.completed-words {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.completed-words h4 {
+    color: #c8aa6e;
+    margin-bottom: 1rem;
+}
+
+.completed-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.completed-word {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #00ff88;
+    border-radius: 6px;
+}
+
+.completed-word .word {
+    font-weight: 700;
+    color: #f0e6d2;
+    font-size: 1rem;
+}
+
+.completed-word .definition {
+    font-size: 0.85rem;
+    color: #cdbe91;
+    font-style: italic;
+}
+
+.reset-btn {
+    margin-top: 1rem;
+    align-self: center;
+}
+
+/* Status Overlay */
+.status-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.status-message {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-width: 200px;
+    text-align: center;
+}
+
+.status-message.success {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+}
+
+.status-message.warning {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid #ffc107;
+    color: #ffc107;
+}
+
+.status-message.info {
+    background: rgba(0, 123, 255, 0.2);
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+/* Responsive Design */
+@@media (max-width: 1200px) {
+    .anvil-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .forge-symbol, .forge-arrow {
+        font-size: 1.5rem;
+    }
+}
+
+@@media (max-width: 768px) {
+    .wordforge-container {
+        padding: 10px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .setup-form {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .game-interface {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .interface-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .instruction-steps {
+        grid-template-columns: 1fr;
+    }
+    
+    .setup-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .completed-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@@media (max-width: 480px) {
+    .game-title {
+        font-size: 1.8rem;
+    }
+    
+    .anvil-container h3 {
+        font-size: 1.4rem;
+    }
+    
+    .slot-dropzone, .result-display {
+        width: 120px;
+        min-height: 100px;
+    }
+    
+    .potential-word {
+        font-size: 1rem;
+    }
+    
+    .forge-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
