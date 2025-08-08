@@ -219,26 +219,30 @@
                         <!-- Root Slot -->
                         <div class="anvil-slot root-slot">
                             <h5>Root Word</h5>
-                            <Dropzone Items="@anvilRootItems" 
-                                      Class="slot-dropzone root-dropzone" 
-                                      MaxItems="1"
-                                      OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "root"))"
-                                      Accepts="@((element, targetZone) => element.Type == WordElementType.Root)">
-                                @if (context != null)
-                                {
+                            @if (playerView?.AnvilState?.RootElement != null)
+                            {
+                                <!-- Display only - no dragging allowed -->
+                                <div class="slot-dropzone root-dropzone filled">
                                     <div class="placed-element root-placed">
-                                        <span class="element-text">@context.Text</span>
-                                        <span class="element-desc">@context.Description</span>
+                                        <span class="element-text">@playerView.AnvilState.RootElement.Text</span>
+                                        <span class="element-desc">@playerView.AnvilState.RootElement.Description</span>
                                     </div>
-                                }
-                                else
-                                {
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Active dropzone for empty slot -->
+                                <Dropzone Items="@(new List<WordElement>())" 
+                                          Class="slot-dropzone root-dropzone" 
+                                          MaxItems="1"
+                                          OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "root"))"
+                                          Accepts="@((element, targetZone) => element.Type == WordElementType.Root)">
                                     <div class="slot-placeholder">
                                         <span class="placeholder-icon">📚</span>
                                         <p>Drop root word here</p>
                                     </div>
-                                }
-                            </Dropzone>
+                                </Dropzone>
+                            }
                         </div>
                         
                         <!-- Forge Symbol -->
@@ -249,26 +253,30 @@
                         <!-- Affix Slot -->
                         <div class="anvil-slot affix-slot">
                             <h5>Affix</h5>
-                            <Dropzone Items="@anvilAffixItems" 
-                                      Class="slot-dropzone affix-dropzone" 
-                                      MaxItems="1"
-                                      OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "affix"))"
-                                      Accepts="@((element, targetZone) => element.Type == WordElementType.Prefix || element.Type == WordElementType.Suffix)">
-                                @if (context != null)
-                                {
+                            @if (playerView?.AnvilState?.AffixElement != null)
+                            {
+                                <!-- Display only - no dragging allowed -->
+                                <div class="slot-dropzone affix-dropzone filled">
                                     <div class="placed-element affix-placed">
-                                        <span class="element-text">@context.Text</span>
-                                        <span class="element-desc">@context.Description</span>
+                                        <span class="element-text">@playerView.AnvilState.AffixElement.Text</span>
+                                        <span class="element-desc">@playerView.AnvilState.AffixElement.Description</span>
                                     </div>
-                                }
-                                else
-                                {
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Active dropzone for empty slot -->
+                                <Dropzone Items="@(new List<WordElement>())" 
+                                          Class="slot-dropzone affix-dropzone" 
+                                          MaxItems="1"
+                                          OnItemDrop="@((WordElement element) => OnAnvilDrop(element, "affix"))"
+                                          Accepts="@((element, targetZone) => element.Type == WordElementType.Prefix || element.Type == WordElementType.Suffix)">
                                     <div class="slot-placeholder">
                                         <span class="placeholder-icon">🔧</span>
                                         <p>Drop affix here</p>
                                     </div>
-                                }
-                            </Dropzone>
+                                </Dropzone>
+                            }
                         </div>
                         
                         <!-- Forge Arrow -->
@@ -388,11 +396,9 @@
     // Player tracking
     private List<string> connectedPlayers = new List<string>();
     
-    // Drag and Drop collections for anvil
+    // Drag and Drop collections for word banks
     private List<WordElement> rootPoolItems = new List<WordElement>();
     private List<WordElement> affixPoolItems = new List<WordElement>();
-    private List<WordElement> anvilRootItems = new List<WordElement>();
-    private List<WordElement> anvilAffixItems = new List<WordElement>();
     
     protected override async Task OnInitializedAsync()
     {
@@ -457,7 +463,6 @@
             {
                 playerView = newView;
                 UpdateElementPools();
-                UpdateAnvilSlots();
                 StateHasChanged();
             });
         });
@@ -549,6 +554,7 @@
         }
     }
 
+
     private async Task RestartGame()
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
@@ -558,8 +564,6 @@
             // Clear local collections
             rootPoolItems.Clear();
             affixPoolItems.Clear();
-            anvilRootItems.Clear();
-            anvilAffixItems.Clear();
             
             ShowStatus("Workshop reset - ready for new forging!", "info");
             StateHasChanged();
@@ -584,25 +588,6 @@
         }
     }
 
-    private void UpdateAnvilSlots()
-    {
-        if (playerView?.AnvilState != null)
-        {
-            // Update anvil slots
-            anvilRootItems.Clear();
-            anvilAffixItems.Clear();
-            
-            if (playerView.AnvilState.RootElement != null)
-            {
-                anvilRootItems.Add(playerView.AnvilState.RootElement);
-            }
-            
-            if (playerView.AnvilState.AffixElement != null)
-            {
-                anvilAffixItems.Add(playerView.AnvilState.AffixElement);
-            }
-        }
-    }
 
 
     private void ShowStatus(string message, string type)
@@ -1225,6 +1210,11 @@
     box-shadow: 0 0 25px rgba(200, 155, 60, 0.4);
 }
 
+.slot-dropzone.filled {
+    border-style: solid;
+    cursor: default;
+}
+
 .root-dropzone.plk-dd-dragging-over {
     border-color: #c89b3c;
     background: rgba(200, 155, 60, 0.2);
@@ -1265,6 +1255,7 @@
     color: #cdbe91;
     font-style: italic;
 }
+
 
 .slot-placeholder {
     text-align: center;

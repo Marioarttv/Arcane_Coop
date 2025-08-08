@@ -865,6 +865,28 @@ public class GameHub : Hub
         }
     }
 
+    public async Task RemoveElementFromAnvil(string roomId, string elementId, string slotType)
+    {
+        if (_wordForgeGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.RemoveElement(Context.ConnectionId, elementId, slotType);
+            if (result.Success)
+            {
+                // Update player views
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+                
+                await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("WordForgeInvalidAction", result.Message);
+            }
+        }
+    }
+
     public async Task ForgeWordCombination(string roomId)
     {
         if (_wordForgeGames.TryGetValue(roomId, out var game))
@@ -3160,6 +3182,35 @@ public class WordForgeGame
         }
 
         return (true, "Element placed on anvil");
+    }
+
+    public (bool Success, string Message) RemoveElement(string connectionId, string elementId, string slotType)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+
+        var playerRole = Players[connectionId];
+        
+        // Validate player can only remove their own element types
+        if (slotType == "root" && playerRole != PlayerRole.Piltover)
+            return (false, "Only Piltover players can remove root elements");
+        
+        if (slotType == "affix" && playerRole != PlayerRole.Zaunite)
+            return (false, "Only Zaunite players can remove affix elements");
+        
+        // Remove element from anvil
+        if (slotType == "root" && CurrentAnvil.RootElement != null && CurrentAnvil.RootElement.Id == elementId)
+        {
+            CurrentAnvil.RootElement = null;
+            return (true, "Root element removed from anvil");
+        }
+        else if (slotType == "affix" && CurrentAnvil.AffixElement != null && CurrentAnvil.AffixElement.Id == elementId)
+        {
+            CurrentAnvil.AffixElement = null;
+            return (true, "Affix element removed from anvil");
+        }
+        
+        return (false, "Element not found on anvil or doesn't belong to you");
     }
 
     public ForgeAttempt ForgeAttempt(string connectionId)
