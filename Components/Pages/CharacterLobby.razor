@@ -1,0 +1,761 @@
+@page "/lobby/{role}"
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<div class="character-lobby @GetRoleClass()">
+    <!-- Background -->
+    <div class="lobby-background">
+        <div class="bg-overlay"></div>
+        <div class="atmospheric-effects"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="lobby-content">
+        <!-- Header Section -->
+        <div class="lobby-header">
+            <h1 class="lobby-title">
+                @if (selectedRole == "zaun")
+                {
+                    <span class="zaun-title">ZAUN OPERATIVE</span>
+                    <span class="subtitle">Underground Network Access</span>
+                }
+                else
+                {
+                    <span class="piltover-title">PILTOVER AGENT</span>
+                    <span class="subtitle">Hextech Command Interface</span>
+                }
+            </h1>
+            <div class="role-badge @GetRoleClass()">
+                <span class="badge-icon">@(selectedRole == "zaun" ? "⚡" : "⚙️")</span>
+                <span>@(selectedRole.ToUpper()) ALLIANCE</span>
+            </div>
+        </div>
+
+        <!-- Character Customization Section -->
+        <div class="customization-section">
+            <div class="customization-grid">
+                <!-- Profile Picture Selection -->
+                <div class="profile-section">
+                    <h3>Choose Your Avatar</h3>
+                    <div class="avatar-grid">
+                        @foreach (var avatar in GetAvailableAvatars())
+                        {
+                            <div class="avatar-option @(selectedAvatar == avatar.Index ? "selected" : "")" 
+                                 @onclick="() => SelectAvatar(avatar.Index)">
+                                <img src="@avatar.ImagePath" 
+                                     alt="@avatar.Name" 
+                                     class="avatar-image" />
+                                <div class="avatar-overlay">
+                                    @if (selectedAvatar == avatar.Index)
+                                    {
+                                        <div class="selected-indicator">✓</div>
+                                    }
+                                    <div class="avatar-name">@avatar.Name</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Character Details -->
+                <div class="details-section">
+                    <div class="input-group">
+                        <label for="characterName" class="input-label">Operative Codename</label>
+                        <input type="text" 
+                               id="characterName" 
+                               class="character-input @GetRoleClass()" 
+                               @bind="characterName" 
+                               @bind:event="oninput"
+                               placeholder="@(selectedRole == "zaun" ? "Street Name..." : "Agent ID...")"
+                               maxlength="20" />
+                        <div class="input-decoration"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="squadName" class="input-label">Squad Designation</label>
+                        <input type="text" 
+                               id="squadName" 
+                               class="character-input @GetRoleClass()" 
+                               @bind="squadName" 
+                               @bind:event="oninput"
+                               placeholder="@(selectedRole == "zaun" ? "Gang Tag..." : "Unit Name...")"
+                               maxlength="15" />
+                        <div class="input-decoration"></div>
+                        <small class="input-help">This will be your lobby name for all multiplayer missions</small>
+                    </div>
+
+                    <!-- Character Preview -->
+                    <div class="character-preview">
+                        <h4>Mission Brief Preview</h4>
+                        <div class="preview-card @GetRoleClass()">
+                            <div class="preview-avatar">
+                                <img src="@GetSelectedAvatarImage()" 
+                                     alt="Selected Avatar" 
+                                     class="preview-image" />
+                            </div>
+                            <div class="preview-info">
+                                <div class="preview-name">@(string.IsNullOrWhiteSpace(characterName) ? "Unnamed Operative" : characterName)</div>
+                                <div class="preview-role">@(selectedRole == "zaun" ? "Zaun Underground" : "Piltover Command")</div>
+                                <div class="preview-squad">Squad: @(string.IsNullOrWhiteSpace(squadName) ? "No Squad" : squadName)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mission Selection -->
+        <div class="mission-section">
+            <h3>Select Your First Mission</h3>
+            <div class="mission-grid">
+                <div class="mission-card story-mission" @onclick="StartStoryMode">
+                    <div class="mission-icon">📖</div>
+                    <h4>Story Campaign</h4>
+                    <p>Begin the full narrative experience with visual novel sequences and progressive multiplayer challenges.</p>
+                    <div class="mission-badge recommended">RECOMMENDED</div>
+                </div>
+
+                <div class="mission-card quick-missions">
+                    <div class="mission-icon">⚡</div>
+                    <h4>Quick Missions</h4>
+                    <p>Jump directly into multiplayer puzzles:</p>
+                    <div class="quick-mission-list">
+                        <button class="quick-mission-btn @GetRoleClass()" @onclick='() => StartQuickMission("code-cracker")'>
+                            Code Cracker
+                        </button>
+                        <button class="quick-mission-btn @GetRoleClass()" @onclick='() => StartQuickMission("signal-decoder")'>
+                            Signal Decoder
+                        </button>
+                        <button class="quick-mission-btn @GetRoleClass()" @onclick='() => StartQuickMission("navigation-maze")'>
+                            Navigation Maze
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="navigation-controls">
+            <button class="nav-btn back-btn" @onclick="GoBack">
+                <span class="btn-icon">←</span>
+                <span>Back to Alliance Selection</span>
+            </button>
+
+            <button class="nav-btn continue-btn @GetRoleClass()" 
+                    @onclick="StartStoryMode" 
+                    disabled="@(!IsFormValid())">
+                <span>Begin Story Campaign</span>
+                <span class="btn-icon">→</span>
+                <div class="btn-effect"></div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Character Lobby Styles */
+.character-lobby {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Rajdhani', sans-serif;
+    color: #fff;
+    overflow-y: auto;
+}
+
+.character-lobby.zaun {
+    --primary-color: #00d4aa;
+    --secondary-color: #0f3427;
+    --accent-color: #00ffc8;
+    --bg-gradient: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+}
+
+.character-lobby.piltover {
+    --primary-color: #c8aa6e;
+    --secondary-color: #2c1810;
+    --accent-color: #ffd700;
+    --bg-gradient: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.lobby-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-gradient);
+    z-index: 1;
+}
+
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.atmospheric-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 50%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 200, 0.05) 0%, transparent 50%);
+}
+
+.lobby-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Header Section */
+.lobby-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.lobby-title {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.zaun-title {
+    color: var(--primary-color);
+    text-shadow: 0 0 20px var(--accent-color)30;
+}
+
+.piltover-title {
+    color: var(--primary-color);
+    text-shadow: 0 0 20px var(--accent-color)30;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    font-family: 'Orbitron', monospace;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 25px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    margin-top: 1rem;
+    box-shadow: 0 0 20px var(--primary-color)20;
+}
+
+/* Customization Section */
+.customization-section {
+    flex: 1;
+}
+
+.customization-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.profile-section h3,
+.details-section h4 {
+    font-family: 'Orbitron', monospace;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Avatar Selection */
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.avatar-option {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+}
+
+.avatar-option:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.avatar-option.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 25px var(--primary-color)50;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.avatar-option:hover .avatar-overlay,
+.avatar-option.selected .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 0.5rem;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.selected-indicator {
+    background: var(--primary-color);
+    color: #000;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+/* Input Styling */
+.input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.input-label {
+    display: block;
+    font-family: 'Orbitron', monospace;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+}
+
+.character-input {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.character-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-color)30;
+}
+
+.character-input.zaun:focus {
+    box-shadow: 0 0 15px #00d4aa30;
+}
+
+.character-input.piltover:focus {
+    box-shadow: 0 0 15px #c8aa6e30;
+}
+
+.input-decoration {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.character-input:focus + .input-decoration {
+    width: 100%;
+}
+
+.input-help {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Character Preview */
+.character-preview {
+    margin-top: 2rem;
+}
+
+.preview-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(20, 20, 20, 0.2) 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.preview-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--primary-color);
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-info {
+    flex: 1;
+}
+
+.preview-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.preview-role,
+.preview-squad {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.2rem;
+}
+
+/* Mission Section */
+.mission-section h3 {
+    font-family: 'Orbitron', monospace;
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mission-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.mission-card {
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.mission-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 30px var(--primary-color)20;
+    transform: translateY(-5px);
+}
+
+.mission-card.story-mission {
+    background: linear-gradient(135deg, var(--primary-color)10 0%, rgba(20, 20, 20, 0.4) 100%);
+}
+
+.mission-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.mission-card h4 {
+    font-family: 'Orbitron', monospace;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.mission-card p {
+    opacity: 0.9;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.mission-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.8rem;
+    background: var(--primary-color);
+    color: #000;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.quick-mission-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quick-mission-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.quick-mission-btn:hover {
+    background: var(--primary-color);
+    color: #000;
+}
+
+/* Navigation Controls */
+.navigation-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.continue-btn {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: #000;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-color)30;
+}
+
+.continue-btn:hover:not(:disabled) {
+    box-shadow: 0 0 30px var(--primary-color)50;
+    transform: translateY(-2px);
+}
+
+.continue-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-effect {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.continue-btn:hover:not(:disabled) .btn-effect {
+    left: 100%;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .lobby-content {
+        padding: 1rem;
+    }
+    
+    .lobby-title {
+        font-size: 2rem;
+    }
+    
+    .customization-grid,
+    .mission-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .navigation-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@@media (max-width: 480px) {
+    .lobby-title {
+        font-size: 1.5rem;
+    }
+    
+    .avatar-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+@code {
+    [Parameter] public string Role { get; set; } = "";
+    
+    private string selectedRole = "";
+    private int selectedAvatar = 1;
+    private string characterName = "";
+    private string squadName = "";
+
+    public class AvatarOption
+    {
+        public int Index { get; set; }
+        public string Name { get; set; } = "";
+        public string ImagePath { get; set; } = "";
+    }
+
+    protected override void OnInitialized()
+    {
+        selectedRole = Role?.ToLower() ?? "zaun";
+    }
+
+    private List<AvatarOption> GetAvailableAvatars()
+    {
+        if (selectedRole == "zaun")
+        {
+            return new List<AvatarOption>
+            {
+                new AvatarOption { Index = 1, Name = "Vi", ImagePath = "/images/Vi.jpeg" },
+                new AvatarOption { Index = 2, Name = "Caitlyn", ImagePath = "/images/Cait.jpeg" },
+                new AvatarOption { Index = 3, Name = "Street Fighter", ImagePath = "/images/Vi.jpeg" } // Placeholder
+            };
+        }
+        else
+        {
+            return new List<AvatarOption>
+            {
+                new AvatarOption { Index = 1, Name = "Jayce", ImagePath = "/images/Jayce.jpeg" },
+                new AvatarOption { Index = 2, Name = "Viktor", ImagePath = "/images/Viktor.jpeg" },
+                new AvatarOption { Index = 3, Name = "Enforcer", ImagePath = "/images/Cait.jpeg" } // Placeholder
+            };
+        }
+    }
+
+    private string GetSelectedAvatarImage()
+    {
+        var avatars = GetAvailableAvatars();
+        var selectedAvatarOption = avatars.FirstOrDefault(a => a.Index == selectedAvatar);
+        return selectedAvatarOption?.ImagePath ?? avatars.First().ImagePath;
+    }
+
+    private void SelectAvatar(int avatarIndex)
+    {
+        selectedAvatar = avatarIndex;
+    }
+
+    private string GetRoleClass()
+    {
+        return selectedRole == "zaun" ? "zaun" : "piltover";
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(characterName) && 
+               !string.IsNullOrWhiteSpace(squadName) &&
+               characterName.Length >= 2 &&
+               squadName.Length >= 2;
+    }
+
+    private void StartStoryMode()
+    {
+        if (!IsFormValid()) return;
+        
+        var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}";
+        NavigationManager.NavigateTo($"/story-campaign?{parameters}");
+    }
+
+    private void StartQuickMission(string mission)
+    {
+        if (!IsFormValid()) return;
+        
+        var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}";
+        NavigationManager.NavigateTo($"/{mission}?{parameters}");
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

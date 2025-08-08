@@ -1,4 +1,5 @@
 @page "/picture-explanation"
+@page "/picture-explanation/{*parameters}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
@@ -10,8 +11,22 @@
 
 <div class="picture-explanation-container">
     <div class="header-section">
-        <h2 class="game-title">🖼️ Picture Explanation Challenge</h2>
-        <p class="game-subtitle">Voice Chat Visual Communication - Describe, Hide, Choose!</p>
+        @if (isFromStory)
+        {
+            <h2 class="game-title">🔍 Visual Intelligence Analysis</h2>
+            <p class="game-subtitle">Emergency Briefing - Analyze corrupted surveillance footage</p>
+            <div class="story-context">
+                <div class="story-badge @GetRoleThemeClass()">
+                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
+                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h2 class="game-title">🖼️ Picture Explanation Challenge</h2>
+            <p class="game-subtitle">Voice Chat Visual Communication - Describe, Hide, Choose!</p>
+        }
     </div>
     
     <div class="connection-status mb-3">
@@ -332,6 +347,8 @@
 </div>
 
 @code {
+    [Parameter] public string? Parameters { get; set; }
+    
     // Connection and SignalR
     private HubConnection? hubConnection;
     private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
@@ -347,6 +364,12 @@
     // UI state
     private PictureRoundResult? lastRoundResult;
     
+    // URL parameters
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
+    
     // UI feedback
     private string statusMessage = "";
     private string statusClass = "";
@@ -355,6 +378,46 @@
     private List<string> connectedPlayers = new List<string>();
     
     protected override async Task OnInitializedAsync()
+    {
+        // Parse URL parameters if provided
+        ParseUrlParameters();
+        
+        // Initialize SignalR connection
+        await InitializeConnection();
+        
+        // Auto-connect if parameters are provided
+        if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
+    }
+
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            playerRole = query["role"] ?? "";
+            playerAvatar = query["avatar"] ?? "";
+            var name = query["name"];
+            var squad = query["squad"];
+            isFromStory = query["story"] == "true";
+            
+            if (!string.IsNullOrEmpty(name))
+                playerName = Uri.UnescapeDataString(name);
+            
+            if (!string.IsNullOrEmpty(squad))
+                roomId = Uri.UnescapeDataString(squad);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeConnection()
     {
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
@@ -436,6 +499,37 @@
         });
 
         await hubConnection.StartAsync();
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            // Small delay to ensure connection is established
+            await Task.Delay(500);
+            
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(200); // Brief delay between operations
+                await JoinGame();
+                
+                if (isFromStory)
+                {
+                    ShowStatus("Continuing story campaign - Visual Intelligence Analysis phase initiated", "info");
+                }
+                else
+                {
+                    ShowStatus("Auto-connecting to your squad...", "info");
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-connect failed: {ex.Message}");
+            ShowStatus("Auto-connection failed, please join manually", "warning");
+        }
     }
 
     private async Task JoinRoom()
@@ -550,6 +644,11 @@
         });
     }
 
+    private string GetRoleThemeClass()
+    {
+        return playerRole == "zaun" ? "story-badge-zaun" : "story-badge-piltover";
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (hubConnection is not null)
@@ -588,6 +687,39 @@
     font-size: 1.2rem;
     color: #c8aa6e;
     margin-bottom: 0;
+}
+
+/* Story Context Styling */
+.story-context {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.story-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+    border-radius: 25px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.story-badge-zaun {
+    border: 2px solid #00d4aa;
+    color: #00d4aa;
+    box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+}
+
+.story-badge-piltover {
+    border: 2px solid #c8aa6e;
+    color: #c8aa6e;
+    box-shadow: 0 0 20px rgba(200, 170, 110, 0.3);
 }
 
 .connection-status {

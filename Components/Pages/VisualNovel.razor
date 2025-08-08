@@ -284,9 +284,9 @@
         return currentScene == null || state.CurrentDialogueIndex >= currentScene.DialogueLines.Count - 1;
     }
 
-    private async Task InvokeStateChanged()
+    private Task InvokeStateChanged()
     {
-        await OnStateChanged.InvokeAsync(state);
+        return OnStateChanged.InvokeAsync(state);
     }
 
     private string GetFormattedText()

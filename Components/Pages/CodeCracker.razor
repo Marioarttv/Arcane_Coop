@@ -1,4 +1,5 @@
 @page "/code-cracker"
+@page "/code-cracker/{*parameters}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
@@ -1127,6 +1128,8 @@
 </style>
 
 @code {
+    [Parameter] public string? Parameters { get; set; }
+    
     private HubConnection? hubConnection;
     private List<string> messages = new();
     private string roomId = "";
@@ -1148,6 +1151,46 @@
     private string clueAnimationClass = "";
 
     protected override async Task OnInitializedAsync()
+    {
+        // Parse URL parameters if provided
+        ParseUrlParameters();
+        
+        // Auto-connect and join if parameters are provided
+        await InitializeConnection();
+        
+        if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
+    }
+
+    private void ParseUrlParameters()
+    {
+        if (string.IsNullOrEmpty(Parameters)) return;
+        
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            var role = query["role"];
+            var avatar = query["avatar"];
+            var name = query["name"];
+            var squad = query["squad"];
+            
+            if (!string.IsNullOrEmpty(name))
+                playerName = Uri.UnescapeDataString(name);
+            
+            if (!string.IsNullOrEmpty(squad))
+                roomId = Uri.UnescapeDataString(squad);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeConnection()
     {
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
@@ -1314,6 +1357,29 @@
         });
 
         await hubConnection.StartAsync();
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            // Small delay to ensure connection is established
+            await Task.Delay(500);
+            
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(200); // Brief delay between operations
+                await JoinGame();
+                
+                gameStatus = "Auto-connecting to your squad...";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-connect failed: {ex.Message}");
+        }
     }
 
     private async Task JoinRoom()

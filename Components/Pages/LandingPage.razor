@@ -1075,17 +1075,10 @@
 
     private bool isAudioEnabled = true;
 
-    private async Task SelectCity(City selectedCity)
+    private void SelectCity(City selectedCity)
     {
-       //Todo implement city selection logic here
-        if (selectedCity == City.Zaun)
-        {
-            // Navigate to Zaun game page
-        }
-        else if (selectedCity == City.Piltover)
-        {
-            // Navigate to Piltover game page
-        }
+        var role = selectedCity == City.Zaun ? "zaun" : "piltover";
+        NavigationManager.NavigateTo($"/lobby/{role}");
     }
 
     private void ToggleAudio()
