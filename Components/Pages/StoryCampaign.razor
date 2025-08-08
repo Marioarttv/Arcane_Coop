@@ -14,6 +14,16 @@
                      Configuration="@novelConfig" 
                      OnSceneComplete="@OnSceneComplete"
                      OnStateChanged="@OnStateChanged" />
+        
+        <!-- Debug: Manual continue button -->
+        @if (novelState.IsTextFullyDisplayed && novelState.CurrentDialogueIndex >= (currentScene.DialogueLines.Count - 1))
+        {
+            <div class="manual-continue">
+                <button class="continue-story-btn @GetThemeClass()" @onclick="OnSceneComplete">
+                    Continue to Visual Intelligence Analysis →
+                </button>
+            </div>
+        }
     }
     else if (showTransition)
     {
@@ -193,6 +203,52 @@
 
 @@keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Manual Continue Button */
+.manual-continue {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 10000;
+}
+
+.continue-story-btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.continue-story-btn.zaun {
+    background: linear-gradient(135deg, #00d4aa 0%, #00ffc8 100%);
+    color: #000;
+    border: 2px solid #00d4aa;
+}
+
+.continue-story-btn.piltover {
+    background: linear-gradient(135deg, #c8aa6e 0%, #ffd700 100%);
+    color: #000;
+    border: 2px solid #c8aa6e;
+}
+
+.continue-story-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.continue-story-btn.zaun:hover {
+    box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+}
+
+.continue-story-btn.piltover:hover {
+    box-shadow: 0 6px 20px rgba(200, 170, 110, 0.4);
 }
 
 /* Responsive Design */
@@ -395,16 +451,24 @@
 
     private async Task OnSceneComplete()
     {
+        Console.WriteLine($"Scene completed! Current index: {currentSceneIndex}, Total: {storyProgression.Count}");
+        
         currentSceneIndex++;
         
         if (currentSceneIndex < storyProgression.Count)
         {
             var nextPhase = storyProgression[currentSceneIndex];
+            Console.WriteLine($"Next phase: {nextPhase}");
             
             if (nextPhase == "picture_explanation_transition")
             {
+                Console.WriteLine("Transitioning to Picture Explanation...");
                 await TransitionToPictureExplanation();
             }
+        }
+        else
+        {
+            Console.WriteLine("Story progression completed");
         }
     }
 
@@ -426,6 +490,7 @@
     private void OnStateChanged(VisualNovelState state)
     {
         novelState = state;
+        Console.WriteLine($"Novel state changed - Current dialogue: {state.CurrentDialogueIndex}, Text displayed: {state.IsTextFullyDisplayed}");
     }
 
     private string GetThemeClass()
