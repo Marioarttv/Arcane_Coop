@@ -3095,6 +3095,24 @@ public class WordForgeGame
     public AnvilSlot CurrentAnvil { get; set; } = new();
     public GameMode Mode { get; set; } = GameMode.Assisted;
     public bool IsGameCompleted { get; set; } = false;
+    
+    // Instance copy of target combinations for this game
+    public WordCombination[] GameTargetCombinations { get; set; }
+
+    public WordForgeGame()
+    {
+        // Create fresh copy of target combinations for this game instance
+        GameTargetCombinations = TargetCombinations.Select(tc => new WordCombination
+        {
+            Id = tc.Id,
+            RootId = tc.RootId,
+            AffixId = tc.AffixId,
+            ResultWord = tc.ResultWord,
+            Definition = tc.Definition,
+            Order = tc.Order,
+            IsCompleted = false // Start fresh
+        }).ToArray();
+    }
 
     public string? AddPlayer(string connectionId, string playerName, GameMode mode)
     {
@@ -3152,7 +3170,7 @@ public class WordForgeGame
         var rootId = CurrentAnvil.RootElement!.Id;
         var affixId = CurrentAnvil.AffixElement!.Id;
 
-        var targetCombo = TargetCombinations.FirstOrDefault(tc => 
+        var targetCombo = GameTargetCombinations.FirstOrDefault(tc => 
             tc.RootId == rootId && tc.AffixId == affixId && !tc.IsCompleted);
 
         if (targetCombo != null)
@@ -3167,7 +3185,7 @@ public class WordForgeGame
             CurrentAnvil.RootElement = null;
             CurrentAnvil.AffixElement = null;
 
-            if (CompletedCombinations.Count >= TargetCombinations.Length)
+            if (CompletedCombinations.Count >= GameTargetCombinations.Length)
             {
                 IsGameCompleted = true;
             }
@@ -3219,7 +3237,7 @@ public class WordForgeGame
                 : "Drag affixes to the anvil to combine with roots!",
             AvailableElements = GetPlayerElements(role).Where(e => !e.IsUsed).ToArray(),
             AnvilState = CurrentAnvil,
-            TargetCombinations = Mode == GameMode.Assisted ? TargetCombinations : Array.Empty<WordCombination>(),
+            TargetCombinations = Mode == GameMode.Assisted ? GameTargetCombinations : Array.Empty<WordCombination>(),
             CompletedCombinations = CompletedCombinations.ToArray(),
             ElementsRemaining = GetPlayerElements(role).Count(e => !e.IsUsed),
             IsCompleted = IsGameCompleted,
