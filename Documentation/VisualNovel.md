@@ -338,6 +338,40 @@ The Act1 Emergency Briefing scene demonstrates the full choice system with:
 2. **Provide clear Continue flow**: Players should always know how to progress after seeing choice results
 3. **Use role restrictions wisely**: Don't lock players out unnecessarily
 
+### Debugging Choice Trees
+
+The system includes comprehensive console logging for debugging dialogue flow and choice trees:
+
+#### **Client-Side Logging (Act1Multiplayer)**
+- **Dialogue Progression**: Every dialogue line displays with speaker, ID, and choice indicators
+- **Choice Selection**: Logs player name, role, choice text, and choice ID when selections are made
+
+#### **Server-Side Logging (GameHub)**  
+- **Branch Navigation**: Shows when choices trigger branches vs sequential flow
+- **Branch Errors**: Alerts when `NextDialogueId` references missing dialogue IDs
+- **Game State Changes**: Logs all consequence applications with key-value pairs
+- **Character Expressions**: Tracks expression changes from choice results
+- **Dialogue Continuation**: Shows normal progression between dialogue lines
+
+#### **Example Console Output**
+```
+[Act1Multiplayer] Dialogue #5: vi (ID: approach_choice) [CHOICE POINT] - "How should we approach this crisis?"
+[Act1Multiplayer] CHOICE MADE: Alex (zaun) selected "We go in quiet. Use the maintenance tunnels - I know every back route." (ID: stealth_approach)
+[Act1GameHub] CONSEQUENCES: Applying 1 game state changes:
+  - approach = stealth
+[Act1GameHub] EXPRESSION: Vi expression changed Default → Determined  
+[Act1GameHub] BRANCH TAKEN: Choice 'We go in quiet. Use the maintenance tunnels - I know every back route.' (ID: stealth_approach) → branching to dialogue ID 'stealth_response' (index: 12)
+[Act1Multiplayer] Dialogue #12: caitlyn (ID: stealth_response) - "Smart. The element of surprise could give us the edge we need. I'll mark the blind spots in their surveillance."
+```
+
+#### **Using the Debug Output**
+1. **Open browser Developer Tools** (F12) → Console tab
+2. **Filter by component**: Search for `[Act1Multiplayer]` or `[Act1GameHub]`
+3. **Track dialogue flow**: Verify dialogue indices progress correctly
+4. **Verify branches**: Ensure `NextDialogueId` values match actual dialogue IDs
+5. **Monitor state**: Check that consequences are applied as expected
+6. **Debug missing branches**: Look for "BRANCH ERROR" messages indicating broken references
+
 ## Configuration Options
 
 ### VisualNovelConfig

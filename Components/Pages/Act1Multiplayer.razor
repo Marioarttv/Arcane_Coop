@@ -473,6 +473,10 @@
                 lastSelectedChoiceId = choice?.ChoiceId ?? lastSelectedChoiceId;
                 lastChoiceBy = choice?.PlayerName;
                 lastChoiceText = choice?.ChoiceText;
+                
+                // Console log choice selection for debugging
+                Console.WriteLine($"[Act1Multiplayer] CHOICE MADE: {choice?.PlayerName} ({choice?.PlayerRole}) selected \"{choice?.ChoiceText}\" (ID: {choice?.ChoiceId})");
+                
                 if (!string.IsNullOrEmpty(lastChoiceText))
                 {
                     // Cancel any running typewriter animation
@@ -529,6 +533,13 @@
             playerView.GameState.CurrentDialogueIndex < playerView.CurrentScene.DialogueLines.Count)
         {
             currentDialogue = playerView.CurrentScene.DialogueLines[playerView.GameState.CurrentDialogueIndex];
+            
+            // Console log dialogue progression for debugging
+            var speaker = currentDialogue.CharacterId ?? "Narrator";
+            var choiceInfo = currentDialogue.IsPlayerChoice ? " [CHOICE POINT]" : "";
+            var dialogueId = !string.IsNullOrEmpty(currentDialogue.Id) ? $" (ID: {currentDialogue.Id})" : "";
+            Console.WriteLine($"[Act1Multiplayer] Dialogue #{playerView.GameState.CurrentDialogueIndex}: {speaker}{dialogueId}{choiceInfo} - \"{currentDialogue.Text}\"");
+            
             UpdateCharacterStates();
         }
     }

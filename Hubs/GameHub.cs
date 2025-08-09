@@ -1608,7 +1608,16 @@ public class GameHub : Hub
             }
             
             game.RecordAction();
+            var oldIndex = game.GameState.CurrentDialogueIndex;
             game.GameState.CurrentDialogueIndex++;
+            
+            // Log dialogue progression for debugging
+            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
+            var speaker = currentDialogue.CharacterId ?? "Narrator";
+            var choiceInfo = currentDialogue.IsPlayerChoice ? " [CHOICE POINT]" : "";
+            var dialogueId = !string.IsNullOrEmpty(currentDialogue.Id) ? $" (ID: {currentDialogue.Id})" : "";
+            Console.WriteLine($"[Act1GameHub] CONTINUE: Dialogue #{oldIndex} → #{game.GameState.CurrentDialogueIndex}: {speaker}{dialogueId}{choiceInfo} - \"{currentDialogue.Text}\"");
+            
             game.GameState.IsTextFullyDisplayed = false;
             game.IsTextAnimating = true;
             game.TextAnimationStartTime = DateTime.UtcNow;
@@ -1799,9 +1808,11 @@ public class GameHub : Hub
             // Apply any consequences
             if (selectedChoice.Consequences != null && selectedChoice.Consequences.Count > 0)
             {
+                Console.WriteLine($"[Act1GameHub] CONSEQUENCES: Applying {selectedChoice.Consequences.Count} game state changes:");
                 foreach (var consequence in selectedChoice.Consequences)
                 {
                     game.GameState.GameState[consequence.Key] = consequence.Value;
+                    Console.WriteLine($"  - {consequence.Key} = {consequence.Value}");
                 }
             }
             
@@ -1811,7 +1822,9 @@ public class GameHub : Hub
                 var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
                 if (character != null)
                 {
+                    var oldExpression = character.CurrentExpression;
                     character.CurrentExpression = selectedChoice.ResultExpression.Value;
+                    Console.WriteLine($"[Act1GameHub] EXPRESSION: {character.DisplayName} expression changed {oldExpression} → {selectedChoice.ResultExpression.Value}");
                 }
             }
             
@@ -1822,16 +1835,19 @@ public class GameHub : Hub
                 var nextIndex = game.CurrentScene.DialogueLines.FindIndex(d => d.Id == selectedChoice.NextDialogueId);
                 if (nextIndex >= 0)
                 {
+                    Console.WriteLine($"[Act1GameHub] BRANCH TAKEN: Choice '{selectedChoice.Text}' (ID: {choiceId}) → branching to dialogue ID '{selectedChoice.NextDialogueId}' (index: {nextIndex})");
                     game.GameState.CurrentDialogueIndex = nextIndex;
                 }
                 else
                 {
+                    Console.WriteLine($"[Act1GameHub] BRANCH ERROR: Choice '{selectedChoice.Text}' references missing dialogue ID '{selectedChoice.NextDialogueId}', falling back to next sequential dialogue");
                     // Default to next dialogue
                     game.GameState.CurrentDialogueIndex++;
                 }
             }
             else
             {
+                Console.WriteLine($"[Act1GameHub] SEQUENTIAL FLOW: Choice '{selectedChoice.Text}' (ID: {choiceId}) → continuing to next dialogue in sequence");
                 // Move to the next dialogue in sequence
                 game.GameState.CurrentDialogueIndex++;
             }
