@@ -140,7 +140,15 @@
             <div class="dialogue-section">
                 <div class="dialogue-box @GetDialogueBoxClass()">
                     <!-- Character Name -->
-                    @if (GetCurrentSpeaker() != null)
+                    @if (!string.IsNullOrEmpty(lastChoiceText))
+                    {
+                        <div class="character-name-tag choice-name-tag @GetNameTagClass()">
+                            <span class="character-name">@lastChoiceBy</span>
+                            <span class="choice-indicator-small">CHOICE</span>
+                            <div class="name-tag-decoration"></div>
+                        </div>
+                    }
+                    else if (GetCurrentSpeaker() != null)
                     {
                         <div class="character-name-tag @GetNameTagClass()">
                             <span class="character-name">@GetCurrentSpeaker()?.DisplayName</span>
@@ -152,7 +160,7 @@
                     <div class="dialogue-content">
                         <div class="dialogue-text-container">
                             <div class="dialogue-text @GetTextAnimationClass()">
-                                @((MarkupString)GetFormattedText())
+                                @((MarkupString)(!string.IsNullOrEmpty(lastChoiceText) ? lastChoiceText.Replace("\n","<br/>") : GetFormattedText()))
                             </div>
                         </div>
                     </div>
@@ -256,6 +264,18 @@
     private bool isTypewriting = false;
     private int currentTextIndex = 0;
     private string? lastSelectedChoiceId = null;
+    private string? lastChoiceBy = null;
+    private string? lastChoiceText = null;
+
+    // DTO for choice events to avoid dynamic binder issues
+    private class ChoiceMadeDto
+    {
+        public string? PlayerId { get; set; }
+        public string? PlayerName { get; set; }
+        public string? PlayerRole { get; set; }
+        public string? ChoiceId { get; set; }
+        public string? ChoiceText { get; set; }
+    }
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
@@ -326,6 +346,14 @@
                 {
                     _ = ScheduleLocalTransitionFallback();
                 }
+                // When a new line starts animating, clear any lingering choice overlay text
+                if (playerView?.IsTextAnimating == true)
+                {
+                    lastChoiceBy = null;
+                    lastChoiceText = null;
+                    lastSelectedChoiceId = null;
+                    _ = StartTypewriterAnimation();
+                }
             });
         });
 
@@ -334,6 +362,9 @@
             await InvokeAsync(() =>
             {
                 CancelTypewriter();
+                // Clear any previous choice display when skipping to the end of the current line
+                lastChoiceBy = null;
+                lastChoiceText = null;
                 if (currentDialogue != null)
                 {
                     displayedText = currentDialogue.Text;
@@ -347,6 +378,10 @@
             await InvokeAsync(() =>
             {
                 CancelTypewriter();
+                // New dialogue started, clear prior choice display
+                lastChoiceBy = null;
+                lastChoiceText = null;
+                lastSelectedChoiceId = null;
                 displayedText = "";
                 UpdateCurrentDialogue();
                 _ = StartTypewriterAnimation();
@@ -387,6 +422,9 @@
             await InvokeAsync(() =>
             {
                 CancelTypewriter();
+                lastChoiceBy = null;
+                lastChoiceText = null;
+                lastSelectedChoiceId = null;
                 displayedText = "";
                 UpdateCurrentDialogue();
                 _ = StartTypewriterAnimation();
@@ -421,15 +459,24 @@
             });
         });
         
-        // Choice-related SignalR handlers
-        hubConnection.On<dynamic>("Act1ChoiceMade", async (choiceData) =>
+        // Choice-related SignalR handlers (strongly-typed to avoid runtime binder exceptions)
+        hubConnection.On<ChoiceMadeDto>("Act1ChoiceMade", async (choice) =>
         {
             await InvokeAsync(() =>
             {
-                // Store the choice that was made
-                lastSelectedChoiceId = choiceData.ChoiceId?.ToString();
-                
-                // The server will send updated game state next
+                lastSelectedChoiceId = choice?.ChoiceId ?? lastSelectedChoiceId;
+                lastChoiceBy = choice?.PlayerName;
+                lastChoiceText = choice?.ChoiceText;
+                if (!string.IsNullOrEmpty(lastChoiceText))
+                {
+                    // Cancel any running typewriter animation
+                    CancelTypewriter();
+                    // Show choice text immediately and mark it fully displayed locally
+                    displayedText = lastChoiceText!;
+                    // Add emphasis to indicate this is a player choice
+                    lastChoiceText = $"🗨️ {lastChoiceText}";
+                    // Do NOT mutate server-sent flags here; server will broadcast proper state and continue
+                }
                 StateHasChanged();
             });
         });
@@ -1350,6 +1397,70 @@
 }
 
 /********************************************
+ * Enhanced Choice Display
+ ********************************************/
+.choice-name-tag {
+    background: linear-gradient(135deg, rgba(30, 15, 0, 0.9) 0%, rgba(40, 25, 5, 0.8) 100%) !important;
+    box-shadow: 
+        inset 0 0 0 2px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5) !important;
+    animation: choiceTagPulse 2s ease-in-out infinite;
+}
+
+.choice-name-tag.name-tag-zaun {
+    background: linear-gradient(135deg, rgba(0, 20, 15, 0.9) 0%, rgba(5, 30, 20, 0.8) 100%) !important;
+    box-shadow: 
+        inset 0 0 0 2px rgba(0, 212, 170, 0.9),
+        0 0 25px rgba(0, 212, 170, 0.5) !important;
+}
+
+.choice-indicator-small {
+    font-size: 0.7rem;
+    margin-left: 8px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+@@keyframes choiceTagPulse {
+    0%, 100% { 
+        transform: translateX(0) scale(1);
+        box-shadow: 
+            inset 0 0 0 2px rgba(200, 170, 110, 0.9),
+            0 0 25px rgba(200, 170, 110, 0.5);
+    }
+    50% { 
+        transform: translateX(0) scale(1.02);
+        box-shadow: 
+            inset 0 0 0 2px rgba(200, 170, 110, 1),
+            0 0 35px rgba(200, 170, 110, 0.7);
+    }
+}
+
+.choice-name-tag.name-tag-zaun {
+    animation: choiceTagPulseZaun 2s ease-in-out infinite;
+}
+
+@@keyframes choiceTagPulseZaun {
+    0%, 100% { 
+        transform: translateX(0) scale(1);
+        box-shadow: 
+            inset 0 0 0 2px rgba(0, 212, 170, 0.9),
+            0 0 25px rgba(0, 212, 170, 0.5);
+    }
+    50% { 
+        transform: translateX(0) scale(1.02);
+        box-shadow: 
+            inset 0 0 0 2px rgba(0, 212, 170, 1),
+            0 0 35px rgba(0, 212, 170, 0.7);
+    }
+}
+
+/********************************************
  * Dialogue Content
  ********************************************/
 .dialogue-text {
@@ -1621,27 +1732,6 @@
     50% { opacity: 1; }
 }
 
-.choice-timer {
-    display: inline-block;
-    margin-top: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 0, 0, 0.1);
-    border: 1px solid rgba(255, 0, 0, 0.5);
-    border-radius: 4px;
-}
-
-.timer-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #ff6b6b;
-    margin-right: 0.5rem;
-}
-
-.timer-label {
-    font-size: 0.9rem;
-    opacity: 0.8;
-}
-
 .choice-options {
     display: flex;
     flex-direction: column;
@@ -1730,9 +1820,6 @@
     text-transform: uppercase;
 }
 
-.choice-button.timed {
-    border-color: rgba(255, 100, 100, 0.5);
-}
 
 .waiting-for-choice {
     text-align: center;

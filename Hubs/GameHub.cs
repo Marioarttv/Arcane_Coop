@@ -1494,6 +1494,17 @@ public class GameHub : Hub
                     IsTextFullyDisplayed = false
                 };
             }
+            // Ensure scene is always set even for second player
+            else if (game.CurrentScene == null)
+            {
+                game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+                game.GameState = new VisualNovelState 
+                { 
+                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentDialogueIndex = 0,
+                    IsTextFullyDisplayed = false
+                };
+            }
             
             // Start game when 2 players joined
             if (game.Players.Count == 2)
@@ -1841,7 +1852,11 @@ public class GameHub : Hub
                 ChoiceText = selectedChoice.Text
             });
             
-            // Update game state for all players
+            // After choice is made, mark text as fully displayed so both players can continue
+            game.IsTextAnimating = false;
+            game.GameState.IsTextFullyDisplayed = true;
+            
+            // Update game state for all players - they should now be able to continue
             await BroadcastAct1GameState(roomId);
         }
         catch (Exception ex)
@@ -1850,63 +1865,6 @@ public class GameHub : Hub
         }
     }
     
-    public async Task RequestAct1ChoiceTimeout(string roomId)
-    {
-        try
-        {
-            if (!_act1Games.TryGetValue(roomId, out var game))
-            {
-                await Clients.Caller.SendAsync("Act1Error", "Game not found");
-                return;
-            }
-            
-            // Check if there's a timed choice that has expired
-            if (game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count)
-            {
-                return;
-            }
-            
-            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
-            if (!currentDialogue.IsPlayerChoice || currentDialogue.Choices.Count == 0)
-            {
-                return;
-            }
-            
-            // Find any timed choice
-            var timedChoice = currentDialogue.Choices.FirstOrDefault(c => c.IsTimeLimited);
-            if (timedChoice == null)
-            {
-                return;
-            }
-            
-            // Auto-select the first available choice or a default
-            var defaultChoice = currentDialogue.Choices.FirstOrDefault();
-            if (defaultChoice != null)
-            {
-                currentDialogue.SelectedChoiceId = defaultChoice.Id;
-                
-                // Move to next dialogue
-                game.GameState.CurrentDialogueIndex++;
-                game.GameState.IsTextFullyDisplayed = false;
-                game.IsTextAnimating = true;
-                game.TextAnimationStartTime = DateTime.UtcNow;
-                game.RecordAction();
-                
-                // Notify all players of the timeout
-                await Clients.Group(roomId).SendAsync("Act1ChoiceTimeout", new
-                {
-                    ChoiceId = defaultChoice.Id,
-                    ChoiceText = defaultChoice.Text
-                });
-                
-                await BroadcastAct1GameState(roomId);
-            }
-        }
-        catch (Exception ex)
-        {
-            await Clients.Caller.SendAsync("Act1Error", $"Failed to handle choice timeout: {ex.Message}");
-        }
-    }
 
     private async Task BroadcastAct1GameState(string roomId)
     {
@@ -1936,24 +1894,29 @@ public class GameHub : Hub
             var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
             if (currentDialogue.IsPlayerChoice && currentDialogue.Choices.Count > 0 && game.GameState.IsTextFullyDisplayed)
             {
-                pendingChoice = currentDialogue;
-                
-                // Check if this player can make the choice
-                if (string.IsNullOrEmpty(currentDialogue.ChoiceOwnerRole))
+                // Only show as pending choice if no choice has been made yet
+                if (string.IsNullOrEmpty(currentDialogue.SelectedChoiceId))
                 {
-                    // Either player can make the choice
-                    canMakeChoice = true;
+                    pendingChoice = currentDialogue;
+                    
+                    // Check if this player can make the choice
+                    if (string.IsNullOrEmpty(currentDialogue.ChoiceOwnerRole))
+                    {
+                        // Either player can make the choice
+                        canMakeChoice = true;
+                    }
+                    else if (player.PlayerRole.Equals(currentDialogue.ChoiceOwnerRole, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // This player is the designated choice maker
+                        canMakeChoice = true;
+                    }
+                    else
+                    {
+                        // Other player is making the choice
+                        isWaitingForOtherPlayer = true;
+                    }
                 }
-                else if (player.PlayerRole.Equals(currentDialogue.ChoiceOwnerRole, StringComparison.OrdinalIgnoreCase))
-                {
-                    // This player is the designated choice maker
-                    canMakeChoice = true;
-                }
-                else
-                {
-                    // Other player is making the choice
-                    isWaitingForOtherPlayer = true;
-                }
+                // If choice has already been made, don't show it as pending (allows continue)
             }
         }
         
@@ -2069,6 +2032,71 @@ public class GameHub : Hub
                 TypewriterSpeed = 45,
                 SpeakerExpression = CharacterExpression.Serious
             },
+            // Player choice - Zaun player decides the approach
+            new DialogueLine
+            {
+                Id = "approach_choice",
+                CharacterId = "vi",
+                Text = "How should we approach this crisis?",
+                IsPlayerChoice = true,
+                ChoiceOwnerRole = "zaun", // Only Zaun player can make this choice
+                Choices = new List<DialogueChoice>
+                {
+                    new DialogueChoice
+                    {
+                        Id = "stealth_approach",
+                        Text = "We go in quiet. Use the maintenance tunnels - I know every back route.",
+                        NextDialogueId = "stealth_response",
+                        ResultExpression = CharacterExpression.Determined,
+                        Consequences = new Dictionary<string, object> { { "approach", "stealth" } }
+                    },
+                    new DialogueChoice
+                    {
+                        Id = "direct_approach",
+                        Text = "No time for subtlety. We hit them hard and fast before they can react.",
+                        NextDialogueId = "direct_response",
+                        ResultExpression = CharacterExpression.Angry,
+                        Consequences = new Dictionary<string, object> { { "approach", "direct" } }
+                    },
+                    new DialogueChoice
+                    {
+                        Id = "diplomatic_approach",
+                        Text = "Let me reach out to my contacts first. The Firelights might help if we ask right.",
+                        NextDialogueId = "diplomatic_response",
+                        ResultExpression = CharacterExpression.Default,
+                        Consequences = new Dictionary<string, object> { { "approach", "diplomatic" } }
+                    }
+                }
+            },
+            // Stealth response branch
+            new DialogueLine
+            {
+                Id = "stealth_response",
+                CharacterId = "caitlyn",
+                Text = "Smart. The element of surprise could give us the edge we need. I'll mark the blind spots in their surveillance.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45
+            },
+            // Direct response branch
+            new DialogueLine
+            {
+                Id = "direct_response",
+                CharacterId = "caitlyn",
+                Text = "Bold, but risky. If we're doing this, we'll need backup. I'll mobilize the Enforcers.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45,
+                SpeakerExpression = CharacterExpression.Worried
+            },
+            // Diplomatic response branch
+            new DialogueLine
+            {
+                Id = "diplomatic_response",
+                CharacterId = "caitlyn",
+                Text = "The Firelights? That's... unexpected. But if they can help evacuate civilians, it's worth trying.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45,
+                SpeakerExpression = CharacterExpression.Surprised
+            },
             new DialogueLine
             {
                 CharacterId = "vi",
@@ -2087,6 +2115,70 @@ public class GameHub : Hub
             {
                 CharacterId = "vi",
                 Text = "Fair enough. First test then - let's see if they can work together when intel's scrambled and time's running out.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40,
+                SpeakerExpression = CharacterExpression.Determined
+            },
+            // Piltover player choice - decides priority
+            new DialogueLine
+            {
+                Id = "priority_choice",
+                CharacterId = "caitlyn",
+                Text = "We have limited resources. What should be our priority?",
+                IsPlayerChoice = true,
+                ChoiceOwnerRole = "piltover", // Only Piltover player can make this choice
+                Choices = new List<DialogueChoice>
+                {
+                    new DialogueChoice
+                    {
+                        Id = "save_data",
+                        Text = "Secure the Hextech research data before it falls into the wrong hands.",
+                        NextDialogueId = "data_priority",
+                        Consequences = new Dictionary<string, object> { { "priority", "data" } }
+                    },
+                    new DialogueChoice
+                    {
+                        Id = "evacuate_civilians",
+                        Text = "Focus on civilian evacuation. Lives are more important than data.",
+                        NextDialogueId = "civilian_priority",
+                        ResultExpression = CharacterExpression.Worried,
+                        Consequences = new Dictionary<string, object> { { "priority", "civilians" } }
+                    },
+                    new DialogueChoice
+                    {
+                        Id = "track_saboteur",
+                        Text = "Track down who's responsible. We need to stop them before they strike again.",
+                        NextDialogueId = "saboteur_priority",
+                        ResultExpression = CharacterExpression.Determined,
+                        Consequences = new Dictionary<string, object> { { "priority", "investigation" } }
+                    }
+                }
+            },
+            // Data priority response
+            new DialogueLine
+            {
+                Id = "data_priority",
+                CharacterId = "vi",
+                Text = "Typical Piltover - always thinking about the tech first. But... you're not wrong. That data in the wrong hands could level the Lanes.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40
+            },
+            // Civilian priority response
+            new DialogueLine
+            {
+                Id = "civilian_priority",
+                CharacterId = "vi",
+                Text = "Now you're talking my language, Cupcake. The people come first. Always.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40,
+                SpeakerExpression = CharacterExpression.Happy
+            },
+            // Investigation priority response
+            new DialogueLine
+            {
+                Id = "saboteur_priority",
+                CharacterId = "vi",
+                Text = "Going straight for the source? I like it. But we better be ready for a fight.",
                 AnimationType = TextAnimationType.Typewriter,
                 TypewriterSpeed = 40,
                 SpeakerExpression = CharacterExpression.Determined
