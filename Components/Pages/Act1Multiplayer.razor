@@ -158,6 +158,44 @@
                     </div>
                 </div>
                 
+                <!-- Player Choice UI -->
+                @if (playerView.PendingChoice != null && playerView.PendingChoice.IsPlayerChoice)
+                {
+                    <div class="choice-overlay @(playerView.CanMakeChoice ? "active" : "waiting")">
+                        @if (playerView.CanMakeChoice)
+                        {
+                            <div class="choice-container @GetThemeClass()">
+                                <div class="choice-prompt">
+                                    <span class="choice-indicator">DECISION POINT</span>
+                                </div>
+                                <div class="choice-options">
+                                    @foreach (var choice in playerView.PendingChoice.Choices)
+                                    {
+                                        <button class="choice-button @GetChoiceButtonClass(choice)" 
+                                                @onclick="() => MakeChoice(choice.Id)"
+                                                disabled="@(!CanSelectChoice(choice))">
+                                            <span class="choice-number">@(playerView.PendingChoice.Choices.IndexOf(choice) + 1)</span>
+                                            <span class="choice-text">@choice.Text</span>
+                                            @if (!string.IsNullOrEmpty(choice.RequiredRole))
+                                            {
+                                                <span class="choice-requirement">[@choice.RequiredRole only]</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else if (playerView.IsWaitingForOtherPlayer)
+                        {
+                            <div class="waiting-for-choice @GetThemeClass()">
+                                <div class="waiting-spinner"></div>
+                                <p>Your partner is making a critical decision...</p>
+                                <small>Their choice will affect the story for both of you</small>
+                            </div>
+                        }
+                    </div>
+                }
+                
                 <!-- Control Buttons -->
                 <div class="dialogue-controls-external">
                     @if (playerView.CanSkip)
@@ -217,6 +255,7 @@
     private CancellationTokenSource? typingCts;
     private bool isTypewriting = false;
     private int currentTextIndex = 0;
+    private string? lastSelectedChoiceId = null;
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
@@ -378,6 +417,19 @@
             await InvokeAsync(() =>
             {
                 statusMessage = $"{playerName} disconnected. Waiting for reconnection...";
+                StateHasChanged();
+            });
+        });
+        
+        // Choice-related SignalR handlers
+        hubConnection.On<dynamic>("Act1ChoiceMade", async (choiceData) =>
+        {
+            await InvokeAsync(() =>
+            {
+                // Store the choice that was made
+                lastSelectedChoiceId = choiceData.ChoiceId?.ToString();
+                
+                // The server will send updated game state next
                 StateHasChanged();
             });
         });
@@ -571,6 +623,47 @@
     private string GetCharacterPositionClass(VisualNovelCharacter character)
     {
         return character.Position.ToString().ToLower() + "-character";
+    }
+    
+    // Choice-related methods
+    private async Task MakeChoice(string choiceId)
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            await hubConnection.SendAsync("MakeAct1Choice", currentRoomId, choiceId);
+        }
+    }
+    
+    private bool CanSelectChoice(DialogueChoice choice)
+    {
+        if (playerView == null) return false;
+        
+        // Check role requirement
+        if (!string.IsNullOrEmpty(choice.RequiredRole))
+        {
+            return playerRole.Equals(choice.RequiredRole, StringComparison.OrdinalIgnoreCase);
+        }
+        
+        return true;
+    }
+    
+    private string GetChoiceButtonClass(DialogueChoice choice)
+    {
+        var classes = new List<string> { "choice-btn" };
+        
+        if (!CanSelectChoice(choice))
+        {
+            classes.Add("disabled");
+        }
+        
+        if (lastSelectedChoiceId == choice.Id)
+        {
+            classes.Add("selected");
+        }
+        
+        classes.Add(GetThemeClass());
+        
+        return string.Join(" ", classes);
     }
 
     public async ValueTask DisposeAsync()
@@ -1447,5 +1540,251 @@
 /* Smooth scrolling for long dialogue */
 .dialogue-text {
     scroll-behavior: smooth;
+}
+
+/********************************************
+ * Player Choice UI Styles
+ ********************************************/
+.choice-overlay {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    z-index: 100;
+    animation: choiceEntrance 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@@keyframes choiceEntrance {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.choice-container {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.95) 0%, 
+        rgba(15, 10, 25, 0.92) 50%,
+        rgba(0, 0, 0, 0.95) 100%);
+    padding: 2rem;
+    border-radius: 0;
+    clip-path: polygon(
+        0 10px, 10px 0,
+        calc(100% - 10px) 0, 100% 10px,
+        100% calc(100% - 10px), calc(100% - 10px) 100%,
+        10px 100%, 0 calc(100% - 10px)
+    );
+}
+
+.choice-container.piltover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(255, 215, 0, 0.4),
+        0 0 40px rgba(200, 170, 110, 0.2);
+}
+
+.choice-container.zaun {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.8),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(0, 255, 200, 0.4),
+        0 0 40px rgba(0, 212, 170, 0.2);
+}
+
+.choice-prompt {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.choice-indicator {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #fff;
+    display: block;
+    margin-bottom: 0.5rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@@keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+.choice-timer {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+.timer-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ff6b6b;
+    margin-right: 0.5rem;
+}
+
+.timer-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.choice-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.choice-button {
+    position: relative;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 0%, rgba(40, 40, 40, 0.8) 100%);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    text-align: left;
+    clip-path: polygon(
+        0 4px, 4px 0,
+        calc(100% - 4px) 0, 100% 4px,
+        100% calc(100% - 4px), calc(100% - 4px) 100%,
+        4px 100%, 0 calc(100% - 4px)
+    );
+}
+
+.choice-button:hover:not(:disabled) {
+    transform: translateX(10px);
+    background: linear-gradient(135deg, rgba(40, 40, 40, 0.95) 0%, rgba(50, 50, 50, 0.9) 100%);
+    border-color: rgba(200, 170, 110, 0.6);
+    box-shadow: 0 0 20px rgba(200, 170, 110, 0.2);
+}
+
+.choice-button.zaun:hover:not(:disabled) {
+    border-color: rgba(0, 212, 170, 0.6);
+    box-shadow: 0 0 20px rgba(0, 212, 170, 0.2);
+}
+
+.choice-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.choice-button.selected {
+    background: linear-gradient(135deg, rgba(200, 170, 110, 0.2) 0%, rgba(200, 170, 110, 0.1) 100%);
+    border-color: rgba(200, 170, 110, 0.8);
+    animation: selectedPulse 0.5s ease-out;
+}
+
+@@keyframes selectedPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.choice-number {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background: rgba(200, 170, 110, 0.2);
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    border-radius: 50%;
+    margin-right: 1rem;
+    font-weight: 700;
+}
+
+.choice-button.zaun .choice-number {
+    background: rgba(0, 212, 170, 0.2);
+    border-color: rgba(0, 212, 170, 0.5);
+}
+
+.choice-text {
+    flex: 1;
+}
+
+.choice-requirement {
+    display: inline-block;
+    margin-left: 1rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+
+.choice-button.timed {
+    border-color: rgba(255, 100, 100, 0.5);
+}
+
+.waiting-for-choice {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+    border-radius: 8px;
+}
+
+.waiting-for-choice.zaun {
+    border-color: rgba(0, 212, 170, 0.3);
+}
+
+.waiting-for-choice p {
+    font-size: 1.2rem;
+    margin: 1rem 0 0.5rem;
+    color: #fff;
+}
+
+.waiting-for-choice small {
+    opacity: 0.7;
+    font-style: italic;
+}
+
+.waiting-spinner {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(200, 170, 110, 0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.waiting-for-choice.zaun .waiting-spinner {
+    border-top-color: rgba(0, 212, 170, 0.8);
+}
+
+/* Responsive adjustments for choices */
+@@media (max-width: 768px) {
+    .choice-overlay {
+        width: 90%;
+        bottom: 15%;
+    }
+    
+    .choice-container {
+        padding: 1.5rem;
+    }
+    
+    .choice-button {
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+    }
 }
 </style>

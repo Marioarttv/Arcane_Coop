@@ -70,6 +70,16 @@ namespace Arcane_Coop.Models
         }
     }
 
+    public class DialogueChoice
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Text { get; set; } = "";
+        public string? NextDialogueId { get; set; }
+        public string? RequiredRole { get; set; } // "piltover", "zaun", or null for either
+        public Dictionary<string, object> Consequences { get; set; } = new();
+        public CharacterExpression? ResultExpression { get; set; } // Expression after choice is made
+    }
+
     public class DialogueLine
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -86,6 +96,12 @@ namespace Arcane_Coop.Models
         // Expression support - allows setting character expressions for this dialogue line
         public CharacterExpression? SpeakerExpression { get; set; } = null;
         public Dictionary<string, CharacterExpression> CharacterExpressions { get; set; } = new();
+        
+        // Player choice support
+        public bool IsPlayerChoice { get; set; } = false;
+        public string? ChoiceOwnerRole { get; set; } // Which player makes this choice ("piltover" or "zaun")
+        public List<DialogueChoice> Choices { get; set; } = new();
+        public string? SelectedChoiceId { get; set; } // Track what was chosen
     }
 
     public class VisualNovelScene
@@ -214,6 +230,7 @@ namespace Arcane_Coop.Models
         public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition" };
         public string NextGameName { get; set; } = "";
         public bool ShowTransition { get; set; } = false;
+        public List<string> ChoiceHistory { get; set; } = new(); // Track all choices made
         
         public Act1Player? GetPlayer(string playerId)
         {
@@ -266,5 +283,11 @@ namespace Arcane_Coop.Models
         public string NextGameName { get; set; } = "";
         public int CurrentSceneIndex { get; set; } = 0;
         public int TotalScenes { get; set; } = 0;
+        
+        // Player choice support
+        public DialogueLine? PendingChoice { get; set; } // Current choice to be made
+        public bool CanMakeChoice { get; set; } = false; // Whether this player can make the current choice
+        public List<string> ChoiceHistory { get; set; } = new(); // Track all choices made in this session
+        public bool IsWaitingForOtherPlayer { get; set; } = false; // True when other player is making a choice
     }
 }

@@ -343,7 +343,7 @@ To ensure predictable behavior in multiplayer and the visual editor:
 - **Type Safety**: Full integration of expression system with strongly-typed models
 
 ### 🎯 Implementation Examples
-See the updated **Act1.razor** in the story campaign for practical examples of the new expression system in action, including Vi showing worry and determination, and Caitlyn displaying serious expressions during critical story moments.
+See the multiplayer story intro in **Act1Multiplayer.razor** for practical examples of the expression system in action, including Vi showing worry and determination, and Caitlyn displaying serious expressions during critical story moments.
 
 ---
 

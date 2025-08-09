@@ -1723,6 +1723,191 @@ public class GameHub : Hub
         }
     }
 
+    public async Task MakeAct1Choice(string roomId, string choiceId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            var player = game.GetPlayer(playerId);
+            if (player == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+            
+            // Validate that there's a pending choice
+            if (game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "No dialogue available");
+                return;
+            }
+            
+            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
+            if (!currentDialogue.IsPlayerChoice || currentDialogue.Choices.Count == 0)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "No choice available");
+                return;
+            }
+            
+            // Validate that this player can make the choice
+            if (!string.IsNullOrEmpty(currentDialogue.ChoiceOwnerRole) && 
+                !player.PlayerRole.Equals(currentDialogue.ChoiceOwnerRole, StringComparison.OrdinalIgnoreCase))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "You cannot make this choice");
+                return;
+            }
+            
+            // Find the selected choice
+            var selectedChoice = currentDialogue.Choices.FirstOrDefault(c => c.Id == choiceId);
+            if (selectedChoice == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Invalid choice");
+                return;
+            }
+            
+            // Validate role requirement for the specific choice
+            if (!string.IsNullOrEmpty(selectedChoice.RequiredRole) &&
+                !player.PlayerRole.Equals(selectedChoice.RequiredRole, StringComparison.OrdinalIgnoreCase))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "You don't meet the requirements for this choice");
+                return;
+            }
+            
+            // Process the choice
+            currentDialogue.SelectedChoiceId = choiceId;
+            
+            // Add to choice history
+            game.ChoiceHistory.Add($"{player.PlayerName} ({player.PlayerRole}): {selectedChoice.Text}");
+            
+            // Apply any consequences
+            if (selectedChoice.Consequences != null && selectedChoice.Consequences.Count > 0)
+            {
+                foreach (var consequence in selectedChoice.Consequences)
+                {
+                    game.GameState.GameState[consequence.Key] = consequence.Value;
+                }
+            }
+            
+            // Apply expression changes if specified
+            if (selectedChoice.ResultExpression.HasValue && !string.IsNullOrEmpty(currentDialogue.CharacterId))
+            {
+                var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+                if (character != null)
+                {
+                    character.CurrentExpression = selectedChoice.ResultExpression.Value;
+                }
+            }
+            
+            // Move to the next dialogue (could be based on NextDialogueId for branching)
+            if (!string.IsNullOrEmpty(selectedChoice.NextDialogueId))
+            {
+                // Find the dialogue with matching ID for branching
+                var nextIndex = game.CurrentScene.DialogueLines.FindIndex(d => d.Id == selectedChoice.NextDialogueId);
+                if (nextIndex >= 0)
+                {
+                    game.GameState.CurrentDialogueIndex = nextIndex;
+                }
+                else
+                {
+                    // Default to next dialogue
+                    game.GameState.CurrentDialogueIndex++;
+                }
+            }
+            else
+            {
+                // Move to the next dialogue in sequence
+                game.GameState.CurrentDialogueIndex++;
+            }
+            
+            // Reset text animation state for the new dialogue
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            game.RecordAction();
+            
+            // Broadcast the choice made to all players
+            await Clients.Group(roomId).SendAsync("Act1ChoiceMade", new
+            {
+                PlayerId = playerId,
+                PlayerName = player.PlayerName,
+                PlayerRole = player.PlayerRole,
+                ChoiceId = choiceId,
+                ChoiceText = selectedChoice.Text
+            });
+            
+            // Update game state for all players
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to make choice: {ex.Message}");
+        }
+    }
+    
+    public async Task RequestAct1ChoiceTimeout(string roomId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            // Check if there's a timed choice that has expired
+            if (game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count)
+            {
+                return;
+            }
+            
+            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
+            if (!currentDialogue.IsPlayerChoice || currentDialogue.Choices.Count == 0)
+            {
+                return;
+            }
+            
+            // Find any timed choice
+            var timedChoice = currentDialogue.Choices.FirstOrDefault(c => c.IsTimeLimited);
+            if (timedChoice == null)
+            {
+                return;
+            }
+            
+            // Auto-select the first available choice or a default
+            var defaultChoice = currentDialogue.Choices.FirstOrDefault();
+            if (defaultChoice != null)
+            {
+                currentDialogue.SelectedChoiceId = defaultChoice.Id;
+                
+                // Move to next dialogue
+                game.GameState.CurrentDialogueIndex++;
+                game.GameState.IsTextFullyDisplayed = false;
+                game.IsTextAnimating = true;
+                game.TextAnimationStartTime = DateTime.UtcNow;
+                game.RecordAction();
+                
+                // Notify all players of the timeout
+                await Clients.Group(roomId).SendAsync("Act1ChoiceTimeout", new
+                {
+                    ChoiceId = defaultChoice.Id,
+                    ChoiceText = defaultChoice.Text
+                });
+                
+                await BroadcastAct1GameState(roomId);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to handle choice timeout: {ex.Message}");
+        }
+    }
+
     private async Task BroadcastAct1GameState(string roomId)
     {
         if (!_act1Games.TryGetValue(roomId, out var game)) return;
@@ -1741,6 +1926,37 @@ public class GameHub : Hub
         
         var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
         
+        // Check for pending choices
+        DialogueLine? pendingChoice = null;
+        bool canMakeChoice = false;
+        bool isWaitingForOtherPlayer = false;
+        
+        if (game.GameState.CurrentDialogueIndex < game.CurrentScene.DialogueLines.Count)
+        {
+            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
+            if (currentDialogue.IsPlayerChoice && currentDialogue.Choices.Count > 0 && game.GameState.IsTextFullyDisplayed)
+            {
+                pendingChoice = currentDialogue;
+                
+                // Check if this player can make the choice
+                if (string.IsNullOrEmpty(currentDialogue.ChoiceOwnerRole))
+                {
+                    // Either player can make the choice
+                    canMakeChoice = true;
+                }
+                else if (player.PlayerRole.Equals(currentDialogue.ChoiceOwnerRole, StringComparison.OrdinalIgnoreCase))
+                {
+                    // This player is the designated choice maker
+                    canMakeChoice = true;
+                }
+                else
+                {
+                    // Other player is making the choice
+                    isWaitingForOtherPlayer = true;
+                }
+            }
+        }
+        
         return new Act1PlayerView
         {
             RoomId = game.RoomId,
@@ -1750,17 +1966,21 @@ public class GameHub : Hub
             CurrentScene = game.CurrentScene,
             GameState = game.GameState,
             ConnectedPlayers = connectedPlayers,
-            CanSkip = game.IsTextAnimating && !game.GameState.IsTextFullyDisplayed,
-            CanContinue = game.GameState.IsTextFullyDisplayed && !game.IsTextAnimating,
+            CanSkip = game.IsTextAnimating && !game.GameState.IsTextFullyDisplayed && pendingChoice == null,
+            CanContinue = game.GameState.IsTextFullyDisplayed && !game.IsTextAnimating && pendingChoice == null,
             IsTextAnimating = game.IsTextAnimating,
             ShowTransition = game.ShowTransition,
             NextGameName = game.NextGameName,
             CurrentSceneIndex = game.CurrentSceneIndex,
             TotalScenes = game.StoryProgression.Count,
+            PendingChoice = pendingChoice,
+            CanMakeChoice = canMakeChoice,
+            IsWaitingForOtherPlayer = isWaitingForOtherPlayer,
+            ChoiceHistory = game.ChoiceHistory,
             StatusMessage = game.Status switch
             {
                 Act1GameStatus.WaitingForPlayers => $"Waiting for players... ({game.Players.Count}/2)",
-                Act1GameStatus.InProgress => "Story in progress",
+                Act1GameStatus.InProgress => isWaitingForOtherPlayer ? "Waiting for partner's choice..." : "Story in progress",
                 Act1GameStatus.SceneTransition => $"Transitioning to {game.NextGameName}...",
                 Act1GameStatus.Completed => "Act 1 completed",
                 _ => ""
