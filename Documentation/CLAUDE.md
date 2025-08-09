@@ -1,10 +1,10 @@
-# CLAUDE.md
+# Arcane Coop - Claude.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with the Arcane Coop escape room project.
 
 ## Project Overview
 
-This is an **ASP.NET Core Blazor Server** application for an Arcane-themed cooperative escape room experience. The application uses .NET 9.0 and implements a dual-city theme with Zaun vs Piltover.
+**Arcane Coop** is a sophisticated cooperative puzzle game platform built with ASP.NET Core Blazor Server (.NET 9.0). Set in the Arcane universe, it features 7 distinct puzzle systems where two players representing Zaun and Piltover must work together to solve challenges through real-time communication and collaboration.
 
 ## Development Commands
 
@@ -47,12 +47,12 @@ dotnet publish -c Release
 - **Styling**: Component-scoped CSS with extensive custom styling
 - **Fonts**: Custom "Arcane Nine" font and Google Fonts (Orbitron, Cinzel, Rajdhani)
 
-### Key Features
-- **Dual-theme design** with Zaun (underground/cyberpunk) and Piltover (steampunk/golden) aesthetics
-- **Character selection system** with Vi, Caitlyn, Jayce, and Viktor
-- **Responsive design** with mobile-first approach
-- **Interactive UI elements** with hover effects and animations
-- **Audio controls** system (placeholder implementation)
+### Core Features
+- **7 Cooperative Puzzle Systems** - Each with unique mechanics and educational focus
+- **Real-time Multiplayer** - SignalR-powered synchronization between players
+- **Dual-theme Arcane Design** - Zaun (teal/underground) vs Piltover (gold/clean) aesthetics
+- **Role-based Gameplay** - Players have different views and responsibilities
+- **Educational Focus** - Designed for ESL students and skill development
 
 ### Development Patterns
 - Uses **minimal APIs** for simple setup
@@ -73,571 +73,289 @@ dotnet publish -c Release
 - Development/Production environment support
 - HTTPS redirection and HSTS enabled for production
 
-## Multiplayer Tic-Tac-Toe Implementation
+## Legacy Systems
 
-### Implementation Workflow
+### Tic-Tac-Toe Demo (/test-signalr)
+Early proof-of-concept for SignalR multiplayer functionality. Fully functional with real-time synchronization, but not part of the main escape room experience.
 
-#### 1. Analysis Phase
-- Examined existing SignalR infrastructure in `TestSignalR.razor` and `GameHub.cs`
-- Identified basic room management and messaging functionality
-- Reviewed existing UI components and styling patterns
 
-#### 2. Backend Implementation (`Hubs/GameHub.cs`)
-- **Added TicTacToeGame class** with complete game logic:
-  - Board state management (string[9] array)
-  - Player management (X/O assignments)
-  - Turn-based gameplay enforcement
-  - Win condition detection (rows, columns, diagonals)
-  - Tie game detection
-- **Enhanced GameHub with game-specific methods**:
-  - `JoinGame()` - Player joins tic-tac-toe game
-  - `MakeMove()` - Process and validate player moves
-  - `RestartGame()` - Reset game state
-- **Added concurrent game management** using `ConcurrentDictionary<string, TicTacToeGame>`
-- **Implemented disconnection handling** to clean up games when players leave
 
-#### 3. Frontend Implementation (`Components/Pages/TestSignalR.razor`)
-- **Enhanced UI with game interface**:
-  - 3x3 grid using CSS Grid layout
-  - Real-time game state display
-  - Turn indicator and player symbol display
-  - Game status messages
-- **Added SignalR event handlers**:
-  - `GameJoined` - Player successfully joins game
-  - `GameStateUpdated` - Real-time board updates
-  - `GameEnded` - Win/tie notifications with winning line highlighting
-  - `InvalidMove` - Move validation feedback
-- **Implemented game logic methods**:
-  - Move validation and execution
-  - Visual feedback for winning combinations
-  - Game restart functionality
-- **Added responsive CSS styling** with hover effects and visual indicators
+## SignalR Best Practices Summary
 
-#### 4. Testing and Validation
-- Verified build process and resolved file locking issues
-- Confirmed SignalR connectivity and real-time synchronization
-- Validated multiplayer functionality across multiple browser instances
+Key guidelines for robust multiplayer implementation:
 
-### Key Features Implemented
+- **Type Safety**: Always use strongly-typed data models for SignalR messages
+- **State Sync**: Update both game state and player views after changes
+- **Connection Management**: Handle joins, leaves, and disconnections gracefully
+- **Server Validation**: Never trust client input - validate all actions server-side
+- **Error Handling**: Comprehensive error messages and proper exception handling
+- **Performance**: Use concurrent collections and batch updates when possible
 
-#### Game Mechanics
-- **Turn-based gameplay** with server-side validation
-- **Real-time synchronization** between players
-- **Win detection** for all possible combinations (8 winning patterns)
-- **Tie game handling** when board is full
-- **Move validation** prevents invalid plays
-- **Game restart** functionality for continuous play
+See individual puzzle documentation for implementation examples.
 
-#### User Interface
-- **Clean 3x3 grid** with consistent cell sizing (100x100px)
-- **Visual feedback** with hover effects and winning line highlighting
-- **Game status display** showing current turn and game state
-- **Player identification** with clear X/O symbol display
-- **Integrated chat** for player communication
-- **Responsive design** using Bootstrap classes
 
-#### Multiplayer Architecture
-- **Room-based games** supporting up to 2 players per room
-- **Player disconnection handling** with automatic game cleanup
-- **Connection state management** with visual status indicators
-- **Error handling** for invalid moves and game full scenarios
+## Puzzle Systems Overview
 
-### Technical Implementation Details
+The project features 7 distinct cooperative puzzle systems, each designed for 2 players with asymmetric information and roles:
 
-#### SignalR Hub Methods
+### 1. CodeCracker (/code-cracker)
+**Purpose**: Vocabulary building and communication
+**Players**: Piltover (sees distorted words) + Zaunite (gets clues)
+**Mechanics**: Word decryption with hints and scoring
+**Education**: ESL vocabulary, German translations
+**Documentation**: [CodeCracker.md](./CodeCracker.md)
+
+### 2. SignalDecoder (/signal-decoder) 
+**Purpose**: Listening comprehension
+**Players**: Piltover (sees incomplete text) + Zaunite (hears audio)
+**Mechanics**: Audio-text coordination with emergency scenarios
+**Education**: Listening skills, emergency vocabulary
+**Documentation**: [SignalDecoder.md](./SignalDecoder.md)
+
+### 3. NavigationMaze (/navigation-maze)
+**Purpose**: Spatial reasoning and direction following
+**Players**: Piltover (map navigator) + Zaunite (first-person explorer)
+**Mechanics**: Pathfinding through dangerous Zaun locations
+**Education**: Prepositions, spatial vocabulary
+**Documentation**: [NavigationMaze.md](./NavigationMaze.md)
+
+### 4. PictureExplanation (/picture-explanation)
+**Purpose**: Visual communication over voice chat
+**Players**: Piltover (image describer) + Zaunite (choice selector)
+**Mechanics**: Describe → Hide → Choose from 4 options
+**Education**: Descriptive language, active listening
+**Documentation**: [PictureExplanation.md](./PictureExplanation.md)
+
+### 5. RuneProtocol (/rune-protocol)
+**Purpose**: Logic puzzles and conditional reasoning
+**Players**: Piltover (R1-R4) + Zaunite (R5-R8)
+**Mechanics**: Satisfy complex rule conditions through coordination
+**Education**: Logic, Boolean algebra, systems thinking
+**Documentation**: [RuneProtocol.md](./RuneProtocol.md)
+
+### 6. AlchemyLab (/alchemy-lab)
+**Purpose**: Process following and drag-and-drop interaction
+**Players**: Piltover (recipe reader) + Zaunite (hands-on brewer)
+**Mechanics**: Multi-step ingredient processing and combination
+**Education**: Following instructions, sequential thinking
+**Documentation**: [AlchemyLab.md](./AlchemyLab.md)
+
+### 7. VisualNovel (/visual-novel)
+**Purpose**: Narrative delivery and story immersion
+**Players**: Single or dual player story experience
+**Mechanics**: Text animation, character expressions, thematic presentation
+**Education**: Reading comprehension, cultural context
+**Documentation**: [VisualNovel.md](./VisualNovel.md)
+
+## Technical Architecture
+
+### Multiplayer Infrastructure
+- **SignalR Hubs**: Real-time communication via GameHub.cs
+- **Room-based Games**: Players join rooms using shared codes
+- **Role Assignment**: First player = Piltover, Second = Zaunite
+- **State Synchronization**: Server-side validation with client updates
+- **Connection Management**: Graceful handling of disconnections
+
+### Data Models
+- **Game-specific Models**: Each puzzle has dedicated model classes
+- **Player Views**: Role-specific data structures for asymmetric gameplay
+- **Game States**: Comprehensive state tracking for all game phases
+
+### Component Architecture
+- **Page Components**: Each puzzle is a standalone Blazor page
+- **Shared Services**: Common functionality via dependency injection
+- **CSS Theming**: Consistent Piltover/Zaun visual identity
+- **Responsive Design**: Desktop-first with mobile support
+
+## Development Guidelines
+
+### Adding New Puzzles
+1. Create page component in Components/Pages/
+2. Add models in Models/ directory
+3. Implement SignalR methods in GameHub.cs
+4. Create comprehensive documentation in Documentation/
+5. Update this CLAUDE.md with basic overview
+
+### Code Standards
+- **SignalR Type Safety**: Always use strongly-typed data models
+- **Error Handling**: Graceful degradation for network issues
+- **State Management**: Separate client/server state concerns
+- **Animation**: Hardware-accelerated CSS for 60fps performance
+- **Accessibility**: ARIA labels and keyboard navigation
+
+### Educational Focus
+- **German ESL Students**: Primary target audience
+- **Collaborative Learning**: Peer-to-peer skill development
+- **Progressive Difficulty**: Scaffolded complexity increases
+- **Multiple Modalities**: Visual, auditory, kinesthetic learning styles
+
+## File Organization
+
+### Core Files
+- **Program.cs**: Application entry point and service configuration
+- **GameHub.cs**: SignalR hub with all multiplayer functionality
+- **appsettings.json**: Configuration for development and production
+
+### Component Structure
+- **Pages/**: All puzzle components and main game pages
+- **Models/**: Data models for each puzzle system
+- **Services/**: Shared services (VisualNovelService, etc.)
+- **wwwroot/**: Static assets (images, audio, fonts, styles)
+
+### Documentation Structure
+- **CLAUDE.md**: This overview and development guidance
+- **[PuzzleName].md**: Detailed documentation for each puzzle system
+- **Specialized docs**: Technical deep-dives for complex systems
+
+## GameHub.cs - Central SignalR Hub Documentation
+
+The `GameHub.cs` file (3,357 lines) serves as the central multiplayer coordination hub for all puzzle systems in the Arcane Coop project. This SignalR hub manages real-time communication, game state synchronization, and player coordination across all puzzle types.
+
+### File Structure Overview
+
+**Core Infrastructure (Lines 1-64)**
+- Static game dictionaries for each puzzle type
+- Room and player management
+- Basic SignalR connection handling
+
+**Game-Specific Sections:**
+- **Tic-Tac-Toe** (Lines 65-111): Legacy demo system with basic turn-based gameplay
+- **CodeCracker** (Lines 112-190): Vocabulary puzzle with word guessing and hint system
+- **SignalDecoder** (Lines 191-286): Audio-based emergency transmission decoding
+- **NavigationMaze** (Lines 287-381): Spatial navigation with route planning
+- **AlchemyLab** (Lines 382-524): Drag-and-drop ingredient processing and brewing
+- **RuneProtocol** (Lines 525-670): Complex logic puzzle with conditional rule systems
+- **PictureExplanation** (Lines 671-825): Voice chat visual communication challenges
+- **Word-Forge** (Lines 826-934): Advanced word formation and affix combinations
+
+**Connection Management (Lines 935-end)**: Player disconnection handling and cleanup
+
+### Static Game Storage Architecture
+
 ```csharp
-JoinGame(string roomId, string playerName)    // Join tic-tac-toe game
-MakeMove(string roomId, int position)         // Make a move
-RestartGame(string roomId)                    // Reset game state
+// Each puzzle type maintains its own concurrent dictionary (Lines 10-18)
+private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
+private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
+private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
+private static readonly ConcurrentDictionary<string, NavigationMazeGame> _navigationMazeGames = new();
+private static readonly ConcurrentDictionary<string, AlchemyGame> _alchemyGames = new();
+private static readonly ConcurrentDictionary<string, RuneProtocolGame> _runeProtocolGames = new();
+private static readonly ConcurrentDictionary<string, PictureExplanationGame> _pictureExplanationGames = new();
+private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
+private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
 ```
 
-#### Client-Side Event Handlers
-```csharp
-GameJoined          // Player joins game successfully
-GameStateUpdated    // Real-time board state updates
-GameEnded           // Game completion with winner/tie
-InvalidMove         // Move validation errors
-```
-
-#### Game State Management
-- **Server-side game state** stored in concurrent dictionary
-- **Client-side state sync** through SignalR events  
-- **Position-based board** (0-8 array indices)
-- **Symbol assignment** (first player X, second player O)
-
-### Usage Instructions
-1. Navigate to `/test-signalr` page
-2. Enter Room ID and Player Name
-3. Click "Join Room" then "Join Game"
-4. Play by clicking empty cells when it's your turn
-5. Use "Restart Game" to play again
-6. Chat functionality available for communication
-
-## Code Cracker: Lexical Puzzle Implementation
-
-### Game Overview
-**Code Cracker** is a premium collaborative vocabulary-building game designed for German ESL students. Players work together to decode corrupted English words using various clues and hints in an immersive Arcane-themed environment.
-
-#### Narrative Theme
-- **Piltover Player (Caitlyn)**: Sees distorted words from Piltover's corrupted archives with clean, hextech-inspired visuals
-- **Zaunite Player (Vi)**: Receives intelligence clues with underground hacker aesthetics and smooth fly-in transitions
-- **Collaborative Gameplay**: Both players must communicate via integrated chat to solve word puzzles
-- **Full Arcane Immersion**: Split-theme design with authentic Piltover (golden) and Zaunite (teal) visual identities
-
-### Implementation Details
-
-#### Backend Architecture (`Hubs/GameHub.cs`)
-- **CodeCrackerGame class** with comprehensive vocabulary puzzle system:
-  - Word bank with 10 educational vocabulary words
-  - Player role assignments (Piltover/Zaunite with different information views)
-  - Progressive scoring system (10 points minus hints and attempts)
-  - Three-tier hint system (word length, first letter, category)
-  - Attempt tracking and game state management
-- **Enhanced GameHub methods**:
-  - `JoinCodeCrackerGame()` - Role-based player assignment
-  - `SubmitCodeCrackerGuess()` - Word validation and progression
-  - `RequestCodeCrackerHint()` - Progressive hint system
-  - `RestartCodeCrackerGame()` - Game reset functionality
-- **Concurrent game management** using dedicated dictionary for Code Cracker games
-- **Role-based information filtering** ensuring each player sees appropriate clues
-
-#### Frontend Implementation (`Components/Pages/CodeCracker.razor`)
-- **Premium Arcane-themed UI with full immersion**:
-  - Full-screen gradient backgrounds with atmospheric effects
-  - Piltover section: Golden hextech gradients with 3D word flip transitions
-  - Zaunite section: Underground aesthetics with smooth clue fly-in animations
-  - Custom font integration (Arcane Nine, Orbitron, Cinzel, Rajdhani)
-  - Glassmorphism design with backdrop blur and gradient borders
-- **Advanced animation system**:
-  - Success celebration overlays with full-screen effects
-  - Smooth content transitions (fly-out → update → fly-in)
-  - Staggered clue card animations (Definition → German → Synonym)
-  - 3D word flip transitions for Piltover players
-  - Hardware-accelerated CSS animations for 60fps performance
-- **Enhanced UX features**:
-  - Interactive tutorial with step-by-step instructions
-  - Role preview cards showing exact gameplay mechanics
-  - Connection guidance with animated waiting indicators
-  - Real-time collaboration feedback and status updates
-- **Educational focus elements**:
-  - German translation integration for ESL learning
-  - Definition and synonym clues for vocabulary building
-  - Progressive hint system with strategic scoring
-  - Attempt history tracking for learning assessment
-
-#### Key Features Implemented
-
-#### Game Mechanics
-- **Role-based gameplay** with distinct information views for each player
-- **10-word vocabulary progression** with increasing complexity
-- **Collaborative problem-solving** requiring communication between players
-- **Progressive hint system** (3 hints per word: length, first letter, category)
-- **Scoring system** rewarding efficiency (fewer hints and attempts = higher score)
-- **Real-time synchronization** of all game state changes
-
-#### Educational Value
-- **German-English translation** support for ESL students
-- **Multiple clue types** (definitions, synonyms, translations) for comprehensive learning
-- **Vocabulary range** covering common English words with educational value
-- **Collaborative learning** encouraging peer-to-peer assistance
-
-#### User Interface & Experience
-- **AAA Gaming Experience** with cinematic presentation and professional animations
-- **Immersive full-screen design** with no white borders or visual distractions
-- **Role-specific visual identities**:
-  - Piltover: Golden hextech themes with clean, technological aesthetics
-  - Zaunite: Underground hacker vibes with smooth content transitions
-- **Interactive onboarding system**:
-  - Step-by-step tutorial with animated numbered guides
-  - Role preview demonstrations showing exact gameplay mechanics
-  - Connection guidance with room code sharing instructions
-- **Dynamic feedback system**:
-  - Full-screen success celebrations with auto-dismiss
-  - Smooth content transitions during word progression
-  - Real-time collaboration status with animated indicators
-- **Professional UI polish**:
-  - Custom font integration with proper web font loading
-  - Glassmorphism effects with backdrop blur throughout
-  - Responsive design optimized for all screen sizes
-  - Hardware-accelerated animations for smooth 60fps performance
-
-#### Multiplayer Architecture
-- **Room-based games** supporting exactly 2 players with distinct roles
-- **Player disconnection handling** with automatic game cleanup
-- **Real-time state synchronization** across all connected clients
-- **Role-specific data filtering** ensuring appropriate information distribution
-
-### Technical Implementation Details
-
-#### SignalR Hub Methods
-```csharp
-JoinCodeCrackerGame(string roomId, string playerName)    // Join with role assignment
-SubmitCodeCrackerGuess(string roomId, string guess)      // Submit word guess
-RequestCodeCrackerHint(string roomId)                    // Request progressive hints
-RestartCodeCrackerGame(string roomId)                    // Reset game state
-```
-
-#### Client-Side Event Handlers
-```csharp
-CodeCrackerGameJoined          // Player joins with role assignment
-CodeCrackerGameStateUpdated    // Real-time game state synchronization
-CodeCrackerGameCompleted       // Game completion with final score
-CodeCrackerInvalidGuess        // Guess validation feedback
-CodeCrackerHintReceived        // Progressive hint delivery
-CodeCrackerPlayerViewUpdated   // Role-specific view updates
-```
-
-#### Game State Management
-- **Server-side vocabulary bank** with educational word selection
-- **Role-based information filtering** (Piltover sees distorted words, Zaunite sees clues)
-- **Progressive scoring system** encouraging strategic hint usage
-- **Attempt tracking** for learning assessment and replay value
-
-### Usage Instructions (Code Cracker)
-1. Navigate to `/code-cracker` page for immersive full-screen experience
-2. **Follow the interactive tutorial** - Read the step-by-step guide and role previews
-3. **Share room code** - Both players enter the same Room ID (e.g., "friends", "game123")
-4. **Connect together** - Click "Join Room" then "Join Game" (first = Piltover, second = Zaunite)
-5. **Experience role-specific gameplay**:
-   - **Piltover Player (Caitlyn)**: Study corrupted archive data with missing letters
-   - **Zaunite Player (Vi)**: Analyze intelligence clues (definition, German, synonym)
-6. **Collaborate in real-time** - Use integrated chat for strategy coordination
-7. **Solve progressively** - Submit guesses, use strategic hints, celebrate successes
-8. **Complete the challenge** - Progress through all 10 vocabulary words with scoring
-9. **Replay seamlessly** - Use "Restart Game" for new word sequences
-
-### Advanced Features
-- **Success celebrations**: Full-screen animations when words are decoded
-- **Smooth transitions**: Content flies out and new information flies in
-- **Strategic hints**: 3-tier system (length → first letter → category)
-- **Educational tracking**: Attempt history and performance scoring
-- **Responsive design**: Optimized experience across all devices
-
-## Signal Decoder: Simplified Listening Comprehension Game
-
-### Game Overview
-**Signal Decoder** is a simplified cooperative listening comprehension game designed for ESL students. Players work together to decode audio transmissions by filling in missing words, with one player listening to audio and the other seeing incomplete sentences.
-
-#### Narrative Theme
-- **Piltover Player (Caitlyn)**: Sees incomplete sentences with blanks to fill in
-- **Zaunite Player (Vi)**: Listens to audio transmissions and relays missing words to partner
-- **Collaborative Gameplay**: Communication between players is essential for success
-- **Clean, Focused Design**: Removed unnecessary complexity for better learning experience
-
-### Implementation Details
-
-#### Backend Architecture (`Hubs/GameHub.cs`)
-- **SimpleSignalDecoderGame class** with streamlined vocabulary system:
-  - 3 progressive signal transmissions with increasing difficulty
-  - Simple scoring system (10 points minus hints used per word)
-  - Position-specific word replacement using string templates
-  - Audio file progression with automatic updates
-- **Simplified GameHub methods**:
-  - `JoinSignalDecoderGame()` - Role-based player assignment (Piltover/Zaunite)
-  - `SubmitSignalDecoderGuess()` - Word validation with proper completion logic
-  - `RequestSignalDecoderHint()` - 3-tier hint system for learning support
-  - `RestartSignalDecoderGame()` - Complete game reset functionality
-
-#### Signal Progression System
-- **Signal 1**: `"Help! {0} spreading {1}!"` → "fire", "fast" (Emergency scenario)
-- **Signal 2**: `"{0} {1} {2}!"` → "evacuate", "building", "now" (Evacuation scenario)  
-- **Signal 3**: `"{0} {1}!"` → "medical", "emergency" (Medical scenario)
-- **Automatic Progression**: Game moves to next signal when current is completed
-- **Audio Updates**: Zaunite player gets new audio file automatically via @key forcing
-
-#### Key Technical Solutions
-- **Word Position Mapping**: Uses `{0}`, `{1}`, `{2}` placeholders for precise word placement
-- **Audio Element Refresh**: `@key="audioUpdateCounter"` forces Blazor to recreate audio elements
-- **Signal Completion Logic**: Prevents index out of bounds on final signal completion
-- **Animation Timing**: Success animations only trigger on signal completion, not individual words
-
-#### Frontend Implementation (`Components/Pages/SignalDecoder.razor`)
-- **Simplified UI with essential elements only**:
-  - Clean audio player for Zaunite players (removed frequency/morse displays)
-  - Clear sentence display for Piltover players with proper word replacement
-  - Progress tracking showing current signal and score
-  - Streamlined hint system integration
-- **Robust SignalR Integration**:
-  - Type-safe event handlers using simplified data models
-  - Real-time audio file updates with forced element refresh
-  - Proper word replacement display with position-specific mapping
-
-### Key Features Implemented
-
-#### Game Mechanics
-- **3-Signal Progression**: Emergency scenarios with increasing vocabulary complexity
-- **Position-Specific Word Replacement**: Each word fills its designated blank correctly
-- **Audio File Progression**: Automatic audio updates when moving between signals
-- **Smart Success Animations**: Celebrations only on signal completion, not individual words
-- **Hint System**: Category → Length/First Letter → Context hints for learning support
-
-#### Educational Value
-- **Listening Comprehension Focus**: Core ESL skill development through audio-text coordination
-- **Emergency Vocabulary**: Practical English words for urgent situations
-- **Collaborative Learning**: Encourages peer communication and teamwork
-- **Progressive Difficulty**: Vocabulary complexity increases across the three signals
-
-#### User Experience
-- **Clean, Distraction-Free Design**: Removed unnecessary UI elements (frequency displays, morse patterns)
-- **Immediate Visual Feedback**: Words appear in correct positions as typed
-- **Smooth Signal Transitions**: 2-second celebration delay before new signal loads
-- **Audio Debug Information**: Shows current audio file and update counter for troubleshooting
-- **Responsive Progress Display**: Real-time signal tracking (Signal: 1/3, 2/3, 3/3)
-
-#### Multiplayer Architecture
-- **Room-based games** supporting exactly 2 players with distinct roles
-- **Real-time audio synchronization** across player progression
-- **Type-safe SignalR messaging** using simplified data models
-- **Robust error handling** for game completion and edge cases
-
-### Technical Implementation Details
-
-#### SignalR Hub Methods
-```csharp
-JoinSignalDecoderGame(string roomId, string playerName)    // Join with role assignment
-SubmitSignalDecoderGuess(string roomId, string guess)      // Submit word with position validation
-RequestSignalDecoderHint(string roomId)                    // Request learning hints
-RestartSignalDecoderGame(string roomId)                    // Reset game state
-```
-
-#### Client-Side Event Handlers
-```csharp
-SignalDecoderGameJoined          // Player joins with role assignment
-SignalDecoderGameStateUpdated    // Real-time game state synchronization
-SignalDecoderGameCompleted       // Final game completion
-SignalDecoderInvalidGuess        // Guess validation feedback
-SignalDecoderCorrectGuess        // Success feedback (signal-level animations only)
-SignalDecoderPlayerViewUpdated   // Role-specific view updates with audio refresh
-```
-
-#### Data Models
-```csharp
-SimpleSignalData                 // Signal template with audio file
-SimplePlayerView                 // Role-specific view data
-SimpleGameState                  // Progress tracking and scoring
-```
-
-### Usage Instructions (Signal Decoder)
-1. Navigate to `/signal-decoder` page
-2. **Connect together** - Both players enter same Room ID and click "Join Room" then "Join Game"
-3. **Role Assignment** - First player becomes Piltover (text), second becomes Zaunite (audio)
-4. **Signal 1**: Piltover sees `"Help! ____ spreading ____!"`, Zaunite listens to emergency audio
-5. **Collaborate** - Zaunite listens and tells Piltover the missing words ("fire", "fast")
-6. **Progress** - Complete all 3 signals with different emergency scenarios
-7. **Restart** - Use "Restart Game" to play again with same room
-
-### Lessons Learned from Over-Engineering
-- **Started Complex**: Originally had 12+ audio files, priority systems, timers, complex UI
-- **Simplified Successfully**: Reduced to 3 essential signals with clean gameplay loop
-- **Focus on Learning**: Prioritized ESL education over complex game mechanics
-- **Technical Challenges Solved**: Audio updates, word positioning, completion logic, animation timing
-- **Result**: Clean, educational, functional listening comprehension tool
-
-## SignalR Multiplayer Best Practices
-
-### Key Insights for Robust SignalR Implementation
-
-#### 1. **Type Safety is Critical**
-- **Problem**: Using `dynamic` or `object` types in SignalR event handlers causes serialization issues and Blazor circuit crashes
-- **Solution**: Create strongly-typed classes for data transfer between client and server
-```csharp
-// Backend - Strongly typed data classes
-public class PlayerViewData { /* properties */ }
-public class GameStateData { /* properties */ }
-
-// Frontend - Matching client classes  
-public class PlayerView { /* properties */ }
-public class GameState { /* properties */ }
-
-// SignalR event handlers with proper types
-hubConnection.On<string, PlayerViewData>("GameJoined", (role, view) => { ... });
-```
-
-#### 2. **State Synchronization Patterns**
-- **Always update both game state AND player views** after state changes
-- **Use individual client updates** for role-specific data, group updates for shared state
-```csharp
-// Update shared game state
-await Clients.Group(roomId).SendAsync("GameStateUpdated", game.GetGameState());
-
-// Update individual player views with role-specific data
-foreach (var player in game.GetConnectedPlayers())
-{
-    await Clients.Client(player).SendAsync("PlayerViewUpdated", game.GetPlayerView(player));
-}
-```
-
-#### 3. **Connection Management**
-- **Ensure players join SignalR groups** before game-specific operations
-- **Handle duplicate join attempts** gracefully - return existing state instead of failing
-- **Clean up games on disconnection** to prevent memory leaks
-```csharp
-public async Task JoinGame(string roomId, string playerName)
-{
-    // Always ensure group membership first
-    await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-    
-    // Handle existing players gracefully
-    var existingRole = game.GetExistingPlayerRole(Context.ConnectionId);
-    if (existingRole != null) return existingRole;
-}
-```
-
-#### 4. **Error Handling and Debugging**
-- **Enable DetailedErrors in development** for better error visibility
-- **Add comprehensive error messages** for invalid operations
-- **Use proper exception handling** in hub methods
-```json
-// appsettings.Development.json
-{
-  "DetailedErrors": true
-}
-```
-
-#### 5. **Game State Validation**
-- **Validate all player actions** server-side (never trust client input)
-- **Check game completion state** before processing actions
-- **Implement proper turn management** for turn-based games
-```csharp
-public (bool Success, string Message) ProcessAction(string connectionId, object action)
-{
-    if (IsCompleted) return (false, "Game is already completed");
-    if (!Players.ContainsKey(connectionId)) return (false, "Player not in game");
-    if (!IsPlayerTurn(connectionId)) return (false, "Not your turn");
-    // ... process action
-}
-```
-
-#### 6. **Performance Considerations**
-- **Use concurrent collections** for thread-safe game storage
-- **Limit the size of data sent** in SignalR messages
-- **Batch related updates** instead of sending multiple small updates
-- **Clean up completed/abandoned games** periodically
-
-#### 7. **Client-Side Resilience**
-- **Handle connection drops gracefully** with automatic reconnection
-- **Show connection status** to users
-- **Disable actions during disconnection** to prevent errors
-- **Use proper async/await patterns** in event handlers
-
-#### Common Pitfalls to Avoid
-- ❌ Using `dynamic` types in SignalR messages (causes crashes)
-- ❌ Forgetting to update player views after game state changes
-- ❌ Not validating player actions server-side
-- ❌ Missing SignalR group membership before game operations
-- ❌ Not handling duplicate join attempts
-- ❌ Mixing async/sync code improperly in event handlers
-
-## NavigationMaze: Underground Escape Route Implementation
-
-### Game Overview
-**NavigationMaze** is a cooperative navigation puzzle where players work together to escape from dangerous Zaun to safety in Piltover. One player acts as the tactical navigator with map access, while the other makes navigation choices from a first-person perspective.
-
-#### Narrative Theme
-- **Piltover Player (Caitlyn)**: Acts as tactical navigator with access to reconnaissance files and tactical maps
-- **Zaunite Player (Vi)**: Explores dangerous undercity terrain from first-person view making navigation choices
-- **Collaborative Gameplay**: Navigator provides intel while Explorer makes path decisions
-- **Simplified Lobby System**: Clean player list display without chat complexity
-
-### Implementation Details
-
-#### Backend Architecture (`Hubs/GameHub.cs`)
-- **NavigationMazeGame class** with cooperative pathfinding system:
-  - 5 progressive location challenges with increasing difficulty
-  - Player role assignments (Piltover Navigator/Zaunite Explorer)
-  - Turn-based navigation choices with win/lose conditions
-  - Location-based map data and tactical intelligence
-- **Enhanced GameHub methods**:
-  - `JoinNavigationMazeGame()` - Role-based player assignment
-  - `MakeNavigationChoice()` - Process navigation decisions with validation
-  - `RestartNavigationMazeGame()` - Reset game state for replay
-- **Room State Tracking**: Server-side player registry for accurate lobby display
-- **Concurrent game management** using dedicated dictionary for NavigationMaze games
-
-#### Room Management System
-- **Player State Tracking**: `ConcurrentDictionary<string, ConcurrentDictionary<string, string>>` for room players
-- **Room State Synchronization**: `RoomState` event sends complete player list to joining players
-- **Automatic Cleanup**: Disconnection handling and empty room cleanup
-- **Real-time Updates**: Both players see accurate player list regardless of join order
-
-#### Frontend Implementation (`Components/Pages/NavigationMaze.razor`)
-- **Simplified Lobby Design**:
-  - Clean header section with game title and subtitle
-  - Step-by-step instructions with numbered guides
-  - Role preview cards showing gameplay mechanics
-  - **Player list display** instead of chat system (Mission Team section)
-  - **Lobby hidden during gameplay** for immersive experience
-- **Arcane-themed UI Components**:
-  - Custom `arcane-btn` classes with gradient backgrounds and hover effects
-  - Form inputs with golden borders and futuristic styling
-  - Player cards with real-time connection status
-  - Responsive design optimized for all screen sizes
-- **Game Interface**:
-  - **Piltover Navigator**: File browser with tactical maps and reconnaissance data
-  - **Zaunite Explorer**: First-person location view with navigation choices
-  - **Role-specific theming**: Golden Piltover vs Teal Zaunite aesthetics
-
-### Key Features Implemented
-
-#### Lobby System
-- **Player List Display**: Shows connected players with status indicators
-- **Real-time Updates**: Accurate player count regardless of join order
-- **Waiting Indicators**: Shows "Waiting for partner..." when only 1 player connected
-- **Role Assignment**: First player = Piltover Navigator, Second = Zaunite Explorer
-- **Clean UI**: Lobby completely hidden during active gameplay
-
-#### Game Mechanics
-- **Cooperative Navigation**: Navigator provides intel, Explorer makes choices
-- **Progressive Difficulty**: 5 locations with increasing challenge complexity
-- **Location Intelligence**: Threat levels, recommended actions, tactical data
-- **Win/Lose Conditions**: Correct choices advance, wrong choices end game
-- **Restart Functionality**: Quick replay without rejoining room
-
-#### Technical Architecture
-- **Room State Management**: Robust player tracking with automatic cleanup
-- **SignalR Event Handlers**:
-  - `NavigationMazeGameJoined` - Role assignment and game start
-  - `NavigationMazeGameStateUpdated` - Real-time game progress
-  - `NavigationMazePlayerViewUpdated` - Role-specific view updates
-  - `RoomState` - Complete player list synchronization
-- **Data Models**: `NavigationPlayerView`, `NavigationGameState`, `NavigationMapData`
-
-### Usage Instructions (NavigationMaze)
-1. Navigate to `/navigation-maze` page
-2. **Setup Room** - Both players enter same Room ID and Player Name
-3. **Join Room** - Click "Join Room" to see Mission Team player list
-4. **Start Mission** - Click "Start Mission" (first = Navigator, second = Explorer)
-5. **Collaborate** - Navigator reads tactical intel, Explorer chooses paths
-6. **Navigate Together** - Progress through 5 locations to reach safety
-7. **Restart** - Use "Restart Mission" to play again
-
-### Technical Improvements Made
-- **Fixed Player List Sync**: Second player now sees first player immediately
-- **Room State Tracking**: Server maintains accurate player registry per room
-- **Lobby Visibility**: Entire setup section hidden during active gameplay
-- **Custom Button Styling**: Replaced Bootstrap with themed `arcane-btn` classes
-- **Performance Optimized**: Concurrent collections for thread-safe operations
-- **Memory Management**: Automatic cleanup of empty rooms and disconnected players
-
-### Development Notes
-- **No Chat System**: Intentionally simplified - players coordinate via game mechanics
-- **Responsive Design**: Optimized for desktop and mobile experiences  
-- **Theming Consistency**: Matches other prototypes' visual quality and behavior
-- **Error Handling**: Robust disconnection and edge case management
-- **Scalable Architecture**: Easy to add more locations or game variations
-
-## Important Notes
-
-- This is a **premium game/entertainment application** focused on the Arcane universe
-- The project emphasizes **AAA-quality visual design** with cinematic animations and immersive theming
-- **Character selection logic is not yet implemented** (see TODO comments in LandingPage.razor:1069)
-- **Audio system is placeholder** functionality
-- Uses **Blazor Server** rendering mode throughout
-- **Multiplayer games implemented**:
-  - **Tic-tac-toe**: Fully functional with real-time synchronization
-  - **Code Cracker**: Premium vocabulary puzzle with educational focus and advanced UX
-  - **Signal Decoder**: Simplified listening comprehension game for ESL students
-  - **NavigationMaze**: Cooperative pathfinding puzzle with simplified lobby system and player list display
-- **Advanced animation system** with hardware-accelerated CSS and smooth transitions
-- **Educational gaming focus** specifically designed for German ESL students
-- **Professional multiplayer architecture** with robust SignalR implementation
+### Common Method Patterns
+
+Each puzzle section follows consistent patterns:
+
+#### 1. **Join Game Methods** (Lines 113, 192, 288, 383, 526, 672, 827)
+- Pattern: `JoinXXXGame(string roomId, string playerName)`
+- Adds player to SignalR group
+- Creates or retrieves game instance
+- Assigns player role (typically Piltover vs Zaunite)
+- Sends initial game state and player-specific view
+
+#### 2. **Game Action Methods** (Varies by puzzle)
+- **CodeCracker**: `SubmitCodeCrackerGuess()` (Line 132), `RequestCodeCrackerHint()` (Line 163)
+- **SignalDecoder**: `SubmitSignalDecoding()` (Line 232)
+- **NavigationMaze**: `MakeNavigationChoice()` (Line 315)
+- **AlchemyLab**: `ProcessIngredient()` (Line 409), `AddToCauldron()` (Line 440), `SubmitPotion()` (Line 473)
+- **RuneProtocol**: `ToggleRune()` (Line 557), `ToggleRuneProtocolValidationHints()` (Line 602)
+- **PictureExplanation**: `SubmitPictureChoice()` (Line 736), `NextPictureRound()` (Line 780)
+- **Word-Forge**: `ForgeWordCombination()` (Line 890)
+
+#### 3. **Restart/Reset Methods** (Lines 176, 243, 353, 510, 637, 810, 919)
+- Pattern: `RestartXXXGame(string roomId)`
+- Resets game state to initial conditions
+- Broadcasts updated state to all players
+
+### Advanced Features by Puzzle
+
+#### **CodeCracker (Lines 112-190)**
+- **Hint System**: Players can request hints with usage tracking
+- **Scoring System**: Points based on speed and accuracy
+- **Progressive Difficulty**: Word complexity increases through rounds
+- **Animation Coordination**: 2.5-second delays for success animations
+
+#### **SignalDecoder (Lines 191-286)**
+- **Emergency Scenarios**: Multiple crisis types (medical, fire, police, disasters)
+- **Signal Degradation**: Time-based signal quality reduction
+- **Audio Integration**: Coordinated audio playback for realistic communication
+
+#### **NavigationMaze (Lines 287-381)**
+- **Role Separation**: Navigator (map view) vs Explorer (first-person view)
+- **Location Progression**: 5-stage journey with increasing complexity
+- **Failure Handling**: Thematic game-over messages with restart capability
+
+#### **AlchemyLab (Lines 382-524)**
+- **Multi-Step Processing**: Ingredient transformation through multiple stations
+- **Drag-and-Drop Validation**: Server-side verification of ingredient movements
+- **Recipe Validation**: Complex 4-step brewing process with combination mechanics
+- **State Synchronization**: Real-time ingredient pool updates
+
+#### **RuneProtocol (Lines 525-670)**
+- **Logic Engine**: Advanced rule validation with conditional statements
+- **Hint Toggling**: Optional validation feedback system
+- **Level Progression**: Multiple difficulty levels with unique rule sets
+- **Victory Detection**: Rule-satisfaction analysis rather than hardcoded solutions
+
+#### **PictureExplanation (Lines 671-825)**
+- **Voice Chat Integration**: Designed for external voice communication
+- **Image Management**: Hide/show mechanics for strategic gameplay
+- **Round Progression**: 5-round structure with increasing difficulty
+- **Choice Validation**: Server-side image selection verification
+
+#### **Word-Forge (Lines 826-934)**
+- **Affix System**: Complex word formation with prefixes and suffixes
+- **Game Modes**: Assisted vs Challenge difficulty levels
+- **Combination Tracking**: Progress monitoring for word formation goals
+
+### SignalR Event Patterns
+
+Each puzzle broadcasts standardized event types:
+- **`XXXGameJoined`**: Player successfully joins with role assignment
+- **`XXXGameStateUpdated`**: Global game state changes
+- **`XXXPlayerViewUpdated`**: Individual player-specific information updates
+- **`XXXGameCompleted`**: Victory conditions met
+- **`XXXGameFull`**: Room capacity reached
+- **Invalid Action Events**: Puzzle-specific error handling
+
+### Performance and Scalability Features
+
+#### **Thread Safety**
+- `ConcurrentDictionary` usage throughout for thread-safe operations
+- Atomic game state updates to prevent race conditions
+
+#### **Memory Management**
+- Automatic cleanup of empty rooms in `OnDisconnectedAsync()` (Line 935)
+- Player tracking removal on disconnection
+- Game instance cleanup when no players remain
+
+#### **Error Handling**
+- Comprehensive try-catch blocks for game operations
+- Graceful degradation when games not found
+- Client-side validation with server-side verification
+
+### Future Maintenance Guidelines
+
+#### **Adding New Puzzles**
+1. **Add Static Dictionary** (after Line 18): `private static readonly ConcurrentDictionary<string, NewPuzzleGame> _newPuzzleGames = new();`
+2. **Insert Methods Section** (after Line 934): Follow established patterns for Join/Action/Restart methods
+3. **Update Documentation**: Add line ranges and method descriptions to this section
+
+#### **Modifying Existing Puzzles**
+- **CodeCracker**: Lines 112-190 - Word bank and scoring modifications
+- **SignalDecoder**: Lines 191-286 - Emergency scenario additions
+- **NavigationMaze**: Lines 287-381 - Location progression changes
+- **AlchemyLab**: Lines 382-524 - Recipe and ingredient system updates
+- **RuneProtocol**: Lines 525-670 - Logic rule additions and level creation
+- **PictureExplanation**: Lines 671-825 - Image set and round structure changes
+- **Word-Forge**: Lines 826-934 - Affix system and difficulty adjustments
+
+#### **Connection Management**
+- Room cleanup logic: Lines 935-960
+- Player tracking: Lines 20-53
+- Group management: Standard SignalR patterns throughout
+
+This centralized architecture allows for consistent multiplayer experiences across all puzzle types while maintaining clear separation of concerns for each game system.

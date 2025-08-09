@@ -547,7 +547,7 @@
 
 .character-container {
     position: relative;
-    bottom: 35%;
+    bottom: 25%;
     transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
     transform: scale(0.95) translateY(10px);
 }
@@ -654,37 +654,41 @@
  ********************************************/
 .dialogue-section {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    max-width: 900px;
     z-index: 6;
-    padding: 2rem;
 }
 
 .dialogue-box {
     position: relative;
-    min-height: 140px;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.9) 100%);
-    border-radius: 0;
-    padding: 2rem 2.5rem 1.5rem 2.5rem;
+    min-height: 200px;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.92) 0%, 
+        rgba(15, 10, 25, 0.88) 50%,
+        rgba(0, 0, 0, 0.92) 100%);
+    padding: 2.5rem 3rem 2rem 3rem;
     border: none;
-    overflow: hidden;
+    overflow: visible;
     animation: dialogueBoxEntrance 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
     
-    /* Arcane-style border with layered effects */
+    /* Hextech-inspired border design */
     box-shadow: 
-        inset 0 0 0 2px rgba(200, 170, 110, 0.6),
-        inset 0 0 0 4px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 6px rgba(200, 170, 110, 0.3),
-        0 8px 32px rgba(0, 0, 0, 0.6),
-        0 0 40px rgba(200, 170, 110, 0.1);
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(200, 170, 110, 0.4),
+        inset 0 0 20px rgba(200, 170, 110, 0.1),
+        0 0 50px rgba(0, 0, 0, 0.8),
+        0 0 80px rgba(200, 170, 110, 0.15);
     
-    /* Clip path for angular Arcane-style corners */
+    /* More dramatic angular corners */
     clip-path: polygon(
-        0 10px, 10px 0, 
-        calc(100% - 10px) 0, 100% 10px,
-        100% calc(100% - 10px), calc(100% - 10px) 100%,
-        10px 100%, 0 calc(100% - 10px)
+        0 15px, 15px 0,
+        calc(100% - 15px) 0, 100% 15px,
+        100% calc(100% - 15px), calc(100% - 15px) 100%,
+        15px 100%, 0 calc(100% - 15px)
     );
 }
 
@@ -699,7 +703,7 @@
     }
 }
 
-/* Runic pattern overlay */
+/* Subtle corner accents */
 .dialogue-box::before {
     content: '';
     position: absolute;
@@ -708,50 +712,53 @@
     right: 0;
     bottom: 0;
     background-image: 
-        /* Corner runes */
-        radial-gradient(circle at 2rem 2rem, rgba(200, 170, 110, 0.15) 1px, transparent 2px),
-        radial-gradient(circle at calc(100% - 2rem) 2rem, rgba(200, 170, 110, 0.15) 1px, transparent 2px),
-        radial-gradient(circle at 2rem calc(100% - 2rem), rgba(200, 170, 110, 0.15) 1px, transparent 2px),
-        radial-gradient(circle at calc(100% - 2rem) calc(100% - 2rem), rgba(200, 170, 110, 0.15) 1px, transparent 2px),
-        /* Border pattern */
-        linear-gradient(90deg, rgba(200, 170, 110, 0.2) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(200, 170, 110, 0.2) 1px, transparent 1px);
-    background-size: 8px 8px, 8px 8px, 8px 8px, 8px 8px, 20px 4px, 4px 20px;
-    background-position: top left, top right, bottom left, bottom right, top, left;
-    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-y;
+        /* Static corner hextech nodes */
+        radial-gradient(circle at 3rem 3rem, rgba(200, 170, 110, 0.2) 2px, transparent 3px),
+        radial-gradient(circle at calc(100% - 3rem) 3rem, rgba(200, 170, 110, 0.2) 2px, transparent 3px),
+        radial-gradient(circle at 3rem calc(100% - 3rem), rgba(200, 170, 110, 0.2) 2px, transparent 3px),
+        radial-gradient(circle at calc(100% - 3rem) calc(100% - 3rem), rgba(200, 170, 110, 0.2) 2px, transparent 3px);
+    background-size: 10px 10px, 10px 10px, 10px 10px, 10px 10px;
+    background-position: top left, top right, bottom left, bottom right;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
-/* Hextech energy glow effect */
+/* Static border accent */
 .dialogue-box::after {
     content: '';
     position: absolute;
-    top: 6px;
-    left: 6px;
-    right: 6px;
-    bottom: 6px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: linear-gradient(135deg, 
-        rgba(200, 170, 110, 0.03) 0%, 
+        rgba(200, 170, 110, 0.05) 0%, 
         transparent 20%, 
         transparent 80%, 
-        rgba(200, 170, 110, 0.03) 100%);
+        rgba(200, 170, 110, 0.05) 100%);
     clip-path: polygon(
-        0 8px, 8px 0, 
-        calc(100% - 8px) 0, 100% 8px,
-        100% calc(100% - 8px), calc(100% - 8px) 100%,
-        8px 100%, 0 calc(100% - 8px)
+        0 15px, 15px 0,
+        calc(100% - 15px) 0, 100% 15px,
+        100% calc(100% - 15px), calc(100% - 15px) 100%,
+        15px 100%, 0 calc(100% - 15px)
     );
     pointer-events: none;
+    z-index: -1;
 }
 
 .dialogue-piltover {
+    background: linear-gradient(135deg, 
+        rgba(10, 5, 0, 0.95) 0%, 
+        rgba(25, 15, 5, 0.9) 50%,
+        rgba(10, 5, 0, 0.95) 100%);
     box-shadow: 
-        inset 0 0 0 2px rgba(200, 170, 110, 0.8),
-        inset 0 0 0 4px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 6px rgba(255, 215, 0, 0.4),
-        0 8px 32px rgba(0, 0, 0, 0.6),
-        0 0 50px rgba(200, 170, 110, 0.2);
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(255, 215, 0, 0.5),
+        inset 0 0 30px rgba(255, 215, 0, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(200, 170, 110, 0.2);
 }
 
 .dialogue-piltover::before {
@@ -767,12 +774,17 @@
 }
 
 .dialogue-zaun {
+    background: linear-gradient(135deg, 
+        rgba(0, 10, 8, 0.95) 0%, 
+        rgba(5, 20, 15, 0.9) 50%,
+        rgba(0, 10, 8, 0.95) 100%);
     box-shadow: 
-        inset 0 0 0 2px rgba(0, 212, 170, 0.8),
-        inset 0 0 0 4px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 6px rgba(0, 255, 200, 0.4),
-        0 8px 32px rgba(0, 0, 0, 0.6),
-        0 0 50px rgba(0, 212, 170, 0.2);
+        inset 0 0 0 1px rgba(0, 212, 170, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(0, 255, 200, 0.5),
+        inset 0 0 30px rgba(0, 255, 200, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(0, 212, 170, 0.2);
 }
 
 .dialogue-zaun::before {
@@ -792,12 +804,11 @@
  ********************************************/
 .dialogue-controls-external {
     position: absolute;
-    top: -50px;
-    right: 0;
+    top: -55px;
+    right: 20px;
     display: flex;
-    gap: 12px;
+    gap: 15px;
     z-index: 100;
-    padding: 0 2rem;
 }
 
 .control-btn {
@@ -1133,12 +1144,13 @@
  ********************************************/
 @@media (max-width: 768px) {
     .dialogue-section {
-        padding: 1rem;
+        width: 85%;
+        bottom: 2rem;
     }
     
     .dialogue-box {
-        padding: 0.75rem;
-        min-height: 100px;
+        padding: 2rem 2rem 1.5rem 2rem;
+        min-height: 160px;
     }
     
     .dialogue-text {
@@ -1166,13 +1178,18 @@
     }
     
     .dialogue-controls-external {
-        top: -45px;
-        gap: 8px;
-        padding: 0 1rem;
+        top: -50px;
+        gap: 10px;
+        right: 15px;
     }
 }
 
 @@media (max-width: 480px) {
+    .dialogue-section {
+        width: 95%;
+        bottom: 1rem;
+    }
+    
     .dialogue-text {
         font-size: 1rem;
     }
@@ -1183,8 +1200,8 @@
     }
     
     .dialogue-box {
-        min-height: 80px;
-        padding: 0.5rem;
+        min-height: 140px;
+        padding: 1.5rem 1.5rem 1rem 1.5rem;
     }
     
     .character-name-tag {
@@ -1197,9 +1214,9 @@
     }
     
     .dialogue-controls-external {
-        top: -40px;
-        gap: 6px;
-        padding: 0 1rem;
+        top: -45px;
+        gap: 8px;
+        right: 10px;
     }
 }
 
