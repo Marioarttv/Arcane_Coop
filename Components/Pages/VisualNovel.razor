@@ -549,65 +549,92 @@
     position: relative;
     bottom: 35%;
     transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-    filter: brightness(0.6) saturate(0.5) blur(1px);
     transform: scale(0.95) translateY(10px);
-    opacity: 0.8;
 }
 
 .character-container.active {
-    filter: brightness(1.1) saturate(1.1) blur(0px);
     transform: scale(1.05) translateY(0px);
     z-index: 5;
-    opacity: 1;
 }
 
 .character-container.inactive {
-    filter: brightness(0.4) saturate(0.3) blur(2px);
     transform: scale(0.88) translateY(15px);
-    opacity: 0.6;
 }
 
 .character-portrait {
     position: relative;
     display: flex;
     align-items: flex-end;
+    justify-content: center;
 }
 
 .portrait-image {
     max-height: 70vh;
     max-width: 400px;
     object-fit: contain;
-    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
     transition: all 0.4s ease-in-out;
     transform-origin: center bottom;
 }
 
+/* Active character glow effect for transparent PNGs */
+.character-container.active .portrait-image {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.8))
+            drop-shadow(0 0 60px rgba(200, 170, 110, 0.2));
+}
+
+/* Inactive character subtle shadow */
+.character-container.inactive .portrait-image {
+    filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.6));
+    opacity: 0.6;
+}
+
 .character-glow {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
                 transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: scale(0.8);
+    transform: translate(-50%, -50%) scale(0.8);
+    z-index: -1;
 }
 
 .character-container.active .character-glow {
-    opacity: 1;
-    transform: scale(1);
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
 }
 
 .visual-novel.piltover .character-container.active .character-glow {
-    box-shadow: 0 0 50px rgba(200, 170, 110, 0.3);
-    background: radial-gradient(circle at center, rgba(200, 170, 110, 0.1) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, 
+        rgba(200, 170, 110, 0.15) 0%, 
+        rgba(200, 170, 110, 0.08) 30%, 
+        transparent 70%);
+    filter: blur(40px);
 }
 
 .visual-novel.zaun .character-container.active .character-glow {
-    box-shadow: 0 0 50px rgba(0, 212, 170, 0.3);
-    background: radial-gradient(circle at center, rgba(0, 212, 170, 0.1) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, 
+        rgba(0, 212, 170, 0.15) 0%, 
+        rgba(0, 212, 170, 0.08) 30%, 
+        transparent 70%);
+    filter: blur(40px);
+}
+
+/* Enhanced theme-specific portrait shadows */
+.visual-novel.piltover .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(200, 170, 110, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(255, 215, 0, 0.15));
+}
+
+.visual-novel.zaun .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(0, 212, 170, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(0, 255, 200, 0.15));
 }
 
 .left-character {
@@ -765,7 +792,7 @@
  ********************************************/
 .dialogue-controls-external {
     position: absolute;
-    bottom: -60px;
+    top: -50px;
     right: 0;
     display: flex;
     gap: 12px;
@@ -1139,7 +1166,7 @@
     }
     
     .dialogue-controls-external {
-        bottom: -50px;
+        top: -45px;
         gap: 8px;
         padding: 0 1rem;
     }
@@ -1170,7 +1197,7 @@
     }
     
     .dialogue-controls-external {
-        bottom: -40px;
+        top: -40px;
         gap: 6px;
         padding: 0 1rem;
     }
