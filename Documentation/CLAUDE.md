@@ -62,6 +62,16 @@ dotnet publish -c Release
 - **Cascading parameters** for context sharing
 - **CSS @ symbols must be escaped** in Razor components: use `@@keyframes`, `@@media`, `@@import`, `@@font-face`
 
+### Visual Novel Multiplayer Editor Notes (2025)
+
+For reliable Visual Novel behavior in multiplayer (Act 1) and in the visual editor:
+
+- Use `CancellationTokenSource` and a `CancelTypewriter()` helper to cancel any in-flight typewriter animation
+- Reset local text state (`displayedText`, `currentTextIndex`) and force a render before starting a new animation to avoid first-character carry-over
+- On Skip, cancel the animation and set the full line once; also notify the server (see `Act1TypingCompleted`) so both clients' buttons flip from Skip → Continue
+- Add a `Act1TypingCompleted(roomId)` hub method that marks `IsTextAnimating=false` and `GameState.IsTextFullyDisplayed=true`, then broadcasts the updated `Act1PlayerView`
+- After `Act1SceneTransition`, add a short client fallback (e.g., 4s) to navigate to the next game if the redirect message is missed
+
 ### Static Assets
 - Located in **wwwroot/**
 - Character images: Vi.jpeg, Cait.jpeg, Jayce.jpeg, Viktor.jpeg
@@ -125,6 +135,11 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 **Mechanics**: Describe → Hide → Choose from 4 options
 **Education**: Descriptive language, active listening
 **Documentation**: [PictureExplanation.md](./PictureExplanation.md)
+**Story Transition and Role Preservation**
+
+- From Act 1, send each client an individualized redirect (not a single group URL) including: `role`, `avatar`, `name`, `squad`, `story=true`
+- In `PictureExplanation.razor`, when `story=true`, immediately set `inGame = true` after join to bypass the lobby for both Piltover and Zaun
+- Add `JoinPictureExplanationGameWithRole(roomId, playerName, requestedRole)` to honor requested roles while preventing duplicates (second player is assigned the remaining role)
 
 ### 5. RuneProtocol (/rune-protocol)
 **Purpose**: Logic puzzles and conditional reasoning
@@ -153,6 +168,7 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 - **SignalR Hubs**: Real-time communication via GameHub.cs
 - **Room-based Games**: Players join rooms using shared codes
 - **Role Assignment**: First player = Piltover, Second = Zaunite
+  - Story override: per-player URL `role` can request Piltover/Zaun; server resolves conflicts and ensures distinct roles
 - **State Synchronization**: Server-side validation with client updates
 - **Connection Management**: Graceful handling of disconnections
 

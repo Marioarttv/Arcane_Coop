@@ -24,8 +24,15 @@ public class GameHub : Hub
     private sealed class LobbyPlayerInfo
     {
         public string Name { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty; // "piltover" or "zaun"
         public string Avatar { get; set; } = string.Empty;
+        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    private sealed class LobbyRolesSnapshot
+    {
+        public string? PiltoverBy { get; set; }
+        public string? ZaunBy { get; set; }
     }
 
     public async Task JoinRoom(string roomId, string playerName)
@@ -39,7 +46,7 @@ public class GameHub : Hub
         // Initialize lobby player metadata with at least the name; role/avatar can be updated later
         var lobbyDict = _lobbyPlayers.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, LobbyPlayerInfo>());
         lobbyDict.AddOrUpdate(Context.ConnectionId,
-            _ => new LobbyPlayerInfo { Name = playerName },
+            _ => new LobbyPlayerInfo { Name = playerName, JoinedAt = DateTime.UtcNow },
             (_, existing) => { existing.Name = playerName; return existing; });
         
         // Send room state to the joining player
@@ -77,6 +84,7 @@ public class GameHub : Hub
         }
         
         await Clients.Group(roomId).SendAsync("PlayerLeft", playerName, Context.ConnectionId);
+        await BroadcastLobbyRoles(roomId);
     }
 
     public async Task SendMessageToRoom(string roomId, string playerName, string message)
@@ -86,19 +94,53 @@ public class GameHub : Hub
 
     public async Task RedirectPlayersToAct1(string originalRoomId, string storyLobbyName, string role, string avatar, string playerName)
     {
-        // Prefer personalized redirects when lobby metadata is available (avoids using caller's params for everyone)
+        // Prefer personalized redirects with enforced distinct roles when metadata is available
         if (_lobbyPlayers.TryGetValue(originalRoomId, out var lobbyDict) && !lobbyDict.IsEmpty)
         {
-            foreach (var kvp in lobbyDict)
-            {
-                var connectionId = kvp.Key;
-                var info = kvp.Value;
-                var effectiveRole = string.IsNullOrWhiteSpace(info.Role) ? role : info.Role;
-                var effectiveAvatar = string.IsNullOrWhiteSpace(info.Avatar) ? avatar : info.Avatar;
-                var effectiveName = string.IsNullOrWhiteSpace(info.Name) ? playerName : info.Name;
+            // Build ordered list of players by JoinedAt to break ties deterministically
+            var players = lobbyDict
+                .Select(kvp => (ConnectionId: kvp.Key, Info: kvp.Value))
+                .OrderBy(p => p.Info.JoinedAt)
+                .ToList();
 
-                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={effectiveRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}";
-                await Clients.Client(connectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
+            // Determine final roles ensuring distinct assignment when two players are present
+            string? assignedPiltoverConn = null;
+            string? assignedZaunConn = null;
+
+            foreach (var p in players)
+            {
+                var desired = (p.Info.Role ?? string.Empty).Trim().ToLowerInvariant();
+                if (desired == "piltover" && assignedPiltoverConn == null)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if ((desired == "zaun" || desired == "zaunite") && assignedZaunConn == null)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            // If duplicates or missing, fill remaining slots by join order
+            foreach (var p in players)
+            {
+                if (assignedPiltoverConn == null && p.ConnectionId != assignedZaunConn)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if (assignedZaunConn == null && p.ConnectionId != assignedPiltoverConn)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            // Send per-client redirects with final roles
+            foreach (var p in players)
+            {
+                var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
+                var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
+                var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
+                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}";
+                await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
             }
             return;
         }
@@ -121,7 +163,36 @@ public class GameHub : Hub
                 existing.Avatar = avatar;
                 return existing;
             });
+        _ = BroadcastLobbyRoles(roomId);
         return Task.CompletedTask;
+    }
+
+    public Task RequestLobbyRoles(string roomId)
+    {
+        return BroadcastLobbyRoles(roomId, Context.ConnectionId);
+    }
+
+    private Task BroadcastLobbyRoles(string roomId, string? onlyToConnectionId = null)
+    {
+        if (!_lobbyPlayers.TryGetValue(roomId, out var lobbyDict))
+        {
+            return Task.CompletedTask;
+        }
+
+        string? piltoverBy = null;
+        string? zaunBy = null;
+        foreach (var kvp in lobbyDict)
+        {
+            var role = (kvp.Value.Role ?? string.Empty).Trim().ToLowerInvariant();
+            if (role == "piltover" && string.IsNullOrEmpty(piltoverBy)) piltoverBy = kvp.Value.Name;
+            if ((role == "zaun" || role == "zaunite") && string.IsNullOrEmpty(zaunBy)) zaunBy = kvp.Value.Name;
+        }
+
+        if (onlyToConnectionId != null)
+        {
+            return Clients.Client(onlyToConnectionId).SendAsync("LobbyRolesUpdated", piltoverBy, zaunBy);
+        }
+        return Clients.Group(roomId).SendAsync("LobbyRolesUpdated", piltoverBy, zaunBy);
     }
 
     public async Task SendPlayerAction(string roomId, string action, object data)
@@ -1707,7 +1778,7 @@ public class GameHub : Hub
             Theme = NovelTheme.Zaun // Default theme, can be dynamic based on majority
         };
 
-        // Add Vi and Caitlyn characters
+        // Add Vi and Caitlyn characters using transparent PNGs with expression support
         scene.Characters.AddRange(new[]
         {
             new VisualNovelCharacter
@@ -1715,18 +1786,26 @@ public class GameHub : Hub
                 Id = "vi",
                 Name = "Vi",
                 DisplayName = "Vi",
-                ImagePath = "/images/Vi.jpeg",
+                ImagePath = "/images/Characters/Vi/Vi_default.png",
                 Position = CharacterPosition.Left,
-                ThemeColor = "#00d4aa"
+                ThemeColor = "#00d4aa",
+                ExpressionPaths = new Dictionary<CharacterExpression, string>
+                {
+                    { CharacterExpression.Default, "/images/Characters/Vi/Vi_default.png" }
+                }
             },
             new VisualNovelCharacter
             {
                 Id = "caitlyn",
                 Name = "Caitlyn",
                 DisplayName = "Sheriff Caitlyn",
-                ImagePath = "/images/Cait.jpeg",
+                ImagePath = "/images/Characters/Caitlyn/Caitlyn_default.png",
                 Position = CharacterPosition.Right,
-                ThemeColor = "#c8aa6e"
+                ThemeColor = "#c8aa6e",
+                ExpressionPaths = new Dictionary<CharacterExpression, string>
+                {
+                    { CharacterExpression.Default, "/images/Characters/Caitlyn/Caitlyn_default.png" }
+                }
             }
         });
 

@@ -47,6 +47,25 @@ The Visual Novel System is a sophisticated narrative engine designed specificall
 - **Desktop-First Design**: Optimized for desktop experience with professional animations
 - **Hardware Acceleration**: 60fps animations with CSS transforms and cubic-bezier easing
 
+### Multiplayer (Act 1) Integration
+
+The Visual Novel engine powers a synchronized, two-player story intro for Act 1 via SignalR. The multiplayer page (`Components/Pages/Act1Multiplayer.razor`) mirrors the single-player experience while coordinating state with the server.
+
+- Hub events (subset):
+  - `Act1GameJoined(Act1PlayerView)`, `Act1PlayerViewUpdated(Act1PlayerView)`
+  - `Act1TextSkipped()`, `Act1DialogueContinued(int)`
+  - `Act1SceneTransition(string)`, `Act1RedirectToNextGame(string url)`
+  - `Act1GameRestarted()`, `Act1GameCompleted()`
+- Client state flags in `Act1PlayerView` control UI buttons:
+  - `CanSkip` shows Skip only while text is animating
+  - `CanContinue` shows Continue only when text is fully displayed
+- Typing completion handshake:
+  - Client calls `Act1TypingCompleted(roomId)` when a line finishes animating or is shown instantly
+  - Server sets `IsTextAnimating=false`, `GameState.IsTextFullyDisplayed=true`, then broadcasts updated views
+- Scene transition:
+  - Server emits `Act1SceneTransition` and per-player `Act1RedirectToNextGame(/picture-explanation?...params...)`
+  - Client has a 4s local fallback to navigate if a redirect is missed
+
 ## Usage Guide
 
 ### Basic Implementation
@@ -251,6 +270,20 @@ wwwroot/images/Characters/
 - Save/load functionality  
 - Multiple player support
 - Context preservation
+
+### Visual Editor and Typewriter Reliability (2025 Update)
+
+To ensure predictable behavior in multiplayer and the visual editor:
+
+- Strong cancellation for the typewriter animation
+  - `CancellationTokenSource` with explicit `CancelTypewriter()`
+  - Reset `displayedText`/`currentTextIndex` before starting a new animation
+  - Force a render between reset and start to prevent first-character carry-over
+- Skip behavior
+  - Cancels any running animation, replaces the full line text once (no duplication)
+  - Calls `Act1TypingCompleted` when appropriate so buttons switch from Skip → Continue automatically
+- Continue behavior
+  - Cancels animation, advances dialogue, then starts fresh animation on the next line
 
 ### Modular Architecture
 - Service-based design

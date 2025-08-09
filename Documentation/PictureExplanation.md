@@ -145,6 +145,16 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 - **Mission Context**: Visual intelligence gathering for larger story
 
 ### Thematic Elements
+### Act 1 Visual Novel → Picture Explanation Transition
+
+- Per-player redirect
+  - Server sends `Act1RedirectToNextGame` to each connection with individualized URL parameters
+  - Parameters include: `role`, `avatar`, `name`, `squad`, and `story=true`
+- Role preservation
+  - `PictureExplanation.razor` reads `role` from URL and calls `JoinPictureExplanationGameWithRole`
+  - If both request the same role, the second is assigned the remaining role automatically
+- Lobby bypass for story
+  - When `story=true`, the UI immediately sets `inGame = true` upon join to skip the lobby panel for both Piltover and Zaun
 - **Surveillance Technology**: Fits Piltover's technological aesthetic
 - **Underground Intelligence**: Matches Zaun's information networks
 - **Cooperative Mission**: Emphasizes cross-faction collaboration
@@ -153,12 +163,13 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 ## Technical Notes
 
 ### SignalR Methods
-- `JoinRoom`: Connects players to challenge session
-- `JoinGame`: Assigns Describer/Guesser roles
-- `HideImage`: Describer triggers image hiding
-- `SubmitChoice`: Processes Guesser's image selection
-- `AdvanceRound`: Moves to next challenge round
-- `CompleteChallenge`: Handles final round completion
+- `JoinRoom(roomId, playerName)`: Connects players to challenge session
+- `JoinPictureExplanationGame(roomId, playerName)`: Assigns Describer/Guesser roles
+- `JoinPictureExplanationGameWithRole(roomId, playerName, requestedRole)`: Honors requested role from story URL while preventing duplicates
+- `FinishDescribing(roomId)`: Describer triggers image hiding
+- `SubmitPictureChoice(roomId, choiceIndex)`: Processes Guesser's image selection
+- `NextPictureRound(roomId)`: Moves to next challenge round
+- `RestartPictureExplanationGame(roomId)`: Resets the challenge
 
 ### Image Requirements
 - **Resolution**: High-quality images for detailed description

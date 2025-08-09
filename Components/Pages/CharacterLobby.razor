@@ -887,6 +887,8 @@
     private string connectionTestClass = "";
     private bool isTestingConnection = false;
     private List<string> connectedPlayers = new();
+    private string? piltoverTakenBy = null;
+    private string? zaunTakenBy = null;
     
     // SignalR connections
     private HubConnection? lobbyConnection;
@@ -941,6 +943,11 @@
     private string GetRoleClass()
     {
         return selectedRole == "zaun" ? "zaun" : "piltover";
+    }
+
+    private bool AreRolesDistinct()
+    {
+        return !string.IsNullOrWhiteSpace(piltoverTakenBy) && !string.IsNullOrWhiteSpace(zaunTakenBy);
     }
 
     private bool IsFormValid()
@@ -1062,9 +1069,17 @@
                 });
             });
             
+            lobbyConnection.On<string?, string?>("LobbyRolesUpdated", (piltoverBy, zaunBy) =>
+            {
+                piltoverTakenBy = piltoverBy;
+                zaunTakenBy = zaunBy;
+                InvokeAsync(StateHasChanged);
+            });
+            
             await lobbyConnection.StartAsync();
             await lobbyConnection.SendAsync("JoinRoom", squadName, characterName);
             await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RequestLobbyRoles", squadName);
             
             inRoom = true;
             if (!connectedPlayers.Contains(characterName))

@@ -557,7 +557,8 @@
     }
 
     // CSS Class Methods
-    private string GetThemeClass() => playerView?.CurrentScene?.Theme.ToString().ToLower() ?? playerRole;
+    // Use player role to drive theme so each client sees the correct background color
+    private string GetThemeClass() => string.IsNullOrWhiteSpace(playerRole) ? "zaun" : playerRole.ToLower();
     private string GetBackgroundClass() => $"background-{GetThemeClass()}";
     private string GetLayoutClass() => playerView?.CurrentScene?.Layout.ToString().ToLower() ?? "single";
     private string GetDialogueBoxClass() => $"dialogue-{GetThemeClass()}";
@@ -619,6 +620,11 @@
     z-index: 1000;
 }
 
+/* Base theme backgrounds - ensuring proper differentiation */
+.story-scene {
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%); /* Default Piltover */
+}
+
 /********************************************
  * Connection and Setup Screens
  ********************************************/
@@ -628,6 +634,10 @@
     justify-content: center;
     width: 100%;
     height: 100vh;
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.connection-screen.piltover, .waiting-screen.piltover, .completion-screen.piltover, .transition-screen.piltover {
     background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
 }
 
@@ -824,11 +834,11 @@
  * Theme-Specific Backgrounds
  ********************************************/
 .story-scene.piltover {
-    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%) !important;
 }
 
 .story-scene.zaun {
-    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%) !important;
 }
 
 /********************************************
@@ -871,8 +881,8 @@
 }
 
 .background-piltover .atmospheric-effects {
-    background: radial-gradient(circle at 20% 50%, rgba(200, 170, 110, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+    background: radial-gradient(circle at 20% 50%, rgba(200, 170, 110, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.06) 0%, transparent 55%);
 }
 
 .background-zaun .atmospheric-effects {
@@ -937,15 +947,28 @@
 
 /* Active character glow effect for transparent PNGs */
 .character-container.active .portrait-image {
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))
-            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.8))
-            drop-shadow(0 0 60px rgba(200, 170, 110, 0.2));
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.45))
+            drop-shadow(0 10px 44px rgba(0, 0, 0, 0.72))
+            drop-shadow(0 0 44px rgba(200, 170, 110, 0.18));
 }
 
 /* Inactive character subtle shadow */
 .character-container.inactive .portrait-image {
-    filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 5px 22px rgba(0, 0, 0, 0.62));
     opacity: 0.6;
+}
+
+/* Enhanced theme-specific portrait shadows */
+.story-scene.piltover .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(200, 170, 110, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(255, 215, 0, 0.15));
+}
+
+.story-scene.zaun .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(0, 212, 170, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(0, 255, 200, 0.15));
 }
 
 .character-glow {
@@ -969,31 +992,31 @@
 
 .story-scene.piltover .character-container.active .character-glow {
     background: radial-gradient(ellipse at center, 
-        rgba(200, 170, 110, 0.15) 0%, 
-        rgba(200, 170, 110, 0.08) 30%, 
+        rgba(200, 170, 110, 0.2) 0%, 
+        rgba(200, 170, 110, 0.1) 30%, 
         transparent 70%);
-    filter: blur(40px);
+    filter: blur(48px);
 }
 
 .story-scene.zaun .character-container.active .character-glow {
     background: radial-gradient(ellipse at center, 
-        rgba(0, 212, 170, 0.15) 0%, 
-        rgba(0, 212, 170, 0.08) 30%, 
+        rgba(0, 212, 170, 0.2) 0%, 
+        rgba(0, 212, 170, 0.1) 30%, 
         transparent 70%);
-    filter: blur(40px);
+    filter: blur(48px);
 }
 
 /* Enhanced theme-specific portrait shadows */
 .story-scene.piltover .character-container.active .portrait-image {
-    filter: drop-shadow(0 0 15px rgba(200, 170, 110, 0.4))
-            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
-            drop-shadow(0 0 40px rgba(255, 215, 0, 0.15));
+    filter: drop-shadow(0 0 18px rgba(200, 170, 110, 0.45))
+            drop-shadow(0 10px 44px rgba(0, 0, 0, 0.72))
+            drop-shadow(0 0 44px rgba(255, 215, 0, 0.18));
 }
 
 .story-scene.zaun .character-container.active .portrait-image {
-    filter: drop-shadow(0 0 15px rgba(0, 212, 170, 0.4))
-            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
-            drop-shadow(0 0 40px rgba(0, 255, 200, 0.15));
+    filter: drop-shadow(0 0 18px rgba(0, 212, 170, 0.45))
+            drop-shadow(0 10px 44px rgba(0, 0, 0, 0.72))
+            drop-shadow(0 0 44px rgba(0, 255, 200, 0.18));
 }
 
 .left-character {
