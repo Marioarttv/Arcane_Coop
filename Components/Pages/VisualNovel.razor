@@ -24,7 +24,7 @@
             {
                 <div class="character-container center-character @(GetCurrentSpeaker()?.IsActive == true ? "active" : "")">
                     <div class="character-portrait">
-                        <img src="@GetCurrentSpeaker()?.ImagePath" alt="@GetCurrentSpeaker()?.Name" class="portrait-image" />
+                        <img src="@GetCurrentSpeaker()?.GetCurrentImagePath()" alt="@GetCurrentSpeaker()?.Name (@GetCurrentSpeaker()?.CurrentExpression)" class="portrait-image" />
                         <div class="character-glow"></div>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                 {
                     <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
                         <div class="character-portrait">
-                            <img src="@character.ImagePath" alt="@character.Name" class="portrait-image" />
+                            <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
                             <div class="character-glow"></div>
                         </div>
                     </div>
@@ -46,8 +46,6 @@
         <!-- Dialogue Box -->
         <div class="dialogue-section">
             <div class="dialogue-box @GetDialogueBoxClass()">
-
-
                 <!-- Character Name -->
                 @if (config.ShowCharacterNames && GetCurrentSpeaker() != null)
                 {
@@ -67,27 +65,27 @@
                         @* Removed blinking cursor - was annoying *@
                     </div>
                 </div>
+            </div>
+            
+            <!-- Control Buttons - Now Outside Dialogue Box -->
+            <div class="dialogue-controls-external">
+                @if (config.ShowSkipButton && !state.IsTextFullyDisplayed)
+                {
+                    <button class="control-btn skip-btn @GetControlButtonClass()" @onclick="SkipText" title="Skip to end of text">
+                        <span class="btn-icon">⏭️</span>
+                        <span class="btn-text">Skip</span>
+                        <div class="btn-effect"></div>
+                    </button>
+                }
 
-                <!-- Control Buttons at Bottom Right -->
-                <div class="dialogue-controls-bottom">
-                    @if (config.ShowSkipButton && !state.IsTextFullyDisplayed)
-                    {
-                        <button class="control-btn skip-btn @GetControlButtonClass()" @onclick="SkipText" title="Skip to end of text">
-                            <span class="btn-icon">⏭️</span>
-                            <span class="btn-text">Skip</span>
-                            <div class="btn-effect"></div>
-                        </button>
-                    }
-
-                    @if (config.ShowContinueButton && state.IsTextFullyDisplayed && !IsLastDialogue())
-                    {
-                        <button class="control-btn continue-btn @GetControlButtonClass()" @onclick="ContinueToNext" title="Continue to next dialogue">
-                            <span class="btn-icon">▶️</span>
-                            <span class="btn-text">Continue</span>
-                            <div class="btn-effect"></div>
-                        </button>
-                    }
-                </div>
+                @if (config.ShowContinueButton && state.IsTextFullyDisplayed && !IsLastDialogue())
+                {
+                    <button class="control-btn continue-btn @GetControlButtonClass()" @onclick="ContinueToNext" title="Continue to next dialogue">
+                        <span class="btn-icon">▶️</span>
+                        <span class="btn-text">Continue</span>
+                        <div class="btn-effect"></div>
+                    </button>
+                }
             </div>
         </div>
     }
@@ -270,7 +268,21 @@
         // Set current speaker as active
         var speaker = currentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
         if (speaker != null)
+        {
             speaker.IsActive = true;
+            
+            // Update speaker expression if specified
+            if (currentDialogue.SpeakerExpression.HasValue)
+                speaker.CurrentExpression = currentDialogue.SpeakerExpression.Value;
+        }
+
+        // Update expressions for other characters if specified
+        foreach (var expressionChange in currentDialogue.CharacterExpressions)
+        {
+            var character = currentScene.Characters.FirstOrDefault(c => c.Id == expressionChange.Key);
+            if (character != null)
+                character.CurrentExpression = expressionChange.Value;
+        }
     }
 
     private VisualNovelCharacter? GetCurrentSpeaker()
@@ -284,9 +296,9 @@
         return currentScene == null || state.CurrentDialogueIndex >= currentScene.DialogueLines.Count - 1;
     }
 
-    private Task InvokeStateChanged()
+    private async Task InvokeStateChanged()
     {
-        return OnStateChanged.InvokeAsync(state);
+        await OnStateChanged.InvokeAsync(state);
     }
 
     private string GetFormattedText()
@@ -536,20 +548,23 @@
 .character-container {
     position: relative;
     bottom: 35%;
-    transition: all 0.5s ease;
-    filter: brightness(0.6) saturate(0.5);
-    transform: scale(0.95);
+    transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    filter: brightness(0.6) saturate(0.5) blur(1px);
+    transform: scale(0.95) translateY(10px);
+    opacity: 0.8;
 }
 
 .character-container.active {
-    filter: brightness(1) saturate(1);
-    transform: scale(1);
+    filter: brightness(1.1) saturate(1.1) blur(0px);
+    transform: scale(1.05) translateY(0px);
     z-index: 5;
+    opacity: 1;
 }
 
 .character-container.inactive {
-    filter: brightness(0.4) saturate(0.3);
-    transform: scale(0.9);
+    filter: brightness(0.4) saturate(0.3) blur(2px);
+    transform: scale(0.88) translateY(15px);
+    opacity: 0.6;
 }
 
 .character-portrait {
@@ -563,6 +578,8 @@
     max-width: 400px;
     object-fit: contain;
     filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+    transition: all 0.4s ease-in-out;
+    transform-origin: center bottom;
 }
 
 .character-glow {
@@ -573,11 +590,14 @@
     height: 100%;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.8);
 }
 
 .character-container.active .character-glow {
     opacity: 1;
+    transform: scale(1);
 }
 
 .visual-novel.piltover .character-container.active .character-glow {
@@ -622,6 +642,7 @@
     padding: 2rem 2.5rem 1.5rem 2.5rem;
     border: none;
     overflow: hidden;
+    animation: dialogueBoxEntrance 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
     
     /* Arcane-style border with layered effects */
     box-shadow: 
@@ -638,6 +659,17 @@
         100% calc(100% - 10px), calc(100% - 10px) 100%,
         10px 100%, 0 calc(100% - 10px)
     );
+}
+
+@@keyframes dialogueBoxEntrance {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* Runic pattern overlay */
@@ -731,13 +763,14 @@
 /********************************************
  * Dialogue Controls
  ********************************************/
-.dialogue-controls-bottom {
+.dialogue-controls-external {
     position: absolute;
-    bottom: 20px;
-    right: 25px;
+    bottom: -60px;
+    right: 0;
     display: flex;
     gap: 12px;
     z-index: 100;
+    padding: 0 2rem;
 }
 
 .control-btn {
@@ -751,9 +784,10 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    animation: buttonEntrance 0.6s ease-out;
     
     /* Arcane-style angular shape */
     clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
@@ -763,6 +797,17 @@
         inset 0 0 0 1px rgba(200, 170, 110, 0.5),
         0 0 12px rgba(200, 170, 110, 0.2),
         0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@@keyframes buttonEntrance {
+    from {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .control-btn::before {
@@ -782,11 +827,11 @@
 }
 
 .control-btn:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: 
-        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
-        0 0 20px rgba(200, 170, 110, 0.4),
-        0 4px 16px rgba(0, 0, 0, 0.4);
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5),
+        0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .control-btn:hover::before {
@@ -869,6 +914,7 @@
     letter-spacing: 0.1em;
     position: relative;
     overflow: hidden;
+    animation: nameTagEntrance 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
     
     /* Arcane-style angular shape */
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
@@ -877,6 +923,17 @@
     box-shadow: 
         inset 0 0 0 1px rgba(200, 170, 110, 0.6),
         0 0 15px rgba(200, 170, 110, 0.3);
+}
+
+@@keyframes nameTagEntrance {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .character-name-tag::before {
@@ -1081,10 +1138,10 @@
         font-size: 0.9rem;
     }
     
-    .dialogue-controls-bottom {
-        bottom: 15px;
-        right: 20px;
+    .dialogue-controls-external {
+        bottom: -50px;
         gap: 8px;
+        padding: 0 1rem;
     }
 }
 
@@ -1112,10 +1169,10 @@
         font-size: 0.8rem;
     }
     
-    .dialogue-controls-bottom {
-        bottom: 12px;
-        right: 15px;
+    .dialogue-controls-external {
+        bottom: -40px;
         gap: 6px;
+        padding: 0 1rem;
     }
 }
 

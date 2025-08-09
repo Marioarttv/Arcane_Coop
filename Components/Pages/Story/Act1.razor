@@ -347,15 +347,20 @@
             Theme = novelConfig.Theme
         };
 
-        // Add Vi and Caitlyn characters
+        // Add Vi and Caitlyn characters with new avatar paths and expression support
         var vi = new VisualNovelCharacter
         {
             Id = "vi",
             Name = "Vi",
             DisplayName = "Vi",
-            ImagePath = "/images/Vi.jpeg",
+            ImagePath = "/images/Characters/Vi/Vi_default.png",
             Position = CharacterPosition.Left,
-            ThemeColor = "#00d4aa"
+            ThemeColor = "#00d4aa",
+            ExpressionPaths = new Dictionary<CharacterExpression, string>
+            {
+                { CharacterExpression.Default, "/images/Characters/Vi/Vi_default.png" }
+                // Additional expressions can be added later: Happy, Angry, etc.
+            }
         };
 
         var caitlyn = new VisualNovelCharacter
@@ -363,9 +368,14 @@
             Id = "caitlyn",
             Name = "Caitlyn",
             DisplayName = "Sheriff Caitlyn",
-            ImagePath = "/images/Cait.jpeg",
+            ImagePath = "/images/Characters/Caitlyn/Caitlyn_default.png",
             Position = CharacterPosition.Right,
-            ThemeColor = "#c8aa6e"
+            ThemeColor = "#c8aa6e",
+            ExpressionPaths = new Dictionary<CharacterExpression, string>
+            {
+                { CharacterExpression.Default, "/images/Characters/Caitlyn/Caitlyn_default.png" }
+                // Additional expressions can be added later: Serious, Worried, etc.
+            }
         };
 
         scene.Characters.Add(vi);
@@ -400,14 +410,16 @@
                 CharacterId = "vi",
                 Text = "Shit. That's where families live, not just the Chem-Barons and their labs. What do you need from me?",
                 AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 35
+                TypewriterSpeed = 35,
+                SpeakerExpression = CharacterExpression.Worried
             },
             new DialogueLine
             {
                 CharacterId = "caitlyn",
                 Text = "I can coordinate from HQ - I have access to surveillance, technical analysis, and tactical resources. But I need someone who knows Zaun's underground networks.",
                 AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45
+                TypewriterSpeed = 45,
+                SpeakerExpression = CharacterExpression.Serious
             },
             new DialogueLine
             {
@@ -428,7 +440,8 @@
                 CharacterId = "vi",
                 Text = "Fair enough. First test then - let's see if they can work together when intel's scrambled and time's running out.",
                 AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40
+                TypewriterSpeed = 40,
+                SpeakerExpression = CharacterExpression.Determined
             },
             new DialogueLine
             {

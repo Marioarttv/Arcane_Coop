@@ -28,6 +28,20 @@ namespace Arcane_Coop.Models
         Center
     }
 
+    public enum CharacterExpression
+    {
+        Default,
+        Happy,
+        Sad,
+        Angry,
+        Surprised,
+        Worried,
+        Determined,
+        Smug,
+        Confused,
+        Serious
+    }
+
     public class VisualNovelCharacter
     {
         public string Id { get; set; } = "";
@@ -38,6 +52,22 @@ namespace Arcane_Coop.Models
         public string ThemeColor { get; set; } = "#ffffff";
         public bool IsActive { get; set; } = false;
         public CharacterPosition Position { get; set; } = CharacterPosition.Center;
+        
+        // Expression support
+        public CharacterExpression CurrentExpression { get; set; } = CharacterExpression.Default;
+        public Dictionary<CharacterExpression, string> ExpressionPaths { get; set; } = new();
+        
+        // Helper method to get current expression image path
+        public string GetCurrentImagePath()
+        {
+            if (ExpressionPaths.ContainsKey(CurrentExpression))
+                return ExpressionPaths[CurrentExpression];
+            
+            if (ExpressionPaths.ContainsKey(CharacterExpression.Default))
+                return ExpressionPaths[CharacterExpression.Default];
+            
+            return ImagePath; // Fallback to original image path
+        }
     }
 
     public class DialogueLine
@@ -52,6 +82,10 @@ namespace Arcane_Coop.Models
         public string? BackgroundMusic { get; set; }
         public string? SoundEffect { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new();
+        
+        // Expression support - allows setting character expressions for this dialogue line
+        public CharacterExpression? SpeakerExpression { get; set; } = null;
+        public Dictionary<string, CharacterExpression> CharacterExpressions { get; set; } = new();
     }
 
     public class VisualNovelScene
