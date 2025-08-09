@@ -413,8 +413,10 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+            Console.WriteLine($"[PictureExplanation] Error parsing URL parameters: {ex.Message}");
         }
+        
+        Console.WriteLine($"[PictureExplanation] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, Story: {isFromStory}");
     }
 
     private async Task InitializeConnection()
@@ -455,6 +457,7 @@
         // Picture Explanation game event handlers
         hubConnection.On<string, PictureExplanationPlayerView>("PictureExplanationGameJoined", (role, view) =>
         {
+            Console.WriteLine($"[PictureExplanation] Game joined successfully - Role: {role}, DisplayName: {view.DisplayName}");
             inGame = true;
             playerView = view;
             ShowStatus($"Joined as {view.DisplayName}", "success");
@@ -488,12 +491,14 @@
 
         hubConnection.On<string>("PictureExplanationInvalidAction", (message) =>
         {
+            Console.WriteLine($"[PictureExplanation] Invalid action: {message}");
             ShowStatus(message, "warning");
             InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On("PictureExplanationGameFull", () =>
         {
+            Console.WriteLine("[PictureExplanation] Game full - unable to join");
             ShowStatus("Game is full - maximum 2 players", "warning");
             InvokeAsync(StateHasChanged);
         });
@@ -569,10 +574,12 @@
                 // Prefer sending requested role if coming from story
                 if (!string.IsNullOrEmpty(playerRole))
                 {
+                    Console.WriteLine($"[PictureExplanation] Joining with role: {playerRole}, room: {roomId}, name: {playerName}");
                     await hubConnection.SendAsync("JoinPictureExplanationGameWithRole", roomId, playerName, playerRole);
                 }
                 else
                 {
+                    Console.WriteLine($"[PictureExplanation] Joining without role: room: {roomId}, name: {playerName}");
                     await hubConnection.SendAsync("JoinPictureExplanationGame", roomId, playerName);
                 }
 

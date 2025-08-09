@@ -116,6 +116,228 @@ scene.DialogueLines.Add(new DialogueLine
     OnSceneComplete="@HandleSceneComplete" />
 ```
 
+## 🌳 Player Choice System
+
+The Visual Novel system features a sophisticated branching dialogue system that supports both simple flow-back choices and complex dialogue trees with state management.
+
+### Choice System Architecture
+
+The choice system operates on two levels:
+
+#### **1. Simple Flow-Back Choices**
+Single response that returns to the main narrative flow:
+```
+Main Story → Player Choice → Single Response → Continue Main Story
+```
+
+#### **2. Full Dialogue Trees**  
+Complex branching narratives with multiple paths:
+```
+Main Story → Choice A → Response A1 → Sub-choice A1.1 → Response A1.1.1
+                   ↘ Response A2 → Sub-choice A1.2 → Response A1.2.1  
+           → Choice B → Response B1 → Continue Story
+```
+
+### Technical Implementation
+
+#### **DialogueChoice Model**
+```csharp
+public class DialogueChoice
+{
+    public string Id { get; set; }                          // Unique identifier
+    public string Text { get; set; }                        // Player-visible choice text
+    public string? NextDialogueId { get; set; }             // 🔥 Branching control
+    public string? RequiredRole { get; set; }               // Role restriction ("piltover"/"zaun")
+    public Dictionary<string, object> Consequences;         // Game state changes
+    public CharacterExpression? ResultExpression;           // Character reaction
+}
+```
+
+#### **The NextDialogueId Magic**
+- **`NextDialogueId = null`**: Proceeds to next dialogue line in sequence (simple flow-back)
+- **`NextDialogueId = "branch_id"`**: Jumps to dialogue with matching `Id` (true branching)
+
+#### **Creating Choice Dialogue**
+```csharp
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "How should we approach this crisis?",
+    IsPlayerChoice = true,                          // Marks as choice point
+    ChoiceOwnerRole = "zaun",                      // Only Zaun player can choose
+    Choices = new List<DialogueChoice>
+    {
+        new DialogueChoice
+        {
+            Id = "stealth_approach",
+            Text = "We go in quiet. Use the maintenance tunnels - I know every back route.",
+            NextDialogueId = "stealth_response",    // 🎯 Branches to specific dialogue
+            ResultExpression = CharacterExpression.Determined,
+            Consequences = new Dictionary<string, object> { { "approach", "stealth" } }
+        },
+        new DialogueChoice
+        {
+            Id = "direct_approach", 
+            Text = "No time for subtlety. We hit them hard and fast before they can react.",
+            NextDialogueId = "direct_response",     // 🎯 Different branch
+            ResultExpression = CharacterExpression.Angry,
+            Consequences = new Dictionary<string, object> { { "approach", "direct" } }
+        },
+        new DialogueChoice
+        {
+            Id = "diplomatic_approach",
+            Text = "Let me reach out to my contacts first. The Firelights might help if we ask right.",
+            NextDialogueId = "diplomatic_response", // 🎯 Third branch
+            Consequences = new Dictionary<string, object> { { "approach", "diplomatic" } }
+        }
+    }
+}
+```
+
+#### **Branch Response Dialogues**
+```csharp
+// Stealth Branch Response
+new DialogueLine
+{
+    Id = "stealth_response",                        // 🔗 Matches NextDialogueId
+    CharacterId = "caitlyn",
+    Text = "Smart. The element of surprise could give us the edge we need. I'll mark the blind spots in their surveillance.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 45
+},
+
+// Direct Branch Response  
+new DialogueLine
+{
+    Id = "direct_response",                         // 🔗 Matches NextDialogueId
+    CharacterId = "caitlyn", 
+    Text = "Bold, but risky. If we're doing this, we'll need backup. I'll mobilize the Enforcers.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 45,
+    SpeakerExpression = CharacterExpression.Worried
+},
+
+// Diplomatic Branch Response
+new DialogueLine
+{
+    Id = "diplomatic_response",                     // 🔗 Matches NextDialogueId
+    CharacterId = "caitlyn",
+    Text = "Good thinking. The Firelights know Zaun better than any Enforcer ever could. I'll prepare backup plans while you make contact.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 45
+}
+```
+
+### Advanced Choice Features
+
+#### **1. Multiplayer Role-Based Choices**
+```csharp
+// Only specific players can make certain choices
+ChoiceOwnerRole = "zaun"        // Only Zaun player sees choice UI
+ChoiceOwnerRole = "piltover"    // Only Piltover player sees choice UI  
+ChoiceOwnerRole = null          // Either player can choose
+```
+
+In multiplayer mode:
+- The designated player sees choice options and makes the decision
+- The other player sees "Your partner is making a critical decision..." 
+- After selection, **both players see the chosen option displayed prominently**
+- Both players then continue together with the chosen narrative branch
+
+#### **2. Individual Choice Restrictions**
+```csharp
+new DialogueChoice
+{
+    Text = "Use my Enforcer clearance to access restricted areas",
+    RequiredRole = "piltover",              // Only Piltover players can select this
+    NextDialogueId = "enforcer_route"
+}
+```
+
+#### **3. Consequence System**
+Choices can modify game state that affects future story branches:
+
+```csharp
+// Choice stores consequence
+Consequences = new Dictionary<string, object> 
+{ 
+    { "approach", "stealth" },
+    { "trust_level", 85 },
+    { "alertness", "low" }
+}
+
+// Later dialogue can check game state
+var approach = gameState.GameState["approach"].ToString();
+if (approach == "stealth")
+{
+    // Show different dialogue options or outcomes
+}
+```
+
+#### **4. Character Expression Changes**
+```csharp
+// Vi's expression changes based on player choice
+ResultExpression = CharacterExpression.Determined  // Vi looks determined after stealth choice
+ResultExpression = CharacterExpression.Angry       // Vi looks angry after direct choice
+```
+
+### Nested Choice Trees
+
+The system supports multiple levels of branching:
+
+```csharp
+// Primary Choice
+Choice: "How do we approach?"
+├── Stealth → "stealth_response" 
+│   └── Sub-choice: "Which tunnel system?"
+│       ├── Old Mining Tunnels → "mining_route"
+│       └── Maintenance Shafts → "maintenance_route"
+├── Direct → "direct_response"
+│   └── Sub-choice: "What's our backup plan?"
+│       ├── Call Enforcers → "enforcer_backup"  
+│       └── Alert the Council → "council_backup"
+└── Diplomatic → "diplomatic_response"
+    └── Continue main story
+```
+
+### Current Act1 Implementation
+
+The Act1 Emergency Briefing scene demonstrates the full choice system with:
+
+1. **First Choice Point**: Crisis Approach (3 branches)
+   - Stealth approach → Stealth response
+   - Direct approach → Direct response  
+   - Diplomatic approach → Diplomatic response
+
+2. **Second Choice Point**: Priority Decision (3 branches)
+   - Secure data → Data priority response
+   - Evacuate civilians → Civilian priority response
+   - Track saboteur → Investigation priority response
+
+3. **Flow Convergence**: All branches eventually lead to the transition to Picture Explanation puzzle
+
+### Best Practices for Choice Design
+
+#### **Story Flow**
+1. **Plan your branches**: Decide if choices lead back to main story or create lasting narrative splits
+2. **Use meaningful IDs**: `"stealth_response"` is better than `"choice_a_result"`
+3. **Balance complexity**: Too many nested choices can overwhelm players
+
+#### **Multiplayer Considerations**  
+1. **Assign choice ownership thoughtfully**: Consider which character would logically make each decision
+2. **Provide context for waiting players**: Clear messaging when partner is choosing
+3. **Show choice results prominently**: Both players should see and understand what was chosen
+
+#### **Technical Implementation**
+1. **Test all branches**: Ensure every `NextDialogueId` has a matching dialogue `Id`
+2. **Use consequences strategically**: Store important decisions that might affect future scenes
+3. **Consider character expressions**: Choices should feel emotionally consistent
+
+#### **Performance & UX**
+1. **Keep choice text concise**: 1-2 lines maximum for readability
+2. **Provide clear Continue flow**: Players should always know how to progress after seeing choice results
+3. **Use role restrictions wisely**: Don't lock players out unnecessarily
+
 ## Configuration Options
 
 ### VisualNovelConfig

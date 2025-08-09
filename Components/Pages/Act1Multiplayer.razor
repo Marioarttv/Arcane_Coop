@@ -312,7 +312,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+            var errorMsg = $"Error parsing URL parameters: {ex.Message}";
+            Console.WriteLine($"[Act1Multiplayer] {errorMsg}");
             statusMessage = "Invalid parameters. Please start from the character lobby.";
         }
     }
@@ -394,6 +395,7 @@
             await InvokeAsync(() =>
             {
                 statusMessage = $"Transitioning to {nextGameName}...";
+                Console.WriteLine($"[Act1Multiplayer] Scene transition to: {nextGameName}");
                 StateHasChanged();
                 _ = ScheduleLocalTransitionFallback();
             });
@@ -403,6 +405,7 @@
         {
             await InvokeAsync(() =>
             {
+                Console.WriteLine($"[Act1Multiplayer] Redirecting to next game: {url}");
                 hasNavigatedToNextGame = true;
                 NavigationManager.NavigateTo(url);
             });
@@ -437,6 +440,7 @@
             await InvokeAsync(() =>
             {
                 statusMessage = "Story session is full! Please try again.";
+                Console.WriteLine("[Act1Multiplayer] Game full - unable to join");
                 StateHasChanged();
             });
         });
@@ -445,7 +449,9 @@
         {
             await InvokeAsync(() =>
             {
-                statusMessage = $"Error: {error}";
+                var errorMessage = $"Error: {error}";
+                statusMessage = errorMessage;
+                Console.WriteLine($"[Act1Multiplayer] {errorMessage}");
                 StateHasChanged();
             });
         });
@@ -727,17 +733,26 @@
     {
         try
         {
+            Console.WriteLine("[Act1Multiplayer] Starting 4-second transition fallback timer");
             await Task.Delay(4000);
             if (!hasNavigatedToNextGame && playerView?.ShowTransition == true && !isDisposed)
             {
                 var nameParam = Uri.EscapeDataString(playerName ?? "");
                 var squadParam = Uri.EscapeDataString(originalSquadName ?? "");
                 var url = $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true";
+                Console.WriteLine($"[Act1Multiplayer] Fallback redirect triggering to: {url}");
                 hasNavigatedToNextGame = true;
                 NavigationManager.NavigateTo(url);
             }
+            else
+            {
+                Console.WriteLine($"[Act1Multiplayer] Fallback redirect skipped - hasNavigated: {hasNavigatedToNextGame}, showTransition: {playerView?.ShowTransition}, disposed: {isDisposed}");
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Fallback transition error: {ex.Message}");
+        }
     }
 }
 
