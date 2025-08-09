@@ -2,6 +2,48 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
+<script>
+    window.createMagicParticles = function () {
+        const container = document.getElementById('arcane-particles');
+        if (!container) return;
+        
+        // Clear existing particles
+        container.innerHTML = '';
+        
+        // Create floating magic particles
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'magic-particle';
+            
+            // Randomize horizontal and initial vertical position
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 120 + 'vh'; // Start from below viewport
+            
+            // Stagger animation delays more
+            particle.style.animationDelay = Math.random() * 25 + 's';
+            particle.style.animationDuration = (20 + Math.random() * 15) + 's';
+            
+            // Vary particle colors with more transparency
+            const colors = ['#8b42ff', '#00d9ff', '#c724b1', '#00ffc8', '#ffd700'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.background = color;
+            particle.style.boxShadow = `0 0 8px ${color}`;
+            
+            // Vary sizes
+            const size = Math.random() * 3 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            
+            container.appendChild(particle);
+        }
+    };
+    
+    // Auto-initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        window.createMagicParticles();
+    });
+</script>
+
 <!-- Puzzle Sidebar -->
 <div class="puzzle-sidebar @(isPuzzleSidebarOpen ? "open" : "")">
     <div class="sidebar-header">
@@ -54,33 +96,55 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<div class="arcane-landing">
+<div class="arcane-landing" @ref="landingContainer">
+    <!-- Hextech Grid Overlay -->
+    <div class="hextech-grid-overlay"></div>
+    
+    <!-- Arcane Magic Particles -->
+    <div class="arcane-particles" id="arcane-particles"></div>
+    
     <!-- Split Background -->
     <div class="split-bg">
         <div class="zaun-side">
             <div class="zaun-bg-image"></div>
             <div class="zaun-atmosphere"></div>
             <div class="shimmer-particles"></div>
+            <div class="chemical-smoke"></div>
+            <div class="pipe-steam"></div>
         </div>
         <div class="piltover-side">
             <div class="piltover-bg-image"></div>
             <div class="piltover-atmosphere"></div>
             <div class="hextech-particles"></div>
+            <div class="hextech-rings-bg"></div>
+            <div class="arcane-runes"></div>
         </div>
-        <div class="center-divider"></div>
+        <div class="center-divider">
+            <div class="divider-pulse"></div>
+            <div class="divider-electricity"></div>
+        </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
         <!-- Title -->
         <div class="title-section">
-            <h1 class="arcane-title">
-                <span class="arcane-word">ARCANE</span>
-                <span class="subtitle-line">ESCAPE ROOM ADVENTURE</span>
-            </h1>
-            <div class="cooperation-badge">
+            <div class="title-glitch-container">
+                <h1 class="arcane-title" data-text="ARCANE">
+                    <span class="arcane-word">ARCANE</span>
+                    <span class="arcane-word glitch-1">ARCANE</span>
+                    <span class="arcane-word glitch-2">ARCANE</span>
+                </h1>
+                <div class="subtitle-container">
+                    <span class="subtitle-line">ESCAPE ROOM ADVENTURE</span>
+                    <div class="subtitle-underline"></div>
+                </div>
+            </div>
+            <div class="cooperation-badge floating">
+                <div class="badge-bg"></div>
                 <span class="badge-icon">⚡</span>
-                <span>COOPERATIVE PUZZLE EXPERIENCE</span>
+                <span class="badge-text">COOPERATIVE PUZZLE EXPERIENCE</span>
+                <div class="badge-glow"></div>
             </div>
         </div>
 
@@ -104,7 +168,7 @@
                         <div class="character-cards single-character">
                             <div class="character-card vi-card main-character">
                                 <div class="character-portrait">
-                                    <img src="/images/Vi.jpeg" alt="Vi" class="portrait-image vi-portrait" />
+                                    <img src="/images/Characters/Vi/Vi_default.png" alt="Vi" class="portrait-image vi-portrait" />
                                 </div>
                                 <div class="character-info">
                                     <h5>Vi</h5>
@@ -160,7 +224,7 @@
                         <div class="character-cards single-character">
                             <div class="character-card caitlyn-card main-character">
                                 <div class="character-portrait">
-                                    <img src="/images/Cait.jpeg" alt="Caitlyn" class="portrait-image caitlyn-portrait" />
+                                    <img src="/images/Characters/Caitlyn/Caitlyn_default.png" alt="Caitlyn" class="portrait-image caitlyn-portrait" />
                                 </div>
                                 <div class="character-info">
                                     <h5>Caitlyn</h5>
@@ -242,18 +306,23 @@
         --zaun-glow: #00ffc8;
         --zaun-dark: #0a1e16;
         --shimmer-pink: #ff007f;
+        --shimmer-purple: #c724b1;
         --piltover-primary: #2c1810;
         --piltover-secondary: #5c3317;
         --piltover-accent: #c8aa6e;
         --piltover-glow: #ffd700;
         --piltover-light: #f5e6a3;
         --hextech-blue: #0596aa;
+        --hextech-cyan: #44e5e7;
         --arcane-blue: #0596aa;
         --arcane-light-blue: #00d4ff;
         --arcane-sky-blue: #4da6ff;
         --arcane-pale-blue: #b8d4ff;
+        --arcane-purple: #8b42ff;
         --neutral-dark: #000a0f;
         --neutral-light: #f0f8ff;
+        --glitch-red: #ff003c;
+        --glitch-blue: #00d9ff;
     }
 
     * {
@@ -268,6 +337,64 @@
         overflow-x: hidden;
         font-family: 'Rajdhani', sans-serif;
         color: var(--neutral-light);
+    }
+
+    /* Hextech Grid Overlay */
+    .hextech-grid-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            repeating-linear-gradient(0deg, transparent, transparent 99px, rgba(5, 150, 170, 0.03) 99px, rgba(5, 150, 170, 0.03) 100px),
+            repeating-linear-gradient(90deg, transparent, transparent 99px, rgba(5, 150, 170, 0.03) 99px, rgba(5, 150, 170, 0.03) 100px);
+        pointer-events: none;
+        z-index: 1;
+        animation: gridPulse 4s ease-in-out infinite;
+    }
+
+    @@keyframes gridPulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+    }
+
+    /* Arcane Magic Particles */
+    .arcane-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .magic-particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--arcane-purple);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--arcane-purple);
+        animation: floatParticle 15s infinite linear;
+    }
+
+    @@keyframes floatParticle {
+        0% {
+            transform: translateY(20px) translateX(0px);
+            opacity: 0;
+        }
+        5% {
+            opacity: 0.8;
+        }
+        95% {
+            opacity: 0.8;
+        }
+        100% {
+            transform: translateY(-120vh) translateX(50px);
+            opacity: 0;
+        }
     }
 
     /* Split Background */
@@ -326,6 +453,53 @@
         animation: shimmerFlow 8s ease-in-out infinite alternate;
     }
 
+    /* Chemical Smoke Effect for Zaun */
+    .chemical-smoke {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60%;
+        background: linear-gradient(to top, rgba(0, 212, 170, 0.15) 0%, transparent 50%);
+        animation: smokeRise 20s ease-in-out infinite;
+        mix-blend-mode: screen;
+    }
+
+    @@keyframes smokeRise {
+        0%, 100% {
+            transform: translateY(20px);
+            opacity: 0.3;
+        }
+        50% {
+            transform: translateY(-30px);
+            opacity: 0.6;
+        }
+    }
+
+    /* Pipe Steam Effect */
+    .pipe-steam {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(ellipse at 20% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.03) 0%, transparent 35%);
+        animation: steamBurst 8s ease-in-out infinite;
+    }
+
+    @@keyframes steamBurst {
+        0%, 100% {
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+    }
+
     .piltover-atmosphere {
         position: absolute;
         top: 0;
@@ -334,6 +508,80 @@
         height: 100%;
         background: radial-gradient(ellipse at 70% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 70%), radial-gradient(ellipse at 30% 70%, rgba(5, 150, 170, 0.08) 0%, transparent 60%);
         animation: hextechFlow 6s ease-in-out infinite alternate;
+    }
+
+    /* Hextech Rings Background */
+    .hextech-rings-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.15;
+    }
+
+    .hextech-rings-bg::before,
+    .hextech-rings-bg::after {
+        content: '';
+        position: absolute;
+        border: 2px solid var(--hextech-cyan);
+        border-radius: 50%;
+        animation: ringExpand 8s ease-in-out infinite;
+    }
+
+    .hextech-rings-bg::before {
+        top: 20%;
+        left: 60%;
+        width: 200px;
+        height: 200px;
+    }
+
+    .hextech-rings-bg::after {
+        top: 60%;
+        left: 20%;
+        width: 150px;
+        height: 150px;
+        animation-delay: 4s;
+    }
+
+    @@keyframes ringExpand {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(1.5);
+            opacity: 0;
+        }
+    }
+
+    /* Arcane Runes */
+    .arcane-runes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 30% 30%, var(--arcane-purple) 0%, transparent 2%),
+            radial-gradient(circle at 70% 70%, var(--hextech-blue) 0%, transparent 2%),
+            radial-gradient(circle at 50% 50%, var(--piltover-accent) 0%, transparent 1%);
+        background-size: 100px 100px, 150px 150px, 80px 80px;
+        animation: runeFloat 30s linear infinite;
+        opacity: 0.1;
+    }
+
+    @@keyframes runeFloat {
+        0% {
+            transform: translate(0, 0) rotate(0deg);
+        }
+        100% {
+            transform: translate(-50px, -50px) rotate(360deg);
+        }
     }
 
     /* Hexcrystal Runic Effects */
@@ -458,6 +706,57 @@
         animation: pulse 3s ease-in-out infinite;
     }
 
+    .divider-pulse {
+        position: absolute;
+        top: 0;
+        left: -10px;
+        width: 24px;
+        height: 100%;
+        background: linear-gradient(180deg, 
+            transparent 0%,
+            rgba(0, 255, 200, 0.3) 25%,
+            rgba(255, 215, 0, 0.3) 75%,
+            transparent 100%);
+        animation: dividerFlow 4s ease-in-out infinite;
+    }
+
+    @@keyframes dividerFlow {
+        0%, 100% {
+            transform: scaleX(0.5);
+            opacity: 0.3;
+        }
+        50% {
+            transform: scaleX(1.5);
+            opacity: 0.7;
+        }
+    }
+
+    .divider-electricity {
+        position: absolute;
+        top: 0;
+        left: -2px;
+        width: 8px;
+        height: 100%;
+        background: repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 2px,
+            var(--hextech-cyan) 2px,
+            var(--hextech-cyan) 3px
+        );
+        animation: electricFlow 0.5s linear infinite;
+        opacity: 0.6;
+    }
+
+    @@keyframes electricFlow {
+        0% {
+            transform: translateY(0);
+        }
+        100% {
+            transform: translateY(-20px);
+        }
+    }
+
     @@keyframes pulse {
         0%, 100% {
             opacity: 0.8;
@@ -486,9 +785,15 @@
         padding-top: 2rem;
     }
 
+    .title-glitch-container {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
     .arcane-title {
         font-family: 'Arcane Nine', 'Cinzel', serif;
         margin-bottom: 2rem;
+        position: relative;
     }
 
     .arcane-word {
@@ -503,6 +808,73 @@
         letter-spacing: 0.4em;
         margin-left: 51px;
         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        position: relative;
+        animation: textGlow 3s ease-in-out infinite;
+    }
+
+    @@keyframes textGlow {
+        0%, 100% {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) brightness(1);
+        }
+        50% {
+            filter: drop-shadow(0 0 20px rgba(201, 170, 113, 0.5)) brightness(1.1);
+        }
+    }
+
+    .arcane-word.glitch-1,
+    .arcane-word.glitch-2 {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+    }
+
+    .arcane-word.glitch-1 {
+        animation: glitch1 3s infinite;
+        color: var(--glitch-red);
+        z-index: -1;
+    }
+
+    .arcane-word.glitch-2 {
+        animation: glitch2 3s infinite;
+        color: var(--glitch-blue);
+        z-index: -2;
+    }
+
+    @@keyframes glitch1 {
+        0%, 100% {
+            opacity: 0;
+        }
+        33% {
+            opacity: 0;
+        }
+        33.02% {
+            opacity: 1;
+            transform: translateX(8px);
+        }
+        33.04% {
+            opacity: 0;
+            transform: translateX(0);
+        }
+    }
+
+    @@keyframes glitch2 {
+        0%, 100% {
+            opacity: 0;
+        }
+        66% {
+            opacity: 0;
+        }
+        66.02% {
+            opacity: 1;
+            transform: translateX(-8px);
+        }
+        66.04% {
+            opacity: 0;
+            transform: translateX(0);
+        }
     }
 
     .subtitle-line {
@@ -539,6 +911,8 @@
     .badge-icon {
         font-size: 1.5rem;
         animation: spark 2.5s ease-in-out infinite;
+        position: relative;
+        z-index: 2;
     }
 
     @@keyframes spark {
@@ -755,6 +1129,22 @@
         padding: 1.5rem;
         background: rgba(255, 255, 255, 0.08);
         border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.4s ease;
+    }
+
+    .character-card.character-glow {
+        animation: characterPulse 2s ease-in-out infinite;
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    }
+
+    @@keyframes characterPulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.02);
+        }
     }
 
     .character-portrait {
@@ -774,13 +1164,14 @@
     }
 
     .portrait-image {
-        width: 80px;
-        height: 80px;
+        width: 120px;
+        height: 120px;
         border-radius: 50%;
         margin: 0 auto;
         object-fit: cover;
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        border: 3px solid rgba(255, 255, 255, 0.3);
         transition: all 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .portrait-image:hover {
@@ -1251,6 +1642,21 @@
 
     private bool isAudioEnabled = true;
     private bool isPuzzleSidebarOpen = false;
+    private City? hoveredCity = null;
+    private ElementReference landingContainer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CreateArcaneParticles();
+        }
+    }
+
+    private async Task CreateArcaneParticles()
+    {
+        await JSRuntime.InvokeVoidAsync("createMagicParticles");
+    }
 
     private void NavigateToMission(string missionPath)
     {
@@ -1261,6 +1667,16 @@
     {
         var role = selectedCity == City.Zaun ? "zaun" : "piltover";
         NavigationManager.NavigateTo($"/lobby/{role}");
+    }
+
+    private void OnCityHover(City city)
+    {
+        hoveredCity = city;
+    }
+
+    private void OnCityLeave()
+    {
+        hoveredCity = null;
     }
 
     private void ToggleAudio()

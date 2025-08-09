@@ -122,4 +122,149 @@ namespace Arcane_Coop.Models
         public bool ShowCharacterNames { get; set; } = true;
         public string DialogueBoxStyle { get; set; } = "standard";
     }
+
+    // Multiplayer Models
+    public enum VisualNovelGameStatus
+    {
+        WaitingForPlayers,
+        InProgress,
+        Completed
+    }
+
+    public class VisualNovelMultiplayerGame
+    {
+        public string RoomId { get; set; } = "";
+        public VisualNovelGameStatus Status { get; set; } = VisualNovelGameStatus.WaitingForPlayers;
+        public VisualNovelScene CurrentScene { get; set; } = new();
+        public VisualNovelState GameState { get; set; } = new();
+        public List<VisualNovelPlayer> Players { get; set; } = new();
+        public DateTime LastActionTime { get; set; } = DateTime.UtcNow;
+        public int DebounceDelayMs { get; set; } = 500; // Prevent simultaneous button presses
+        public bool IsTextAnimating { get; set; } = false;
+        public DateTime TextAnimationStartTime { get; set; } = DateTime.UtcNow;
+        
+        public VisualNovelPlayer? GetPlayer(string playerId)
+        {
+            return Players.FirstOrDefault(p => p.PlayerId == playerId);
+        }
+        
+        public bool CanPerformAction()
+        {
+            var timeSinceLastAction = DateTime.UtcNow - LastActionTime;
+            return timeSinceLastAction.TotalMilliseconds > DebounceDelayMs;
+        }
+        
+        public void RecordAction()
+        {
+            LastActionTime = DateTime.UtcNow;
+        }
+    }
+
+    public enum VisualNovelPlayerRole 
+    { 
+        Piltover, 
+        Zaunite 
+    }
+
+    public class VisualNovelPlayer
+    {
+        public string PlayerId { get; set; } = "";
+        public string PlayerName { get; set; } = "";
+        public VisualNovelPlayerRole PlayerRole { get; set; } = VisualNovelPlayerRole.Piltover; // First player = Piltover, Second = Zaunite
+        public bool IsConnected { get; set; } = true;
+        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class VisualNovelPlayerView
+    {
+        public string RoomId { get; set; } = "";
+        public string PlayerId { get; set; } = "";
+        public VisualNovelPlayerRole PlayerRole { get; set; } = VisualNovelPlayerRole.Piltover;
+        public VisualNovelGameStatus GameStatus { get; set; } = VisualNovelGameStatus.WaitingForPlayers;
+        public VisualNovelScene? CurrentScene { get; set; }
+        public VisualNovelState? GameState { get; set; }
+        public List<string> ConnectedPlayers { get; set; } = new();
+        public bool CanSkip { get; set; } = false;
+        public bool CanContinue { get; set; } = false;
+        public bool IsTextAnimating { get; set; } = false;
+        public string StatusMessage { get; set; } = "";
+    }
+
+    // Act 1 Story Campaign Multiplayer Models
+    public enum Act1GameStatus
+    {
+        WaitingForPlayers,
+        InProgress,
+        SceneTransition,
+        Completed
+    }
+
+    public class Act1MultiplayerGame
+    {
+        public string RoomId { get; set; } = "";
+        public Act1GameStatus Status { get; set; } = Act1GameStatus.WaitingForPlayers;
+        public VisualNovelScene CurrentScene { get; set; } = new();
+        public VisualNovelState GameState { get; set; } = new();
+        public List<Act1Player> Players { get; set; } = new();
+        public DateTime LastActionTime { get; set; } = DateTime.UtcNow;
+        public int DebounceDelayMs { get; set; } = 500; // Prevent simultaneous button presses
+        public bool IsTextAnimating { get; set; } = false;
+        public DateTime TextAnimationStartTime { get; set; } = DateTime.UtcNow;
+        public int CurrentSceneIndex { get; set; } = 0;
+        public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition" };
+        public string NextGameName { get; set; } = "";
+        public bool ShowTransition { get; set; } = false;
+        
+        public Act1Player? GetPlayer(string playerId)
+        {
+            return Players.FirstOrDefault(p => p.PlayerId == playerId);
+        }
+        
+        public bool CanPerformAction()
+        {
+            var timeSinceLastAction = DateTime.UtcNow - LastActionTime;
+            return timeSinceLastAction.TotalMilliseconds > DebounceDelayMs;
+        }
+        
+        public void RecordAction()
+        {
+            LastActionTime = DateTime.UtcNow;
+        }
+
+        public bool IsLastScene()
+        {
+            return CurrentSceneIndex >= StoryProgression.Count - 1;
+        }
+    }
+
+    public class Act1Player
+    {
+        public string PlayerId { get; set; } = "";
+        public string PlayerName { get; set; } = "";
+        public string OriginalSquadName { get; set; } = ""; // Original squad name without modifiers
+        public string SquadName { get; set; } = ""; // Full squad name with modifiers for lobby separation
+        public string PlayerRole { get; set; } = "zaun"; // "zaun" or "piltover"
+        public string PlayerAvatar { get; set; } = "1";
+        public bool IsConnected { get; set; } = true;
+        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class Act1PlayerView
+    {
+        public string RoomId { get; set; } = "";
+        public string PlayerId { get; set; } = "";
+        public string PlayerRole { get; set; } = "zaun";
+        public Act1GameStatus GameStatus { get; set; } = Act1GameStatus.WaitingForPlayers;
+        public VisualNovelScene? CurrentScene { get; set; }
+        public VisualNovelState? GameState { get; set; }
+        public List<string> ConnectedPlayers { get; set; } = new();
+        public bool CanSkip { get; set; } = false;
+        public bool CanContinue { get; set; } = false;
+        public bool IsTextAnimating { get; set; } = false;
+        public string StatusMessage { get; set; } = "";
+        public bool ShowTransition { get; set; } = false;
+        public string NextGameName { get; set; } = "";
+        public int CurrentSceneIndex { get; set; } = 0;
+        public int TotalScenes { get; set; } = 0;
+    }
 }

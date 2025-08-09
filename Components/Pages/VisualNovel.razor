@@ -114,9 +114,12 @@
     private ElementReference dialogueTextElement;
     
     private Timer? typewriterTimer;
+    private CancellationTokenSource? cancellationTokenSource;
     private int currentTextIndex = 0;
     private string displayedText = "";
     private bool isDisposed = false;
+    private bool isTextAnimationActive = false;
+    private readonly object animationLock = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,9 +151,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && currentDialogue != null)
+        if (firstRender)
         {
-            await StartTextAnimation();
+            // Small delay to ensure proper rendering before starting text animation
+            await Task.Delay(100);
+            if (currentDialogue != null && !isDisposed)
+            {
+                await StartTextAnimation();
+            }
         }
     }
 
@@ -165,31 +173,54 @@
 
     private async Task StartTextAnimation()
     {
-        if (currentDialogue == null) return;
+        if (currentDialogue == null || isDisposed) return;
 
-        displayedText = "";
-        currentTextIndex = 0;
-        state.IsTextFullyDisplayed = false;
-
-        switch (currentDialogue.AnimationType)
+        lock (animationLock)
         {
-            case TextAnimationType.Typewriter:
-                await StartTypewriterEffect();
-                break;
-            case TextAnimationType.Instant:
-                displayedText = currentDialogue.Text;
-                state.IsTextFullyDisplayed = true;
-                StateHasChanged();
-                break;
-            case TextAnimationType.FadeIn:
-            case TextAnimationType.SlideUp:
-                displayedText = currentDialogue.Text;
-                state.IsTextFullyDisplayed = true;
-                StateHasChanged();
-                break;
+            if (isTextAnimationActive)
+            {
+                // Stop any current animation
+                StopCurrentAnimation();
+            }
+            isTextAnimationActive = true;
         }
 
-        await InvokeStateChanged();
+        // Ensure we start with completely clean state
+        ResetTextState();
+        
+        // Force immediate UI update to clear any old text
+        StateHasChanged();
+        await Task.Delay(20); // Slightly longer delay to ensure render
+
+        try
+        {
+            switch (currentDialogue.AnimationType)
+            {
+                case TextAnimationType.Typewriter:
+                    await StartTypewriterEffect();
+                    break;
+                case TextAnimationType.Instant:
+                    displayedText = currentDialogue.Text;
+                    state.IsTextFullyDisplayed = true;
+                    StateHasChanged();
+                    await InvokeStateChanged();
+                    break;
+                case TextAnimationType.FadeIn:
+                case TextAnimationType.SlideUp:
+                    displayedText = currentDialogue.Text;
+                    state.IsTextFullyDisplayed = true;
+                    StateHasChanged();
+                    await InvokeStateChanged();
+                    break;
+            }
+        }
+        finally
+        {
+            lock (animationLock)
+            {
+                isTextAnimationActive = false;
+            }
+        }
     }
 
     private async Task StartTypewriterEffect()
@@ -198,61 +229,117 @@
 
         var speed = currentDialogue.TypewriterSpeed > 0 ? currentDialogue.TypewriterSpeed : config.DefaultTypewriterSpeed;
         
-        typewriterTimer?.Dispose();
-        typewriterTimer = new Timer(async _ =>
-        {
-            if (isDisposed || currentDialogue == null) return;
+        // Clean up previous cancellation token and timer
+        StopCurrentAnimation();
+        
+        // Create new cancellation token for this animation
+        cancellationTokenSource = new CancellationTokenSource();
+        var token = cancellationTokenSource.Token;
 
-            await InvokeAsync(() =>
+        try
+        {
+            while (currentTextIndex < currentDialogue.Text.Length && !token.IsCancellationRequested && !isDisposed)
             {
-                if (currentTextIndex < currentDialogue.Text.Length)
+                await InvokeAsync(() =>
                 {
-                    displayedText += currentDialogue.Text[currentTextIndex];
-                    currentTextIndex++;
-                    StateHasChanged();
-                }
-                else
-                {
-                    state.IsTextFullyDisplayed = true;
-                    typewriterTimer?.Dispose();
-                    StateHasChanged();
-                    
-                    // Auto-continue if enabled
-                    if (currentDialogue.AutoContinue && !IsLastDialogue())
+                    if (!token.IsCancellationRequested && currentDialogue != null && currentTextIndex < currentDialogue.Text.Length)
                     {
-                        _ = Task.Delay(currentDialogue.AutoContinueDelay).ContinueWith(async _ =>
-                        {
-                            if (!isDisposed)
-                                await InvokeAsync(ContinueToNext);
-                        });
+                        displayedText += currentDialogue.Text[currentTextIndex];
+                        currentTextIndex++;
+                        StateHasChanged();
+                    }
+                });
+
+                if (!token.IsCancellationRequested)
+                {
+                    await Task.Delay(speed, token);
+                }
+            }
+
+            // Animation completed naturally - set state BEFORE releasing the lock
+            if (!token.IsCancellationRequested && !isDisposed)
+            {
+                // Set completion state first
+                state.IsTextFullyDisplayed = true;
+                await InvokeAsync(StateHasChanged);
+                await InvokeStateChanged();
+                
+                // Auto-continue if enabled
+                if (currentDialogue.AutoContinue && !IsLastDialogue() && !token.IsCancellationRequested)
+                {
+                    await Task.Delay(currentDialogue.AutoContinueDelay, token);
+                    if (!token.IsCancellationRequested && !isDisposed)
+                    {
+                        await InvokeAsync(ContinueToNext);
                     }
                 }
-            });
-        }, null, 0, speed);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Animation was cancelled - this is expected behavior
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't crash the component
+            Console.WriteLine($"Typewriter animation error: {ex.Message}");
+        }
     }
 
     private async Task SkipText()
     {
-        if (currentDialogue == null) return;
+        if (currentDialogue == null || isDisposed) return;
+        
+        // Prevent multiple skip calls
+        if (state.IsTextFullyDisplayed) return;
 
-        typewriterTimer?.Dispose();
-        displayedText = currentDialogue.Text;
-        state.IsTextFullyDisplayed = true;
-        StateHasChanged();
+        lock (animationLock)
+        {
+            if (!isTextAnimationActive) return; // Nothing to skip
+        }
+
+        // Stop current animation cleanly
+        StopCurrentAnimation();
+        
+        // Immediately show full text - ensure complete replacement
+        await InvokeAsync(() =>
+        {
+            if (currentDialogue != null)
+            {
+                // Use the helper method to ensure complete reset
+                ResetTextState();
+                displayedText = currentDialogue.Text; // Set fresh text
+                state.IsTextFullyDisplayed = true;
+                StateHasChanged();
+            }
+        });
+        
         await InvokeStateChanged();
     }
 
     private async Task ContinueToNext()
     {
+        if (isDisposed) return;
+        
         if (IsLastDialogue())
         {
             await OnSceneComplete.InvokeAsync();
             return;
         }
 
+        // Stop any current animation before proceeding
+        StopCurrentAnimation();
+        
         state.CurrentDialogueIndex++;
         currentDialogue = currentScene?.DialogueLines[state.CurrentDialogueIndex];
         UpdateCharacterStates();
+        
+        // Reset state for new dialogue
+        ResetTextState();
+        StateHasChanged();
+        
+        // Small delay to ensure clean state transition
+        await Task.Delay(50);
         await StartTextAnimation();
     }
 
@@ -305,6 +392,7 @@
     {
         return displayedText.Replace("\n", "<br/>");
     }
+    
 
     // CSS Class Methods
     private string GetThemeClass() => config.Theme.ToString().ToLower();
@@ -434,10 +522,27 @@
         return scene;
     }
 
+    private void StopCurrentAnimation()
+    {
+        typewriterTimer?.Dispose();
+        typewriterTimer = null;
+        
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource?.Dispose();
+        cancellationTokenSource = null;
+    }
+    
+    private void ResetTextState()
+    {
+        displayedText = "";
+        currentTextIndex = 0;
+        state.IsTextFullyDisplayed = false;
+    }
+
     public void Dispose()
     {
         isDisposed = true;
-        typewriterTimer?.Dispose();
+        StopCurrentAnimation();
     }
 }
 

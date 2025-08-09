@@ -1,0 +1,1428 @@
+@page "/act1-multiplayer"
+@page "/act1-multiplayer/{*parameters}"
+@using Arcane_Coop.Models
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<div class="act1-multiplayer-container @GetThemeClass()">
+    @if (!IsConnected)
+    {
+        <!-- Connection Screen -->
+        <div class="connection-screen @GetThemeClass()">
+            <div class="connection-content">
+                <h1>Act 1: Emergency Briefing</h1>
+                <div class="connection-animation">
+                    <div class="loading-spinner @GetThemeClass()"></div>
+                </div>
+                <p>Connecting to multiplayer story session...</p>
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="status-message">@statusMessage</div>
+                }
+            </div>
+        </div>
+    }
+    else if (playerView == null || playerView.GameStatus == Act1GameStatus.WaitingForPlayers)
+    {
+        <!-- Waiting for Players -->
+        <div class="waiting-screen @GetThemeClass()">
+            <div class="waiting-content">
+                <h1>Squad Synchronization</h1>
+                <div class="sync-animation">
+                    <div class="loading-spinner @GetThemeClass()"></div>
+                    <div class="sync-indicators">
+                        <div class="sync-indicator @(connectedPlayersCount >= 1 ? "connected" : "waiting")">Player 1</div>
+                        <div class="sync-indicator @(connectedPlayersCount >= 2 ? "connected" : "waiting")">Player 2</div>
+                    </div>
+                </div>
+                <h2>@(statusMessage ?? "Waiting for both players to join...")</h2>
+                <div class="squad-info">
+                    <p><strong>Squad:</strong> @originalSquadName</p>
+                    <p><strong>Mission:</strong> Emergency Response Protocol</p>
+                </div>
+                @if (playerView?.ConnectedPlayers != null)
+                {
+                    <div class="connected-players">
+                        <h3>Squad Members Ready:</h3>
+                        @foreach (var player in playerView.ConnectedPlayers)
+                        {
+                            <div class="player-tag">@player</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (playerView?.ShowTransition == true)
+    {
+        <!-- Scene Transition -->
+        <div class="transition-screen @GetThemeClass()">
+            <div class="transition-content">
+                <div class="transition-title">
+                    @if (playerRole == "zaun")
+                    {
+                        <span class="zaun-title">UNDERGROUND NETWORK</span>
+                        <span class="subtitle">Connecting to street informants...</span>
+                    }
+                    else
+                    {
+                        <span class="piltover-title">PILTOVER COMMAND</span>
+                        <span class="subtitle">Establishing secure channel...</span>
+                    }
+                </div>
+                <div class="connection-animation">
+                    <div class="loading-spinner @GetThemeClass()"></div>
+                </div>
+                <div class="transition-text">
+                    <p>Preparing next mission phase...</p>
+                    <small>@playerView.NextGameName</small>
+                </div>
+            </div>
+        </div>
+    }
+    else if (playerView?.CurrentScene != null)
+    {
+        <!-- Game Scene -->
+        <div class="story-scene @GetThemeClass()">
+            <!-- Background -->
+            <div class="scene-background @GetBackgroundClass()">
+                @if (!string.IsNullOrEmpty(playerView.CurrentScene.BackgroundImage))
+                {
+                    <img src="@playerView.CurrentScene.BackgroundImage" alt="Scene background" class="background-image" />
+                }
+                <div class="background-overlay"></div>
+                <div class="atmospheric-effects"></div>
+            </div>
+
+            <!-- Character Layer -->
+            <div class="characters-layer @GetLayoutClass()">
+                @if (playerView.CurrentScene.Layout == SceneLayout.SingleCenter && GetCurrentSpeaker() != null)
+                {
+                    <div class="character-container center-character @(GetCurrentSpeaker()?.IsActive == true ? "active" : "")">
+                        <div class="character-portrait">
+                            <img src="@GetCurrentSpeaker()?.GetCurrentImagePath()" alt="@GetCurrentSpeaker()?.Name (@GetCurrentSpeaker()?.CurrentExpression)" class="portrait-image" />
+                            <div class="character-glow"></div>
+                        </div>
+                    </div>
+                }
+                else if (playerView.CurrentScene.Layout == SceneLayout.DualCharacters)
+                {
+                    @foreach (var character in playerView.CurrentScene.Characters.Take(2))
+                    {
+                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                            <div class="character-portrait">
+                                <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
+                                <div class="character-glow"></div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Multiplayer Status Bar -->
+            <div class="multiplayer-status">
+                <div class="player-role-indicator @GetRoleClass()">
+                    Squad Member: @playerRole.ToUpper()
+                </div>
+                <div class="players-online">
+                    Players: @(playerView.ConnectedPlayers.Count)/2
+                </div>
+                <div class="scene-progress">
+                    Scene: @(playerView.CurrentSceneIndex + 1)/@playerView.TotalScenes
+                </div>
+            </div>
+
+            <!-- Dialogue Box -->
+            <div class="dialogue-section">
+                <div class="dialogue-box @GetDialogueBoxClass()">
+                    <!-- Character Name -->
+                    @if (GetCurrentSpeaker() != null)
+                    {
+                        <div class="character-name-tag @GetNameTagClass()">
+                            <span class="character-name">@GetCurrentSpeaker()?.DisplayName</span>
+                            <div class="name-tag-decoration"></div>
+                        </div>
+                    }
+
+                    <!-- Dialogue Text Container -->
+                    <div class="dialogue-content">
+                        <div class="dialogue-text-container">
+                            <div class="dialogue-text @GetTextAnimationClass()">
+                                @((MarkupString)GetFormattedText())
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Control Buttons -->
+                <div class="dialogue-controls-external">
+                    @if (playerView.CanSkip)
+                    {
+                        <button class="control-btn skip-btn @GetControlButtonClass()" @onclick="SkipText" title="Skip to end of text">
+                            <span class="btn-icon">⏭️</span>
+                            <span class="btn-text">Skip</span>
+                            <div class="btn-effect"></div>
+                        </button>
+                    }
+
+                    @if (playerView.CanContinue)
+                    {
+                        <button class="control-btn continue-btn @GetControlButtonClass()" @onclick="ContinueToNext" title="Continue to next dialogue">
+                            <span class="btn-icon">▶️</span>
+                            <span class="btn-text">Continue</span>
+                            <div class="btn-effect"></div>
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (playerView?.GameStatus == Act1GameStatus.Completed)
+    {
+        <!-- Game Completed -->
+        <div class="completion-screen @GetThemeClass()">
+            <div class="completion-content">
+                <h1>Act 1 Complete!</h1>
+                <p>The emergency briefing is complete. Your squad is ready for the mission ahead.</p>
+                <div class="completion-actions">
+                    <button @onclick="RestartGame" class="control-btn @GetControlButtonClass()">
+                        Replay Act 1
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Parameters { get; set; }
+    
+    private HubConnection? hubConnection;
+    private Act1PlayerView? playerView;
+    private string statusMessage = "";
+    private string currentRoomId = "";
+    private string playerRole = "zaun";
+    private string playerName = "";
+    private string playerAvatar = "1";
+    private string originalSquadName = "";
+    private int connectedPlayersCount = 0;
+    private DialogueLine? currentDialogue;
+    private string displayedText = "";
+    private bool isDisposed = false;
+    private bool hasNavigatedToNextGame = false;
+    private CancellationTokenSource? typingCts;
+    private bool isTypewriting = false;
+    private int currentTextIndex = 0;
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ParseUrlParameters();
+        
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7104/gamehub")
+            .Build();
+
+        SetupSignalRHandlers();
+        await hubConnection.StartAsync();
+        
+        // Auto-join the game room
+        if (!string.IsNullOrEmpty(currentRoomId))
+        {
+            await JoinGameRoom();
+        }
+    }
+
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            currentRoomId = Uri.UnescapeDataString(query["roomId"] ?? "");
+            playerRole = query["role"] ?? "zaun";
+            playerName = Uri.UnescapeDataString(query["name"] ?? "Unknown Agent");
+            originalSquadName = Uri.UnescapeDataString(query["squad"] ?? "Squad Alpha");
+            playerAvatar = query["avatar"] ?? "1";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+            statusMessage = "Invalid parameters. Please start from the character lobby.";
+        }
+    }
+
+    private void SetupSignalRHandlers()
+    {
+        if (hubConnection == null) return;
+
+        hubConnection.On<Act1PlayerView>("Act1GameJoined", async (view) =>
+        {
+            await InvokeAsync(() =>
+            {
+                playerView = view;
+                connectedPlayersCount = view.ConnectedPlayers.Count;
+                UpdateCurrentDialogue();
+                displayedText = "";
+                _ = StartTypewriterAnimation();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<Act1PlayerView>("Act1PlayerViewUpdated", async (view) =>
+        {
+            await InvokeAsync(() =>
+            {
+                playerView = view;
+                connectedPlayersCount = view.ConnectedPlayers.Count;
+                UpdateCurrentDialogue();
+                StateHasChanged();
+                if (playerView?.ShowTransition == true)
+                {
+                    _ = ScheduleLocalTransitionFallback();
+                }
+            });
+        });
+
+        hubConnection.On("Act1TextSkipped", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                CancelTypewriter();
+                if (currentDialogue != null)
+                {
+                    displayedText = currentDialogue.Text;
+                    StateHasChanged();
+                }
+            });
+        });
+
+        hubConnection.On<int>("Act1DialogueContinued", async (newDialogueIndex) =>
+        {
+            await InvokeAsync(() =>
+            {
+                CancelTypewriter();
+                displayedText = "";
+                UpdateCurrentDialogue();
+                _ = StartTypewriterAnimation();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("Act1SceneTransition", async (nextGameName) =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = $"Transitioning to {nextGameName}...";
+                StateHasChanged();
+                _ = ScheduleLocalTransitionFallback();
+            });
+        });
+
+        hubConnection.On<string>("Act1RedirectToNextGame", async (url) =>
+        {
+            await InvokeAsync(() =>
+            {
+                hasNavigatedToNextGame = true;
+                NavigationManager.NavigateTo(url);
+            });
+        });
+
+        hubConnection.On("Act1GameCompleted", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = "Act 1 completed!";
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On("Act1GameRestarted", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                CancelTypewriter();
+                displayedText = "";
+                UpdateCurrentDialogue();
+                _ = StartTypewriterAnimation();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On("Act1GameFull", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = "Story session is full! Please try again.";
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("Act1Error", async (error) =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = $"Error: {error}";
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("Act1PlayerDisconnected", async (playerName) =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = $"{playerName} disconnected. Waiting for reconnection...";
+                StateHasChanged();
+            });
+        });
+    }
+
+    private async Task JoinGameRoom()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            statusMessage = "Joining story session...";
+            StateHasChanged();
+            await hubConnection.SendAsync("JoinAct1Game", currentRoomId, playerName, originalSquadName, playerRole, playerAvatar);
+        }
+    }
+
+    private async Task SkipText()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            await hubConnection.SendAsync("SkipAct1Text", currentRoomId);
+        }
+    }
+
+    private async Task ContinueToNext()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            await hubConnection.SendAsync("ContinueAct1", currentRoomId);
+        }
+    }
+
+    private async Task RestartGame()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            await hubConnection.SendAsync("RestartAct1", currentRoomId);
+        }
+    }
+
+    private void UpdateCurrentDialogue()
+    {
+        if (playerView?.CurrentScene?.DialogueLines != null && 
+            playerView.GameState != null &&
+            playerView.GameState.CurrentDialogueIndex < playerView.CurrentScene.DialogueLines.Count)
+        {
+            currentDialogue = playerView.CurrentScene.DialogueLines[playerView.GameState.CurrentDialogueIndex];
+            UpdateCharacterStates();
+        }
+    }
+
+    private async Task StartTypewriterAnimation()
+    {
+        if (isDisposed || currentDialogue == null)
+            return;
+
+        if (currentDialogue.AnimationType != TextAnimationType.Typewriter)
+        {
+            displayedText = currentDialogue.Text;
+            // Immediately inform server that this line is fully displayed
+            if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+            {
+                try { await hubConnection.SendAsync("Act1TypingCompleted", currentRoomId); } catch { }
+            }
+            return;
+        }
+
+        CancelTypewriter();
+
+        typingCts = new CancellationTokenSource();
+        var token = typingCts.Token;
+        isTypewriting = true;
+        currentTextIndex = 0;
+        displayedText = "";
+        StateHasChanged();
+        await Task.Delay(20);
+
+        var speed = currentDialogue.TypewriterSpeed > 0 ? currentDialogue.TypewriterSpeed : 50;
+
+        var completedNaturally = false;
+        try
+        {
+            while (!isDisposed && !token.IsCancellationRequested && currentDialogue != null && currentTextIndex < currentDialogue.Text.Length)
+            {
+                await InvokeAsync(() =>
+                {
+                    if (!token.IsCancellationRequested && currentDialogue != null && currentTextIndex < currentDialogue.Text.Length)
+                    {
+                        displayedText += currentDialogue.Text[currentTextIndex];
+                        currentTextIndex++;
+                        StateHasChanged();
+                    }
+                });
+
+                if (!token.IsCancellationRequested)
+                {
+                    await Task.Delay(speed, token);
+                }
+            }
+            if (!isDisposed && !token.IsCancellationRequested && currentDialogue != null && currentTextIndex >= currentDialogue.Text.Length)
+            {
+                completedNaturally = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when skipping or transitioning
+        }
+        finally
+        {
+            isTypewriting = false;
+            // When typing completes naturally, inform the server so CanSkip/CanContinue are updated for both players
+            if (completedNaturally && !isDisposed && currentDialogue != null)
+            {
+                if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+                {
+                    try { await hubConnection.SendAsync("Act1TypingCompleted", currentRoomId); } catch { }
+                }
+            }
+        }
+    }
+
+    private void CancelTypewriter()
+    {
+        try
+        {
+            if (typingCts != null)
+            {
+                typingCts.Cancel();
+                typingCts.Dispose();
+            }
+        }
+        catch { }
+        finally
+        {
+            typingCts = null;
+            isTypewriting = false;
+        }
+    }
+
+    private void UpdateCharacterStates()
+    {
+        if (playerView?.CurrentScene == null || currentDialogue == null) return;
+
+        // Reset all characters to inactive
+        foreach (var character in playerView.CurrentScene.Characters)
+            character.IsActive = false;
+
+        // Set current speaker as active
+        var speaker = playerView.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+        if (speaker != null)
+        {
+            speaker.IsActive = true;
+            
+            // Update speaker expression if specified
+            if (currentDialogue.SpeakerExpression.HasValue)
+                speaker.CurrentExpression = currentDialogue.SpeakerExpression.Value;
+        }
+
+        // Update expressions for other characters if specified
+        foreach (var expressionChange in currentDialogue.CharacterExpressions)
+        {
+            var character = playerView.CurrentScene.Characters.FirstOrDefault(c => c.Id == expressionChange.Key);
+            if (character != null)
+                character.CurrentExpression = expressionChange.Value;
+        }
+    }
+
+    private VisualNovelCharacter? GetCurrentSpeaker()
+    {
+        if (playerView?.CurrentScene == null || currentDialogue == null) return null;
+        return playerView.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+    }
+
+    private string GetFormattedText()
+    {
+        return displayedText.Replace("\n", "<br/>");
+    }
+
+    // CSS Class Methods
+    private string GetThemeClass() => playerView?.CurrentScene?.Theme.ToString().ToLower() ?? playerRole;
+    private string GetBackgroundClass() => $"background-{GetThemeClass()}";
+    private string GetLayoutClass() => playerView?.CurrentScene?.Layout.ToString().ToLower() ?? "single";
+    private string GetDialogueBoxClass() => $"dialogue-{GetThemeClass()}";
+    private string GetNameTagClass() => $"name-tag-{GetThemeClass()}";
+    private string GetTextAnimationClass() => currentDialogue?.AnimationType.ToString().ToLower() ?? "typewriter";
+    private string GetControlButtonClass() => $"control-{GetThemeClass()}";
+    private string GetSpinnerClass() => $"spinner-{GetThemeClass()}";
+    private string GetRoleClass() => $"role-{playerRole}";
+    
+    private string GetCharacterPositionClass(VisualNovelCharacter character)
+    {
+        return character.Position.ToString().ToLower() + "-character";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        isDisposed = true;
+        CancelTypewriter();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task ScheduleLocalTransitionFallback()
+    {
+        try
+        {
+            await Task.Delay(4000);
+            if (!hasNavigatedToNextGame && playerView?.ShowTransition == true && !isDisposed)
+            {
+                var nameParam = Uri.EscapeDataString(playerName ?? "");
+                var squadParam = Uri.EscapeDataString(originalSquadName ?? "");
+                var url = $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true";
+                hasNavigatedToNextGame = true;
+                NavigationManager.NavigateTo(url);
+            }
+        }
+        catch { }
+    }
+}
+
+<style>
+/* Act 1 Multiplayer Styles - Based on VisualNovelMultiplayer.razor */
+/********************************************
+ * Container & Base Styling
+ ********************************************/
+.act1-multiplayer-container, .story-scene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Rajdhani', sans-serif;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/********************************************
+ * Connection and Setup Screens
+ ********************************************/
+.connection-screen, .waiting-screen, .completion-screen, .transition-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.connection-screen.zaun, .waiting-screen.zaun, .completion-screen.zaun, .transition-screen.zaun {
+    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+}
+
+.connection-content, .waiting-content, .completion-content, .transition-content {
+    text-align: center;
+    color: #fff;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.connection-content h1, .waiting-content h1 {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+}
+
+.zaun h1 {
+    text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
+}
+
+.connection-animation, .sync-animation {
+    margin: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sync-indicators {
+    display: flex;
+    gap: 2rem;
+}
+
+.sync-indicator {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.sync-indicator.waiting {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sync-indicator.connected {
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid #28a745;
+    color: #28a745;
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.squad-info {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.squad-info p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.status-message {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    color: #fff;
+}
+
+/********************************************
+ * Connected Players Display
+ ********************************************/
+.connected-players {
+    margin-top: 2rem;
+}
+
+.player-tag {
+    display: inline-block;
+    margin: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    border-radius: 20px;
+    color: #fff;
+}
+
+/********************************************
+ * Multiplayer Status Bar
+ ********************************************/
+.multiplayer-status {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 15px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+}
+
+.player-role-indicator, .players-online, .scene-progress {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 16px;
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    color: #fff;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.role-piltover {
+    border-color: rgba(200, 170, 110, 0.8);
+    color: rgba(200, 170, 110, 1);
+}
+
+.role-zaun {
+    border-color: rgba(0, 212, 170, 0.8);
+    color: rgba(0, 212, 170, 1);
+}
+
+/********************************************
+ * Completion Screen
+ ********************************************/
+.completion-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.completion-actions .control-btn {
+    min-width: 150px;
+}
+
+/********************************************
+ * Transition Elements
+ ********************************************/
+.transition-title {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.zaun-title, .piltover-title {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.zaun-title {
+    color: #00d4aa;
+    text-shadow: 0 0 20px #00ffc8;
+}
+
+.piltover-title {
+    color: #c8aa6e;
+    text-shadow: 0 0 20px #ffd700;
+}
+
+.subtitle {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.transition-text {
+    opacity: 0.9;
+}
+
+.transition-text p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.transition-text small {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* Include all Visual Novel styles for scene display */
+/********************************************
+ * Theme-Specific Backgrounds
+ ********************************************/
+.story-scene.piltover {
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.story-scene.zaun {
+    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+}
+
+/********************************************
+ * Scene Background
+ ********************************************/
+.scene-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.8);
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.atmospheric-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.background-piltover .atmospheric-effects {
+    background: radial-gradient(circle at 20% 50%, rgba(200, 170, 110, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+}
+
+.background-zaun .atmospheric-effects {
+    background: radial-gradient(circle at 30% 70%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(0, 255, 200, 0.05) 0%, transparent 50%);
+}
+
+/********************************************
+ * Character Layer
+ ********************************************/
+.characters-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.characters-layer.single {
+    justify-content: center;
+}
+
+.characters-layer.dualcharacters {
+    justify-content: space-around;
+    padding: 0 5%;
+}
+
+.character-container {
+    position: relative;
+    bottom: 25%;
+    transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: scale(0.95) translateY(10px);
+}
+
+.character-container.active {
+    transform: scale(1.05) translateY(0px);
+    z-index: 5;
+}
+
+.character-container.inactive {
+    transform: scale(0.88) translateY(15px);
+}
+
+.character-portrait {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.portrait-image {
+    max-height: 70vh;
+    max-width: 400px;
+    object-fit: contain;
+    transition: all 0.4s ease-in-out;
+    transform-origin: center bottom;
+}
+
+/* Active character glow effect for transparent PNGs */
+.character-container.active .portrait-image {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.8))
+            drop-shadow(0 0 60px rgba(200, 170, 110, 0.2));
+}
+
+/* Inactive character subtle shadow */
+.character-container.inactive .portrait-image {
+    filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.6));
+    opacity: 0.6;
+}
+
+.character-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(-50%, -50%) scale(0.8);
+    z-index: -1;
+}
+
+.character-container.active .character-glow {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.story-scene.piltover .character-container.active .character-glow {
+    background: radial-gradient(ellipse at center, 
+        rgba(200, 170, 110, 0.15) 0%, 
+        rgba(200, 170, 110, 0.08) 30%, 
+        transparent 70%);
+    filter: blur(40px);
+}
+
+.story-scene.zaun .character-container.active .character-glow {
+    background: radial-gradient(ellipse at center, 
+        rgba(0, 212, 170, 0.15) 0%, 
+        rgba(0, 212, 170, 0.08) 30%, 
+        transparent 70%);
+    filter: blur(40px);
+}
+
+/* Enhanced theme-specific portrait shadows */
+.story-scene.piltover .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(200, 170, 110, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(255, 215, 0, 0.15));
+}
+
+.story-scene.zaun .character-container.active .portrait-image {
+    filter: drop-shadow(0 0 15px rgba(0, 212, 170, 0.4))
+            drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7))
+            drop-shadow(0 0 40px rgba(0, 255, 200, 0.15));
+}
+
+.left-character {
+    align-self: flex-end;
+}
+
+.right-character {
+    align-self: flex-end;
+}
+
+.center-character {
+    align-self: flex-end;
+}
+
+/********************************************
+ * Dialogue Section
+ ********************************************/
+.dialogue-section {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    max-width: 900px;
+    z-index: 6;
+}
+
+.dialogue-box {
+    position: relative;
+    min-height: 200px;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.92) 0%, 
+        rgba(15, 10, 25, 0.88) 50%,
+        rgba(0, 0, 0, 0.92) 100%);
+    padding: 2.5rem 3rem 2rem 3rem;
+    border: none;
+    overflow: visible;
+    animation: dialogueBoxEntrance 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+    
+    /* Hextech-inspired border design */
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(200, 170, 110, 0.4),
+        inset 0 0 20px rgba(200, 170, 110, 0.1),
+        0 0 50px rgba(0, 0, 0, 0.8),
+        0 0 80px rgba(200, 170, 110, 0.15);
+    
+    /* More dramatic angular corners */
+    clip-path: polygon(
+        0 15px, 15px 0,
+        calc(100% - 15px) 0, 100% 15px,
+        100% calc(100% - 15px), calc(100% - 15px) 100%,
+        15px 100%, 0 calc(100% - 15px)
+    );
+}
+
+@@keyframes dialogueBoxEntrance {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.dialogue-piltover {
+    background: linear-gradient(135deg, 
+        rgba(10, 5, 0, 0.95) 0%, 
+        rgba(25, 15, 5, 0.9) 50%,
+        rgba(10, 5, 0, 0.95) 100%);
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(255, 215, 0, 0.5),
+        inset 0 0 30px rgba(255, 215, 0, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(200, 170, 110, 0.2);
+}
+
+.dialogue-zaun {
+    background: linear-gradient(135deg, 
+        rgba(0, 10, 8, 0.95) 0%, 
+        rgba(5, 20, 15, 0.9) 50%,
+        rgba(0, 10, 8, 0.95) 100%);
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(0, 255, 200, 0.5),
+        inset 0 0 30px rgba(0, 255, 200, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(0, 212, 170, 0.2);
+}
+
+/********************************************
+ * Dialogue Controls
+ ********************************************/
+.dialogue-controls-external {
+    position: absolute;
+    top: -55px;
+    right: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 100;
+}
+
+.control-btn {
+    padding: 10px 18px;
+    border: none;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(30, 30, 30, 0.8) 100%);
+    color: #fff;
+    font-size: 1rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    animation: buttonEntrance 0.6s ease-out;
+    
+    /* Arcane-style angular shape */
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+    
+    /* Glowing border effect */
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.5),
+        0 0 12px rgba(200, 170, 110, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@@keyframes buttonEntrance {
+    from {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.control-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5),
+        0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+    transition: all 0.1s ease;
+}
+
+.control-piltover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.6),
+        0 0 15px rgba(200, 170, 110, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.control-piltover:hover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.control-zaun {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.6),
+        0 0 15px rgba(0, 212, 170, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.control-zaun:hover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.9),
+        0 0 25px rgba(0, 212, 170, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/********************************************
+ * Character Name Tag
+ ********************************************/
+.character-name-tag {
+    display: inline-block;
+    margin-bottom: 1rem;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 20, 0.6) 100%);
+    border: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    position: relative;
+    overflow: hidden;
+    animation: nameTagEntrance 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    
+    /* Arcane-style angular shape */
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    
+    /* Glowing border effect */
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.6),
+        0 0 15px rgba(200, 170, 110, 0.3);
+}
+
+@@keyframes nameTagEntrance {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.name-tag-piltover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        0 0 20px rgba(200, 170, 110, 0.4);
+    color: rgba(200, 170, 110, 1);
+}
+
+.name-tag-zaun {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.8),
+        0 0 20px rgba(0, 212, 170, 0.4);
+    color: rgba(0, 212, 170, 1);
+}
+
+/********************************************
+ * Dialogue Content
+ ********************************************/
+.dialogue-text {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: #f8f8f8;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 400;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 10;
+}
+
+/* Text Animation Classes */
+.dialogue-text.typewriter {
+    /* Typewriter effect handled by C# code */
+}
+
+.dialogue-text.fadein {
+    animation: fadeInText 1s ease-in;
+}
+
+.dialogue-text.slideup {
+    animation: slideUpText 0.8s ease-out;
+}
+
+.dialogue-text.instant {
+    /* No animation */
+}
+
+@@keyframes fadeInText {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes slideUpText {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/********************************************
+ * Loading Screen
+ ********************************************/
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: #c8aa6e;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+.spinner-piltover {
+    border-top-color: #c8aa6e;
+}
+
+.spinner-zaun {
+    border-top-color: #00d4aa;
+}
+
+@@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/********************************************
+ * Responsive Design
+ ********************************************/
+@@media (max-width: 768px) {
+    .dialogue-section {
+        width: 85%;
+        bottom: 2rem;
+    }
+    
+    .dialogue-box {
+        padding: 2rem 2rem 1.5rem 2rem;
+        min-height: 160px;
+    }
+    
+    .dialogue-text {
+        font-size: 1.1rem;
+    }
+    
+    .character-name-tag {
+        font-size: 0.9rem;
+        padding: 3px 6px;
+    }
+    
+    .characters-layer.dualcharacters {
+        padding: 0 2%;
+        padding-bottom: 35%;
+    }
+    
+    .portrait-image {
+        max-height: 60vh;
+        max-width: 300px;
+    }
+    
+    .control-btn {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+    
+    .dialogue-controls-external {
+        top: -50px;
+        gap: 10px;
+        right: 15px;
+    }
+    
+    .multiplayer-status {
+        top: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+        gap: 10px;
+        flex-direction: column;
+    }
+    
+    .player-role-indicator, .players-online, .scene-progress {
+        padding: 6px 12px;
+    }
+}
+
+@@media (max-width: 480px) {
+    .dialogue-section {
+        width: 95%;
+        bottom: 1rem;
+    }
+    
+    .dialogue-text {
+        font-size: 1rem;
+    }
+    
+    .portrait-image {
+        max-height: 50vh;
+        max-width: 250px;
+    }
+    
+    .dialogue-box {
+        min-height: 140px;
+        padding: 1.5rem 1.5rem 1rem 1.5rem;
+    }
+    
+    .character-name-tag {
+        font-size: 0.8rem;
+    }
+    
+    .control-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .dialogue-controls-external {
+        top: -45px;
+        gap: 8px;
+        right: 10px;
+    }
+}
+
+/********************************************
+ * Hardware Acceleration & Performance
+ ********************************************/
+.character-container,
+.dialogue-box,
+.control-btn {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.portrait-image {
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Smooth scrolling for long dialogue */
+.dialogue-text {
+    scroll-behavior: smooth;
+}
+</style>

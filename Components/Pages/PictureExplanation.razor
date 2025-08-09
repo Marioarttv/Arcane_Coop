@@ -566,7 +566,22 @@
         {
             try
             {
-                await hubConnection.SendAsync("JoinPictureExplanationGame", roomId, playerName);
+                // Prefer sending requested role if coming from story
+                if (!string.IsNullOrEmpty(playerRole))
+                {
+                    await hubConnection.SendAsync("JoinPictureExplanationGameWithRole", roomId, playerName, playerRole);
+                }
+                else
+                {
+                    await hubConnection.SendAsync("JoinPictureExplanationGame", roomId, playerName);
+                }
+
+                // If coming from the story, immediately hide the lobby and show game UI while waiting for server view
+                if (isFromStory)
+                {
+                    inGame = true;
+                    StateHasChanged();
+                }
             }
             catch (Exception ex)
             {

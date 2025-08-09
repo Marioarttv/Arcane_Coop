@@ -951,12 +951,32 @@
                squadName.Length >= 2;
     }
 
-    private void StartStoryMode()
+    private async Task StartStoryMode()
     {
         if (!squadVerified) return;
         
-        var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}";
-        NavigationManager.NavigateTo($"/story-campaign?{parameters}");
+        // Generate a unique lobby name for story campaign to prevent conflicts with other lobby uses
+        var storyLobbyName = GenerateStoryLobbyName(squadName);
+        
+        // Use SignalR to redirect both players to Act 1 multiplayer
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToAct1", squadName, storyLobbyName, selectedRole, selectedAvatar.ToString(), characterName);
+        }
+        else
+        {
+            // Fallback: direct navigation if SignalR not connected
+            var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}";
+            NavigationManager.NavigateTo($"/act1-multiplayer?{parameters}");
+        }
+    }
+    
+    private string GenerateStoryLobbyName(string originalName)
+    {
+        // Add modifier to prevent conflicts: original name + "_story_" + timestamp
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return $"{originalName}_story_{timestamp}";
     }
 
     private void AutoVerifySquad()
@@ -1033,9 +1053,18 @@
                 
                 InvokeAsync(StateHasChanged);
             });
+
+            lobbyConnection.On<string>("RedirectToAct1", (url) =>
+            {
+                InvokeAsync(() =>
+                {
+                    NavigationManager.NavigateTo(url);
+                });
+            });
             
             await lobbyConnection.StartAsync();
             await lobbyConnection.SendAsync("JoinRoom", squadName, characterName);
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
             
             inRoom = true;
             if (!connectedPlayers.Contains(characterName))

@@ -15,7 +15,18 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, RuneProtocolGame> _runeProtocolGames = new();
     private static readonly ConcurrentDictionary<string, PictureExplanationGame> _pictureExplanationGames = new();
     private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
+    private static readonly ConcurrentDictionary<string, VisualNovelMultiplayerGame> _visualNovelGames = new();
+    private static readonly ConcurrentDictionary<string, Act1MultiplayerGame> _act1Games = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
+    // Track richer lobby player metadata per connection within a room (used for personalized redirects)
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, LobbyPlayerInfo>> _lobbyPlayers = new();
+
+    private sealed class LobbyPlayerInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Avatar { get; set; } = string.Empty;
+    }
 
     public async Task JoinRoom(string roomId, string playerName)
     {
@@ -24,6 +35,12 @@ public class GameHub : Hub
         // Add player to room tracking
         var roomPlayerDict = _roomPlayers.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>());
         roomPlayerDict.TryAdd(Context.ConnectionId, playerName);
+
+        // Initialize lobby player metadata with at least the name; role/avatar can be updated later
+        var lobbyDict = _lobbyPlayers.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, LobbyPlayerInfo>());
+        lobbyDict.AddOrUpdate(Context.ConnectionId,
+            _ => new LobbyPlayerInfo { Name = playerName },
+            (_, existing) => { existing.Name = playerName; return existing; });
         
         // Send room state to the joining player
         var allPlayerNames = roomPlayerDict.Values.ToList();
@@ -48,6 +65,16 @@ public class GameHub : Hub
                 _roomPlayers.TryRemove(roomId, out _);
             }
         }
+
+        // Remove from lobby metadata tracking
+        if (_lobbyPlayers.TryGetValue(roomId, out var lobbyDict))
+        {
+            lobbyDict.TryRemove(Context.ConnectionId, out _);
+            if (lobbyDict.IsEmpty)
+            {
+                _lobbyPlayers.TryRemove(roomId, out _);
+            }
+        }
         
         await Clients.Group(roomId).SendAsync("PlayerLeft", playerName, Context.ConnectionId);
     }
@@ -55,6 +82,46 @@ public class GameHub : Hub
     public async Task SendMessageToRoom(string roomId, string playerName, string message)
     {
         await Clients.Group(roomId).SendAsync("ReceiveMessage", playerName, message);
+    }
+
+    public async Task RedirectPlayersToAct1(string originalRoomId, string storyLobbyName, string role, string avatar, string playerName)
+    {
+        // Prefer personalized redirects when lobby metadata is available (avoids using caller's params for everyone)
+        if (_lobbyPlayers.TryGetValue(originalRoomId, out var lobbyDict) && !lobbyDict.IsEmpty)
+        {
+            foreach (var kvp in lobbyDict)
+            {
+                var connectionId = kvp.Key;
+                var info = kvp.Value;
+                var effectiveRole = string.IsNullOrWhiteSpace(info.Role) ? role : info.Role;
+                var effectiveAvatar = string.IsNullOrWhiteSpace(info.Avatar) ? avatar : info.Avatar;
+                var effectiveName = string.IsNullOrWhiteSpace(info.Name) ? playerName : info.Name;
+
+                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={effectiveRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}";
+                await Clients.Client(connectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
+            }
+            return;
+        }
+
+        // Fallback: broadcast using caller's params (legacy behavior)
+        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}";
+        await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{fallback}");
+    }
+
+    // Update or set per-connection lobby metadata for personalized redirects
+    public Task UpdateLobbyPlayerInfo(string roomId, string role, string avatar, string playerName)
+    {
+        var lobbyDict = _lobbyPlayers.GetOrAdd(roomId, _ => new ConcurrentDictionary<string, LobbyPlayerInfo>());
+        lobbyDict.AddOrUpdate(Context.ConnectionId,
+            _ => new LobbyPlayerInfo { Name = playerName, Role = role, Avatar = avatar },
+            (_, existing) =>
+            {
+                existing.Name = playerName;
+                existing.Role = role;
+                existing.Avatar = avatar;
+                return existing;
+            });
+        return Task.CompletedTask;
     }
 
     public async Task SendPlayerAction(string roomId, string action, object data)
@@ -703,6 +770,35 @@ public class GameHub : Hub
         }
     }
 
+    public async Task JoinPictureExplanationGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        var game = _pictureExplanationGames.GetOrAdd(roomId, _ => new PictureExplanationGame());
+        try
+        {
+            var role = game.AddPlayer(Context.ConnectionId, playerName, requestedRole);
+            if (!string.IsNullOrEmpty(role))
+            {
+                var playerView = game.GetPlayerView(Context.ConnectionId);
+                var gameState = game.GetGameState();
+                await Clients.Caller.SendAsync("PictureExplanationGameJoined", role, playerView);
+                await Clients.Group(roomId).SendAsync("PictureExplanationGameStateUpdated", gameState);
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("PictureExplanationPlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("PictureExplanationGameFull");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
+        }
+    }
+
     public async Task FinishDescribing(string roomId)
     {
         if (_pictureExplanationGames.TryGetValue(roomId, out var game))
@@ -932,6 +1028,789 @@ public class GameHub : Hub
         }
     }
 
+    // ==============================================
+    // Visual Novel System - Multiplayer Methods
+    // ==============================================
+
+    public async Task JoinVisualNovelGame(string roomId, string playerName)
+    {
+        try
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            
+            var game = _visualNovelGames.GetOrAdd(roomId, _ => new VisualNovelMultiplayerGame { RoomId = roomId });
+            
+            // Check if room is full (max 2 players)
+            if (game.Players.Count >= 2)
+            {
+                await Clients.Caller.SendAsync("VisualNovelGameFull");
+                return;
+            }
+            
+            // Assign player role: first player = Piltover, second = Zaunite
+            var playerRole = game.Players.Count == 0 ? VisualNovelPlayerRole.Piltover : VisualNovelPlayerRole.Zaunite;
+            var playerId = Context.ConnectionId;
+            
+            var player = new VisualNovelPlayer
+            {
+                PlayerId = playerId,
+                PlayerName = playerName,
+                PlayerRole = playerRole,
+                IsConnected = true,
+                JoinedAt = DateTime.UtcNow
+            };
+            
+            game.Players.Add(player);
+            
+            // Initialize game scene if first player
+            if (game.Players.Count == 1)
+            {
+                // Create default scene based on first player's role
+                game.CurrentScene = CreateDefaultVisualNovelScene(playerRole == VisualNovelPlayerRole.Piltover ? NovelTheme.Piltover : NovelTheme.Zaun);
+                game.GameState = new VisualNovelState 
+                { 
+                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentDialogueIndex = 0,
+                    IsTextFullyDisplayed = false
+                };
+            }
+            
+            // Start game when 2 players joined
+            if (game.Players.Count == 2)
+            {
+                game.Status = VisualNovelGameStatus.InProgress;
+            }
+            
+            // Send game state to all players
+            await BroadcastVisualNovelGameState(roomId);
+            
+            await Clients.Caller.SendAsync("VisualNovelGameJoined", CreatePlayerView(game, playerId));
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("VisualNovelError", $"Failed to join game: {ex.Message}");
+        }
+    }
+
+    public async Task SkipVisualNovelText(string roomId)
+    {
+        try
+        {
+            if (!_visualNovelGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Player not in game");
+                return;
+            }
+            
+            // Debouncing: check if enough time has passed since last action
+            if (!game.CanPerformAction())
+            {
+                return; // Silently ignore if within debounce period
+            }
+            
+            // Only allow skip if text is currently animating
+            if (!game.IsTextAnimating)
+            {
+                return;
+            }
+            
+            game.RecordAction();
+            game.IsTextAnimating = false;
+            game.GameState.IsTextFullyDisplayed = true;
+            
+            // Broadcast text skip to all players
+            await Clients.Group(roomId).SendAsync("VisualNovelTextSkipped");
+            await BroadcastVisualNovelGameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("VisualNovelError", $"Failed to skip text: {ex.Message}");
+        }
+    }
+
+    public async Task ContinueVisualNovel(string roomId)
+    {
+        try
+        {
+            if (!_visualNovelGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Player not in game");
+                return;
+            }
+            
+            // Debouncing: check if enough time has passed since last action
+            if (!game.CanPerformAction())
+            {
+                return; // Silently ignore if within debounce period
+            }
+            
+            // Only allow continue if text is fully displayed and not animating
+            if (!game.GameState.IsTextFullyDisplayed || game.IsTextAnimating)
+            {
+                return;
+            }
+            
+            // Check if this is the last dialogue in the scene
+            var isLastDialogue = game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count - 1;
+            if (isLastDialogue)
+            {
+                game.Status = VisualNovelGameStatus.Completed;
+                await Clients.Group(roomId).SendAsync("VisualNovelGameCompleted");
+                await BroadcastVisualNovelGameState(roomId);
+                return;
+            }
+            
+            game.RecordAction();
+            game.GameState.CurrentDialogueIndex++;
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            
+            // Broadcast dialogue progression to all players
+            await Clients.Group(roomId).SendAsync("VisualNovelDialogueContinued", game.GameState.CurrentDialogueIndex);
+            await BroadcastVisualNovelGameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("VisualNovelError", $"Failed to continue: {ex.Message}");
+        }
+    }
+
+    public async Task RestartVisualNovel(string roomId)
+    {
+        try
+        {
+            if (!_visualNovelGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("VisualNovelError", "Player not in game");
+                return;
+            }
+            
+            // Reset game state
+            game.Status = VisualNovelGameStatus.InProgress;
+            game.GameState.CurrentDialogueIndex = 0;
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            game.RecordAction();
+            
+            await Clients.Group(roomId).SendAsync("VisualNovelGameRestarted");
+            await BroadcastVisualNovelGameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("VisualNovelError", $"Failed to restart: {ex.Message}");
+        }
+    }
+
+    private async Task BroadcastVisualNovelGameState(string roomId)
+    {
+        if (!_visualNovelGames.TryGetValue(roomId, out var game)) return;
+        
+        foreach (var player in game.Players)
+        {
+            var playerView = CreatePlayerView(game, player.PlayerId);
+            await Clients.Client(player.PlayerId).SendAsync("VisualNovelPlayerViewUpdated", playerView);
+        }
+    }
+
+    private VisualNovelPlayerView CreatePlayerView(VisualNovelMultiplayerGame game, string playerId)
+    {
+        var player = game.GetPlayer(playerId);
+        if (player == null) return new VisualNovelPlayerView();
+        
+        var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
+        
+        return new VisualNovelPlayerView
+        {
+            RoomId = game.RoomId,
+            PlayerId = playerId,
+            PlayerRole = player.PlayerRole,
+            GameStatus = game.Status,
+            CurrentScene = game.CurrentScene,
+            GameState = game.GameState,
+            ConnectedPlayers = connectedPlayers,
+            CanSkip = game.IsTextAnimating && !game.GameState.IsTextFullyDisplayed,
+            CanContinue = game.GameState.IsTextFullyDisplayed && !game.IsTextAnimating && 
+                         game.GameState.CurrentDialogueIndex < game.CurrentScene.DialogueLines.Count - 1,
+            IsTextAnimating = game.IsTextAnimating,
+            StatusMessage = game.Status switch
+            {
+                VisualNovelGameStatus.WaitingForPlayers => $"Waiting for players... ({game.Players.Count}/2)",
+                VisualNovelGameStatus.InProgress => "Story in progress",
+                VisualNovelGameStatus.Completed => "Story completed",
+                _ => ""
+            }
+        };
+    }
+
+    private VisualNovelScene CreateDefaultVisualNovelScene(NovelTheme theme)
+    {
+        var scene = new VisualNovelScene
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = $"{theme} Multiplayer Story",
+            Layout = SceneLayout.DualCharacters,
+            Theme = theme
+        };
+
+        if (theme == NovelTheme.Piltover)
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "jayce",
+                    Name = "Jayce",
+                    DisplayName = "Jayce Talis",
+                    ImagePath = "/images/Jayce.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#c8aa6e"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "viktor",
+                    Name = "Viktor",
+                    DisplayName = "Viktor",
+                    ImagePath = "/images/Viktor.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#0596aa"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "Welcome to our multiplayer investigation. Together, we'll uncover the truth behind this conspiracy.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "viktor",
+                    Text = "The synchronized nature of our discovery suggests collaboration will be essential. We must work as one.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 45
+                },
+                new DialogueLine
+                {
+                    CharacterId = "jayce",
+                    Text = "Any action taken by one of us affects us both. Communication and coordination are key to our success.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                }
+            });
+        }
+        else
+        {
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/Vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa"
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Sheriff Caitlyn",
+                    ImagePath = "/images/Cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#ff007f"
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Alright partner, this is a team operation. When one of us moves, we both move. Got it?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Understood. Our actions are synchronized - every choice we make affects both our perspectives.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 50
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Stay sharp and stay together. In Zaun, we watch each other's backs, and that's exactly what we're gonna do.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                }
+            });
+        }
+
+        return scene;
+    }
+
+    // ==============================================
+    // Act 1 Story Campaign - Multiplayer Methods
+    // ==============================================
+
+    public async Task JoinAct1Game(string roomId, string playerName, string originalSquadName, string role, string avatar)
+    {
+        try
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            
+            var game = _act1Games.GetOrAdd(roomId, _ => new Act1MultiplayerGame { RoomId = roomId });
+            
+            // Check if room is full (max 2 players)
+            if (game.Players.Count >= 2)
+            {
+                await Clients.Caller.SendAsync("Act1GameFull");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            
+            var player = new Act1Player
+            {
+                PlayerId = playerId,
+                PlayerName = playerName,
+                OriginalSquadName = originalSquadName,
+                SquadName = roomId, // Full room ID with modifiers
+                PlayerRole = role,
+                PlayerAvatar = avatar,
+                IsConnected = true,
+                JoinedAt = DateTime.UtcNow
+            };
+            
+            game.Players.Add(player);
+            
+            // Initialize game scene if first player
+            if (game.Players.Count == 1)
+            {
+                game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+                game.GameState = new VisualNovelState 
+                { 
+                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentDialogueIndex = 0,
+                    IsTextFullyDisplayed = false
+                };
+            }
+            
+            // Start game when 2 players joined
+            if (game.Players.Count == 2)
+            {
+                game.Status = Act1GameStatus.InProgress;
+                game.IsTextAnimating = true;
+                game.TextAnimationStartTime = DateTime.UtcNow;
+            }
+            
+            // Send game state to all players
+            await BroadcastAct1GameState(roomId);
+            
+            await Clients.Caller.SendAsync("Act1GameJoined", CreateAct1PlayerView(game, playerId));
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to join game: {ex.Message}");
+        }
+    }
+
+    public async Task SkipAct1Text(string roomId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+            
+            // Debouncing: check if enough time has passed since last action
+            if (!game.CanPerformAction())
+            {
+                return; // Silently ignore if within debounce period
+            }
+            
+            // Only allow skip if text is currently animating
+            if (!game.IsTextAnimating)
+            {
+                return;
+            }
+            
+            game.RecordAction();
+            game.IsTextAnimating = false;
+            game.GameState.IsTextFullyDisplayed = true;
+            
+            // Broadcast text skip to all players
+            await Clients.Group(roomId).SendAsync("Act1TextSkipped");
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to skip text: {ex.Message}");
+        }
+    }
+
+    public async Task ContinueAct1(string roomId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+            
+            // Debouncing: check if enough time has passed since last action
+            if (!game.CanPerformAction())
+            {
+                return; // Silently ignore if within debounce period
+            }
+            
+            // Only allow continue if text is fully displayed and not animating
+            if (!game.GameState.IsTextFullyDisplayed || game.IsTextAnimating)
+            {
+                return;
+            }
+            
+            // Check if this is the last dialogue in the current scene
+            var isLastDialogueInScene = game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count - 1;
+            
+            if (isLastDialogueInScene)
+            {
+                // Move to next scene or complete game
+                await ProgressToNextAct1Scene(roomId, game);
+                return;
+            }
+            
+            game.RecordAction();
+            game.GameState.CurrentDialogueIndex++;
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            
+            // Broadcast dialogue progression to all players
+            await Clients.Group(roomId).SendAsync("Act1DialogueContinued", game.GameState.CurrentDialogueIndex);
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to continue: {ex.Message}");
+        }
+    }
+
+    // Called by clients when the current dialogue line has fully finished animating on their side
+    public async Task Act1TypingCompleted(string roomId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+
+            // Mark text as fully displayed
+            game.IsTextAnimating = false;
+            game.GameState.IsTextFullyDisplayed = true;
+            game.RecordAction();
+
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to complete typing: {ex.Message}");
+        }
+    }
+
+    private async Task ProgressToNextAct1Scene(string roomId, Act1MultiplayerGame game)
+    {
+        game.CurrentSceneIndex++;
+        
+        if (game.CurrentSceneIndex < game.StoryProgression.Count)
+        {
+            var nextPhase = game.StoryProgression[game.CurrentSceneIndex];
+            
+            if (nextPhase == "picture_explanation_transition")
+            {
+                // Show transition screen
+                game.Status = Act1GameStatus.SceneTransition;
+                game.ShowTransition = true;
+                game.NextGameName = "Visual Intelligence Analysis";
+                
+                await Clients.Group(roomId).SendAsync("Act1SceneTransition", "Visual Intelligence Analysis");
+                await BroadcastAct1GameState(roomId);
+                
+                // Auto-transition after 3 seconds
+                _ = Task.Delay(3000).ContinueWith(async _ =>
+                {
+                    if (_act1Games.TryGetValue(roomId, out var currentGame) && currentGame.Status == Act1GameStatus.SceneTransition)
+                    {
+                        foreach (var p in currentGame.Players)
+                        {
+                            var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+                            await Clients.Client(p.PlayerId).SendAsync("Act1RedirectToNextGame", $"/picture-explanation?{parameters}");
+                        }
+                    }
+                });
+            }
+        }
+        else
+        {
+            // Story completed
+            game.Status = Act1GameStatus.Completed;
+            await Clients.Group(roomId).SendAsync("Act1GameCompleted");
+            await BroadcastAct1GameState(roomId);
+        }
+    }
+
+    public async Task RestartAct1(string roomId)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+            
+            // Reset game state
+            var originalSquadName = game.Players.FirstOrDefault()?.OriginalSquadName ?? "";
+            game.Status = Act1GameStatus.InProgress;
+            game.CurrentSceneIndex = 0;
+            game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+            game.GameState.CurrentDialogueIndex = 0;
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            game.ShowTransition = false;
+            game.NextGameName = "";
+            game.RecordAction();
+            
+            await Clients.Group(roomId).SendAsync("Act1GameRestarted");
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Failed to restart: {ex.Message}");
+        }
+    }
+
+    private async Task BroadcastAct1GameState(string roomId)
+    {
+        if (!_act1Games.TryGetValue(roomId, out var game)) return;
+        
+        foreach (var player in game.Players)
+        {
+            var playerView = CreateAct1PlayerView(game, player.PlayerId);
+            await Clients.Client(player.PlayerId).SendAsync("Act1PlayerViewUpdated", playerView);
+        }
+    }
+
+    private Act1PlayerView CreateAct1PlayerView(Act1MultiplayerGame game, string playerId)
+    {
+        var player = game.GetPlayer(playerId);
+        if (player == null) return new Act1PlayerView();
+        
+        var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
+        
+        return new Act1PlayerView
+        {
+            RoomId = game.RoomId,
+            PlayerId = playerId,
+            PlayerRole = player.PlayerRole,
+            GameStatus = game.Status,
+            CurrentScene = game.CurrentScene,
+            GameState = game.GameState,
+            ConnectedPlayers = connectedPlayers,
+            CanSkip = game.IsTextAnimating && !game.GameState.IsTextFullyDisplayed,
+            CanContinue = game.GameState.IsTextFullyDisplayed && !game.IsTextAnimating,
+            IsTextAnimating = game.IsTextAnimating,
+            ShowTransition = game.ShowTransition,
+            NextGameName = game.NextGameName,
+            CurrentSceneIndex = game.CurrentSceneIndex,
+            TotalScenes = game.StoryProgression.Count,
+            StatusMessage = game.Status switch
+            {
+                Act1GameStatus.WaitingForPlayers => $"Waiting for players... ({game.Players.Count}/2)",
+                Act1GameStatus.InProgress => "Story in progress",
+                Act1GameStatus.SceneTransition => $"Transitioning to {game.NextGameName}...",
+                Act1GameStatus.Completed => "Act 1 completed",
+                _ => ""
+            }
+        };
+    }
+
+    private VisualNovelScene CreateAct1EmergencyBriefingScene(string squadName)
+    {
+        var scene = new VisualNovelScene
+        {
+            Id = "emergency_briefing",
+            Name = "Emergency Briefing - Act I Scene I",
+            Layout = SceneLayout.DualCharacters,
+            Theme = NovelTheme.Zaun // Default theme, can be dynamic based on majority
+        };
+
+        // Add Vi and Caitlyn characters
+        scene.Characters.AddRange(new[]
+        {
+            new VisualNovelCharacter
+            {
+                Id = "vi",
+                Name = "Vi",
+                DisplayName = "Vi",
+                ImagePath = "/images/Vi.jpeg",
+                Position = CharacterPosition.Left,
+                ThemeColor = "#00d4aa"
+            },
+            new VisualNovelCharacter
+            {
+                Id = "caitlyn",
+                Name = "Caitlyn",
+                DisplayName = "Sheriff Caitlyn",
+                ImagePath = "/images/Cait.jpeg",
+                Position = CharacterPosition.Right,
+                ThemeColor = "#c8aa6e"
+            }
+        });
+
+        // Act I Scene I Dialogue - Emergency Briefing
+        scene.DialogueLines.AddRange(new[]
+        {
+            new DialogueLine
+            {
+                CharacterId = "caitlyn",
+                Text = "Vi, we have a critical situation. Hextech energy readings across three districts are showing cascade patterns. If we don't act within the next two hours...",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45
+            },
+            new DialogueLine
+            {
+                CharacterId = "vi",
+                Text = "Let me guess - boom goes the neighborhood? How big we talking, Cupcake?",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40
+            },
+            new DialogueLine
+            {
+                CharacterId = "caitlyn",
+                Text = "Potentially three city blocks. Both Piltover infrastructure and Zaun residential areas. The epicenter appears to be in the industrial district.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 50
+            },
+            new DialogueLine
+            {
+                CharacterId = "vi",
+                Text = "Shit. That's where families live, not just the Chem-Barons and their labs. What do you need from me?",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 35,
+                SpeakerExpression = CharacterExpression.Worried
+            },
+            new DialogueLine
+            {
+                CharacterId = "caitlyn",
+                Text = "I can coordinate from HQ - I have access to surveillance, technical analysis, and tactical resources. But I need someone who knows Zaun's underground networks.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45,
+                SpeakerExpression = CharacterExpression.Serious
+            },
+            new DialogueLine
+            {
+                CharacterId = "vi",
+                Text = "And you need someone who won't ask questions when you say 'jump', right? What about the newbies?",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40
+            },
+            new DialogueLine
+            {
+                CharacterId = "caitlyn",
+                Text = $"Squad {squadName} will need to learn quickly. One will adapt to Zaun's ways, the other to field conditions.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45
+            },
+            new DialogueLine
+            {
+                CharacterId = "vi",
+                Text = "Fair enough. First test then - let's see if they can work together when intel's scrambled and time's running out.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40,
+                SpeakerExpression = CharacterExpression.Determined
+            },
+            new DialogueLine
+            {
+                CharacterId = "caitlyn",
+                Text = "The initial blast damaged our surveillance network. We have fragments of security footage, but they need analysis. Visual intelligence that could reveal who's behind this.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 45
+            },
+            new DialogueLine
+            {
+                CharacterId = "vi",
+                Text = $"Visual intel, huh? Good thing Squad {squadName} knows how to read between the lines. Time to put those detective skills to work.",
+                AnimationType = TextAnimationType.Typewriter,
+                TypewriterSpeed = 40
+            }
+        });
+
+        return scene;
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove player from room tracking
@@ -1021,6 +1900,60 @@ public class GameHub : Hub
             if (kvp.Value.RemovePlayer(Context.ConnectionId))
             {
                 await Clients.Group(kvp.Key).SendAsync("WordForgeGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from visual novel games
+        foreach (var kvp in _visualNovelGames)
+        {
+            var game = kvp.Value;
+            var disconnectedPlayer = game.GetPlayer(Context.ConnectionId);
+            
+            if (disconnectedPlayer != null)
+            {
+                // Mark player as disconnected
+                disconnectedPlayer.IsConnected = false;
+                
+                // Remove player completely from the game
+                game.Players.RemoveAll(p => p.PlayerId == Context.ConnectionId);
+                
+                // Clean up empty games or notify remaining players
+                if (game.Players.Count == 0)
+                {
+                    _visualNovelGames.TryRemove(kvp.Key, out _);
+                }
+                else
+                {
+                    await Clients.Group(kvp.Key).SendAsync("VisualNovelPlayerDisconnected", disconnectedPlayer.PlayerName);
+                    await BroadcastVisualNovelGameState(kvp.Key);
+                }
+            }
+        }
+        
+        // Remove player from Act 1 games
+        foreach (var kvp in _act1Games)
+        {
+            var game = kvp.Value;
+            var disconnectedPlayer = game.GetPlayer(Context.ConnectionId);
+            
+            if (disconnectedPlayer != null)
+            {
+                // Mark player as disconnected
+                disconnectedPlayer.IsConnected = false;
+                
+                // Remove player completely from the game
+                game.Players.RemoveAll(p => p.PlayerId == Context.ConnectionId);
+                
+                // Clean up empty games or notify remaining players
+                if (game.Players.Count == 0)
+                {
+                    _act1Games.TryRemove(kvp.Key, out _);
+                }
+                else
+                {
+                    await Clients.Group(kvp.Key).SendAsync("Act1PlayerDisconnected", disconnectedPlayer.PlayerName);
+                    await BroadcastAct1GameState(kvp.Key);
+                }
             }
         }
         
@@ -2864,6 +3797,51 @@ public class PictureExplanationGame
         }
         
         return role == PlayerRole.Piltover ? "Piltover" : "Zaunite";
+    }
+
+    public string AddPlayer(string connectionId, string playerName, string? requestedRole)
+    {
+        if (Players.Count >= 2)
+            return "";
+
+        PlayerRole? desired = null;
+        if (!string.IsNullOrWhiteSpace(requestedRole))
+        {
+            var r = requestedRole.Trim().ToLower();
+            if (r == "piltover") desired = PlayerRole.Piltover;
+            else if (r == "zaun" || r == "zaunite") desired = PlayerRole.Zaunite;
+        }
+
+        PlayerRole assigned;
+        if (desired.HasValue)
+        {
+            // If desired role is taken, assign the other one; otherwise assign desired
+            bool piltoverTaken = Players.Values.Contains(PlayerRole.Piltover);
+            bool zauniteTaken = Players.Values.Contains(PlayerRole.Zaunite);
+            if (desired.Value == PlayerRole.Piltover)
+            {
+                assigned = piltoverTaken ? PlayerRole.Zaunite : PlayerRole.Piltover;
+            }
+            else
+            {
+                assigned = zauniteTaken ? PlayerRole.Piltover : PlayerRole.Zaunite;
+            }
+        }
+        else
+        {
+            // Fallback to default assignment order
+            assigned = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        }
+
+        Players[connectionId] = assigned;
+        PlayerNames[connectionId] = playerName;
+
+        if (Players.Count == 2)
+        {
+            StartNewRound();
+        }
+
+        return assigned == PlayerRole.Piltover ? "Piltover" : "Zaunite";
     }
 
     public bool RemovePlayer(string connectionId)
