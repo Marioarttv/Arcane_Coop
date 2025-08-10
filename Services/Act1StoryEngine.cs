@@ -202,8 +202,8 @@ namespace Arcane_Coop.Services
                     Text = "Smart call. Those codes use both Piltovan and Zaunite encryption. You'll need to work together.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "messages_continue" // Continue to next part of this branch
+                    SpeakerExpression = CharacterExpression.Determined
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 new DialogueLine
                 {
@@ -223,8 +223,8 @@ namespace Arcane_Coop.Services
                     Text = "Good instincts. That residue is unlike anything I've seen. You'll need to analyze it carefully.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "sites_continue" // Continue to next part of this branch
+                    SpeakerExpression = CharacterExpression.Worried
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 new DialogueLine
                 {
@@ -244,8 +244,8 @@ namespace Arcane_Coop.Services
                     Text = "Ambitious. Alright, you two split the leads. But stay in contact - this could get dangerous.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "split_continue" // Continue to next part of this branch
+                    SpeakerExpression = CharacterExpression.Worried
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 new DialogueLine
                 {
@@ -301,8 +301,8 @@ namespace Arcane_Coop.Services
                     Text = "Good. That's exactly the mindset we need. I'll coordinate evacuation routes with the Enforcers.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious,
-                    NextDialogueId = "mission_briefing" // Jump to mission briefing
+                    SpeakerExpression = CharacterExpression.Serious
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 // War priority response
                 new DialogueLine
@@ -312,8 +312,8 @@ namespace Arcane_Coop.Services
                     Text = "Exactly right. The thief wants chaos - we give them cooperation instead.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "mission_briefing" // Jump to mission briefing
+                    SpeakerExpression = CharacterExpression.Worried
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 // Thief priority response
                 new DialogueLine
@@ -323,8 +323,8 @@ namespace Arcane_Coop.Services
                     Text = "Agreed. But remember - we need evidence both sides will accept. Do this right.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "mission_briefing" // Jump to mission briefing
+                    SpeakerExpression = CharacterExpression.Determined
+                    // No NextDialogueId - will naturally continue to next dialogue in sequence
                 },
                 new DialogueLine
                 {
@@ -368,6 +368,17 @@ namespace Arcane_Coop.Services
                     SpeakerExpression = CharacterExpression.Determined
                 }
             });
+
+            // Debug: Log all dialogue IDs and their indices
+            Console.WriteLine($"[Act1StoryEngine] Scene created with {scene.DialogueLines.Count} dialogues:");
+            for (int i = 0; i < scene.DialogueLines.Count; i++)
+            {
+                var dl = scene.DialogueLines[i];
+                var idInfo = !string.IsNullOrEmpty(dl.Id) ? $"ID='{dl.Id}'" : "no ID";
+                var nextInfo = !string.IsNullOrEmpty(dl.NextDialogueId) ? $" → NextDialogueId='{dl.NextDialogueId}'" : "";
+                var choiceInfo = dl.IsPlayerChoice ? " [CHOICE]" : "";
+                Console.WriteLine($"  [{i}] {idInfo} - {dl.CharacterId}: \"{dl.Text.Substring(0, Math.Min(40, dl.Text.Length))}...\"{choiceInfo}{nextInfo}");
+            }
 
             return scene;
         }

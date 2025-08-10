@@ -16,7 +16,9 @@
       "Bash(cp:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:blazordragdrop.azurewebsites.net)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(csc:*)",
+      "Bash(TestDialogueFlow.exe)"
     ],
     "deny": []
   }

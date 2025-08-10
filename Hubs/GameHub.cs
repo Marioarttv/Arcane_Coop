@@ -1673,18 +1673,26 @@ public class GameHub : Hub
                 var nextIndex = game.CurrentScene.DialogueLines.FindIndex(d => d.Id == oldDialogue.NextDialogueId);
                 if (nextIndex >= 0)
                 {
+                    var targetDialogue = game.CurrentScene.DialogueLines[nextIndex];
                     Console.WriteLine($"[Act1GameHub] BRANCH JUMP: Dialogue #{oldIndex} (ID: {oldDialogue.Id}) → jumping to dialogue ID '{oldDialogue.NextDialogueId}' (index: {nextIndex})");
+                    Console.WriteLine($"[Act1GameHub] Target dialogue: Speaker={targetDialogue.CharacterId}, ID={targetDialogue.Id ?? "null"}, Text=\"{targetDialogue.Text.Substring(0, Math.Min(50, targetDialogue.Text.Length))}...\"");
                     game.GameState.CurrentDialogueIndex = nextIndex;
                 }
                 else
                 {
-                    Console.WriteLine($"[Act1GameHub] BRANCH ERROR: Dialogue #{oldIndex} references missing dialogue ID '{oldDialogue.NextDialogueId}', falling back to next sequential dialogue");
+                    Console.WriteLine($"[Act1GameHub] BRANCH ERROR: Dialogue #{oldIndex} (ID: {oldDialogue.Id}) references missing dialogue ID '{oldDialogue.NextDialogueId}', falling back to next sequential dialogue");
                     game.GameState.CurrentDialogueIndex++;
                 }
             }
             else
             {
                 // Normal linear progression
+                var nextDialogue = game.GameState.CurrentDialogueIndex + 1 < game.CurrentScene.DialogueLines.Count ? game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex + 1] : null;
+                Console.WriteLine($"[Act1GameHub] DIALOGUE CONTINUE: Moving from index {oldIndex} to {oldIndex + 1}");
+                if (nextDialogue != null)
+                {
+                    Console.WriteLine($"[Act1GameHub] Next dialogue: Speaker={nextDialogue.CharacterId}, ID={nextDialogue.Id ?? "null"}, Text=\"{nextDialogue.Text.Substring(0, Math.Min(50, nextDialogue.Text.Length))}...\"");
+                }
                 game.GameState.CurrentDialogueIndex++;
             }
             
@@ -1870,6 +1878,11 @@ public class GameHub : Hub
             // Process the choice
             currentDialogue.SelectedChoiceId = choiceId;
             
+            Console.WriteLine($"[Act1GameHub] Processing choice at dialogue index {game.GameState.CurrentDialogueIndex}");
+            Console.WriteLine($"[Act1GameHub] Current dialogue ID: {currentDialogue.Id ?? "null"}");
+            Console.WriteLine($"[Act1GameHub] Selected choice ID: {choiceId}");
+            Console.WriteLine($"[Act1GameHub] Choice NextDialogueId: {selectedChoice.NextDialogueId ?? "null"}");
+            
             // Add to choice history
             game.ChoiceHistory.Add($"{player.PlayerName} ({player.PlayerRole}): {selectedChoice.Text}");
             
@@ -1903,7 +1916,9 @@ public class GameHub : Hub
                 var nextIndex = game.CurrentScene.DialogueLines.FindIndex(d => d.Id == selectedChoice.NextDialogueId);
                 if (nextIndex >= 0)
                 {
+                    var targetDialogue = game.CurrentScene.DialogueLines[nextIndex];
                     Console.WriteLine($"[Act1GameHub] BRANCH TAKEN: Choice '{selectedChoice.Text}' (ID: {choiceId}) → branching to dialogue ID '{selectedChoice.NextDialogueId}' (index: {nextIndex})");
+                    Console.WriteLine($"[Act1GameHub] Target dialogue: Speaker={targetDialogue.CharacterId}, Text=\"{targetDialogue.Text.Substring(0, Math.Min(50, targetDialogue.Text.Length))}...\"");
                     game.GameState.CurrentDialogueIndex = nextIndex;
                 }
                 else
@@ -1936,9 +1951,9 @@ public class GameHub : Hub
                 ChoiceText = selectedChoice.Text
             });
             
-            // After choice is made, mark text as fully displayed so both players can continue
-            game.IsTextAnimating = false;
-            game.GameState.IsTextFullyDisplayed = true;
+            // After choice is made, start animating the new dialogue
+            game.IsTextAnimating = true;
+            game.GameState.IsTextFullyDisplayed = false;
             
             // Update game state for all players - they should now be able to continue
             await BroadcastAct1GameState(roomId);
