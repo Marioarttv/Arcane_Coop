@@ -1652,8 +1652,14 @@ public class GameHub : Hub
                 return;
             }
             
-            // Check if this is the last dialogue in the current scene
-            var isLastDialogueInScene = game.GameState.CurrentDialogueIndex >= game.CurrentScene.DialogueLines.Count - 1;
+            // Check if this is the last dialogue in the main content (before branches)
+            var mainContentEndIndex = game.CurrentScene.MainContentEndIndex ?? (game.CurrentScene.DialogueLines.Count - 1);
+            var currentIndex = game.GameState.CurrentDialogueIndex;
+            
+            // Only check for scene end if we're in the main content range (0 to mainContentEndIndex)
+            // Branch dialogues (after mainContentEndIndex) should never trigger scene end
+            var isInMainContent = currentIndex <= mainContentEndIndex;
+            var isLastDialogueInScene = isInMainContent && currentIndex == mainContentEndIndex;
             
             if (isLastDialogueInScene)
             {

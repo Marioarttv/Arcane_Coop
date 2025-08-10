@@ -194,70 +194,7 @@ namespace Arcane_Coop.Services
                         }
                     }
                 },
-                // Messages response branch
-                new DialogueLine
-                {
-                    Id = "messages_response",
-                    CharacterId = "vi",
-                    Text = "Smart call. Those codes use both Piltovan and Zaunite encryption. You'll need to work together.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
-                new DialogueLine
-                {
-                    Id = "messages_continue",
-                    CharacterId = "caitlyn",
-                    Text = "One of you identifies the patterns, the other provides context. Communication is key.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious,
-                    NextDialogueId = "priority_choice" // Jump to next choice point
-                },
-                // Sites response branch
-                new DialogueLine
-                {
-                    Id = "sites_response",
-                    CharacterId = "vi",
-                    Text = "Good instincts. That residue is unlike anything I've seen. You'll need to analyze it carefully.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
-                new DialogueLine
-                {
-                    Id = "sites_continue",
-                    CharacterId = "caitlyn",
-                    Text = "If someone's mixing hextech and chemtech, you need to identify what they're building. Fast.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "priority_choice" // Jump to next choice point
-                },
-                // Split response branch
-                new DialogueLine
-                {
-                    Id = "split_response",
-                    CharacterId = "vi",
-                    Text = "Ambitious. Alright, you two split the leads. But stay in contact - this could get dangerous.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
-                new DialogueLine
-                {
-                    Id = "split_continue",
-                    CharacterId = "caitlyn",
-                    Text = "Share everything through our secure channels. No secrets between partners.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "priority_choice" // Jump to next choice point
-                },
-                // Zaun player choice - decides priorities
+                // === SECOND CHOICE ===
                 new DialogueLine
                 {
                     Id = "priority_choice",
@@ -293,39 +230,7 @@ namespace Arcane_Coop.Services
                         }
                     }
                 },
-                // People priority response
-                new DialogueLine
-                {
-                    Id = "people_priority",
-                    CharacterId = "caitlyn",
-                    Text = "Good. That's exactly the mindset we need. I'll coordinate evacuation routes with the Enforcers.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
-                // War priority response
-                new DialogueLine
-                {
-                    Id = "war_priority",
-                    CharacterId = "caitlyn",
-                    Text = "Exactly right. The thief wants chaos - we give them cooperation instead.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
-                // Thief priority response
-                new DialogueLine
-                {
-                    Id = "thief_priority",
-                    CharacterId = "caitlyn",
-                    Text = "Agreed. But remember - we need evidence both sides will accept. Do this right.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                    // No NextDialogueId - will naturally continue to next dialogue in sequence
-                },
+                // === FINAL MISSION BRIEFING (common ending) ===
                 new DialogueLine
                 {
                     Id = "mission_briefing",
@@ -366,8 +271,106 @@ namespace Arcane_Coop.Services
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
+                },
+                
+                // === ALL BRANCH DIALOGUES AT THE END ===
+                // First choice branches
+                new DialogueLine
+                {
+                    Id = "messages_response",
+                    CharacterId = "vi",
+                    Text = "Smart call. Those codes use both Piltovan and Zaunite encryption. You'll need to work together.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined,
+                    NextDialogueId = "messages_continue"
+                },
+                new DialogueLine
+                {
+                    Id = "messages_continue",
+                    CharacterId = "caitlyn",
+                    Text = "One of you identifies the patterns, the other provides context. Communication is key.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious,
+                    NextDialogueId = "priority_choice"
+                },
+                new DialogueLine
+                {
+                    Id = "sites_response",
+                    CharacterId = "vi",
+                    Text = "Good instincts. That residue is unlike anything I've seen. You'll need to analyze it carefully.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried,
+                    NextDialogueId = "sites_continue"
+                },
+                new DialogueLine
+                {
+                    Id = "sites_continue",
+                    CharacterId = "caitlyn",
+                    Text = "If someone's mixing hextech and chemtech, you need to identify what they're building. Fast.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried,
+                    NextDialogueId = "priority_choice"
+                },
+                new DialogueLine
+                {
+                    Id = "split_response",
+                    CharacterId = "vi",
+                    Text = "Ambitious. Alright, you two split the leads. But stay in contact - this could get dangerous.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried,
+                    NextDialogueId = "split_continue"
+                },
+                new DialogueLine
+                {
+                    Id = "split_continue",
+                    CharacterId = "caitlyn",
+                    Text = "Share everything through our secure channels. No secrets between partners.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined,
+                    NextDialogueId = "priority_choice"
+                },
+                // Second choice branches
+                new DialogueLine
+                {
+                    Id = "people_priority",
+                    CharacterId = "caitlyn",
+                    Text = "Good. That's exactly the mindset we need. I'll coordinate evacuation routes with the Enforcers.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious,
+                    NextDialogueId = "mission_briefing"
+                },
+                new DialogueLine
+                {
+                    Id = "war_priority",
+                    CharacterId = "caitlyn",
+                    Text = "Exactly right. The thief wants chaos - we give them cooperation instead.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried,
+                    NextDialogueId = "mission_briefing"
+                },
+                new DialogueLine
+                {
+                    Id = "thief_priority",
+                    CharacterId = "caitlyn",
+                    Text = "Agreed. But remember - we need evidence both sides will accept. Do this right.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined,
+                    NextDialogueId = "mission_briefing"
                 }
             });
+
+            // Mark the end of main content (before branch dialogues)
+            // The last main dialogue is at index 16 ("No pressure, rookies...")
+            scene.MainContentEndIndex = 16;
 
             // Debug: Log all dialogue IDs and their indices
             Console.WriteLine($"[Act1StoryEngine] Scene created with {scene.DialogueLines.Count} dialogues:");

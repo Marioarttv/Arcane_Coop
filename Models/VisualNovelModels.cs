@@ -117,6 +117,7 @@ namespace Arcane_Coop.Models
         public string? BackgroundImage { get; set; }
         public string? BackgroundMusic { get; set; }
         public NovelTheme Theme { get; set; } = NovelTheme.Piltover;
+        public int? MainContentEndIndex { get; set; } // Index of last main dialogue before branches
     }
 
     public class VisualNovelState
