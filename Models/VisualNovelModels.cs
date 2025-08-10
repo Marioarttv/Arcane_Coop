@@ -102,6 +102,9 @@ namespace Arcane_Coop.Models
         public string? ChoiceOwnerRole { get; set; } // Which player makes this choice ("piltover" or "zaun")
         public List<DialogueChoice> Choices { get; set; } = new();
         public string? SelectedChoiceId { get; set; } // Track what was chosen
+        
+        // Branching support - allows jumping to a specific dialogue ID after this one
+        public string? NextDialogueId { get; set; } // If set, jump to this dialogue ID instead of continuing linearly
     }
 
     public class VisualNovelScene

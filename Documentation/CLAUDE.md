@@ -47,6 +47,12 @@ dotnet publish -c Release
 - **Styling**: Component-scoped CSS with extensive custom styling
 - **Fonts**: Custom "Arcane Nine" font and Google Fonts (Orbitron, Cinzel, Rajdhani)
 
+### Service Layer (2025)
+- **Act1StoryEngine**: Server-side story engine for Act 1. Provides scene content, player view construction, and progression logic
+  - File: `Services/Act1StoryEngine.cs`
+  - Interface: `IAct1StoryEngine`
+  - Registered in `Program.cs` via DI: `AddSingleton<IAct1StoryEngine, Act1StoryEngine>()`
+
 ### Core Features
 - **7 Cooperative Puzzle Systems** - Each with unique mechanics and educational focus
 - **Real-time Multiplayer** - SignalR-powered synchronization between players
@@ -61,6 +67,7 @@ dotnet publish -c Release
 - **Async/await** patterns for component interactions
 - **Cascading parameters** for context sharing
 - **CSS @ symbols must be escaped** in Razor components: use `@@keyframes`, `@@media`, `@@import`, `@@font-face`
+- **Server-authoritative story flow**: Hubs remain thin; story content and branching live in services (e.g., `Act1StoryEngine`)
 
 ### Visual Novel Multiplayer Editor Notes (2025)
 
@@ -165,17 +172,20 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 ## Technical Architecture
 
 ### Multiplayer Infrastructure
-- **SignalR Hubs**: Real-time communication via GameHub.cs
+- **SignalR Hubs**: Real-time communication via `GameHub.cs` (thin coordinator)
 - **Room-based Games**: Players join rooms using shared codes
 - **Role Assignment**: First player = Piltover, Second = Zaunite
   - Story override: per-player URL `role` can request Piltover/Zaun; server resolves conflicts and ensures distinct roles
 - **State Synchronization**: Server-side validation with client updates
+- **Act 1 Story Engine**: `IAct1StoryEngine` owns scene content and branching
+  - Hub methods (`JoinAct1Game`, `SkipAct1Text`, `ContinueAct1`, `Act1TypingCompleted`, `MakeAct1Choice`, `RestartAct1`) delegate to the engine and broadcast views
 - **Connection Management**: Graceful handling of disconnections
 
 ### Data Models
 - **Game-specific Models**: Each puzzle has dedicated model classes
 - **Player Views**: Role-specific data structures for asymmetric gameplay
 - **Game States**: Comprehensive state tracking for all game phases
+  - Act 1 uses `Act1MultiplayerGame`, `Act1Player`, `Act1PlayerView`, `VisualNovelScene`, `DialogueLine`, `DialogueChoice`
 
 ### Component Architecture
 - **Page Components**: Each puzzle is a standalone Blazor page
@@ -216,6 +226,7 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 - **Pages/**: All puzzle components and main game pages
 - **Models/**: Data models for each puzzle system
 - **Services/**: Shared services (VisualNovelService, etc.)
+- `Act1StoryEngine` provides Act 1 narrative; `VisualNovelService` provides generic VN scenes/utilities
 - **wwwroot/**: Static assets (images, audio, fonts, styles)
 
 ### Documentation Structure
@@ -225,7 +236,7 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 
 ## GameHub.cs - Central SignalR Hub Documentation
 
-The `GameHub.cs` file (3,357 lines) serves as the central multiplayer coordination hub for all puzzle systems in the Arcane Coop project. This SignalR hub manages real-time communication, game state synchronization, and player coordination across all puzzle types.
+The `GameHub.cs` file serves as the central multiplayer coordination hub for all puzzle systems in the Arcane Coop project. This SignalR hub manages real-time communication, game state synchronization, and player coordination across all puzzle types.
 
 ### File Structure Overview
 
@@ -234,7 +245,7 @@ The `GameHub.cs` file (3,357 lines) serves as the central multiplayer coordinati
 - Room and player management
 - Basic SignalR connection handling
 
-**Game-Specific Sections:**
+**Game-Specific Sections (high level):**
 - **Tic-Tac-Toe** (Lines 65-111): Legacy demo system with basic turn-based gameplay
 - **CodeCracker** (Lines 112-190): Vocabulary puzzle with word guessing and hint system
 - **SignalDecoder** (Lines 191-286): Audio-based emergency transmission decoding
@@ -243,6 +254,7 @@ The `GameHub.cs` file (3,357 lines) serves as the central multiplayer coordinati
 - **RuneProtocol** (Lines 525-670): Complex logic puzzle with conditional rule systems
 - **PictureExplanation** (Lines 671-825): Voice chat visual communication challenges
 - **Word-Forge** (Lines 826-934): Advanced word formation and affix combinations
+ - **Act 1 Story (thin)**: Delegates to `IAct1StoryEngine` for content and branching; hub focuses on joins, skips, continue, typing completion, choices, restarts, and broadcasting
 
 **Connection Management (Lines 935-end)**: Player disconnection handling and cleanup
 
@@ -353,6 +365,28 @@ Each puzzle broadcasts standardized event types:
 - Graceful degradation when games not found
 - Client-side validation with server-side verification
 
+### 2025 Refactor: Act 1 Story Engine (Option A)
+
+We extracted Act 1 story content and branching logic from `GameHub.cs` into a dedicated service.
+
+- New files:
+  - `Services/Act1StoryEngine.cs` (implements `IAct1StoryEngine`)
+- DI registration:
+  - `Program.cs`: `builder.Services.AddSingleton<IAct1StoryEngine, Act1StoryEngine>();`
+- Hub changes:
+  - Constructor injection of `IAct1StoryEngine`
+  - Calls to create scenes now use `_act1StoryEngine.CreateEmergencyBriefingScene(squadName)`
+  - Player views created via `_act1StoryEngine.CreatePlayerView(game, playerId)`
+  - Scene progression via `_act1StoryEngine.ProgressToNextScene(game)`
+
+Benefits:
+- Hub becomes a thin coordinator; content and branching become testable and maintainable
+- Server remains authoritative for multiplayer sync and anti-cheat
+
+Extending to more Acts:
+- Add new methods/classes in `Services/` (e.g., `Act2StoryEngine` or unify under a generic `VisualNovelEngine`)
+- Keep hub methods thin; delegate to services and broadcast updated views
+
 ### Future Maintenance Guidelines
 
 #### **Adding New Puzzles**
@@ -360,7 +394,7 @@ Each puzzle broadcasts standardized event types:
 2. **Insert Methods Section** (after Line 934): Follow established patterns for Join/Action/Restart methods
 3. **Update Documentation**: Add line ranges and method descriptions to this section
 
-#### **Modifying Existing Puzzles**
+#### **Modifying Existing Puzzles/Acts**
 - **CodeCracker**: Lines 112-190 - Word bank and scoring modifications
 - **SignalDecoder**: Lines 191-286 - Emergency scenario additions
 - **NavigationMaze**: Lines 287-381 - Location progression changes
@@ -368,6 +402,7 @@ Each puzzle broadcasts standardized event types:
 - **RuneProtocol**: Lines 525-670 - Logic rule additions and level creation
 - **PictureExplanation**: Lines 671-825 - Image set and round structure changes
 - **Word-Forge**: Lines 826-934 - Affix system and difficulty adjustments
+- **Act 1 Story**: Content/branching lives in `Services/Act1StoryEngine.cs`; hub delegates to this service
 
 #### **Connection Management**
 - Room cleanup logic: Lines 935-960

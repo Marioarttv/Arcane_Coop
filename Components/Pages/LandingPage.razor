@@ -38,9 +38,32 @@
         }
     };
     
+    window.createPiltoverRunes = function() {
+        const container = document.getElementById('piltover-floating-runes');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const runes = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛊ'];
+        
+        for (let i = 0; i < 12; i++) {
+            const rune = document.createElement('div');
+            rune.className = 'piltover-floating-rune';
+            rune.textContent = runes[Math.floor(Math.random() * runes.length)];
+            
+            rune.style.left = Math.random() * 100 + '%';
+            rune.style.animationDelay = Math.random() * 20 + 's';
+            rune.style.animationDuration = (15 + Math.random() * 10) + 's';
+            rune.style.fontSize = (20 + Math.random() * 15) + 'px';
+            
+            container.appendChild(rune);
+        }
+    };
+    
     // Auto-initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         window.createMagicParticles();
+        window.createPiltoverRunes();
     });
 </script>
 
@@ -115,7 +138,7 @@
         <div class="piltover-side">
             <div class="piltover-bg-image"></div>
             <div class="piltover-atmosphere"></div>
-            <div class="hextech-particles"></div>
+            <div class="piltover-floating-runes" id="piltover-floating-runes"></div>
             <div class="hextech-rings-bg"></div>
             <div class="arcane-runes"></div>
         </div>
@@ -682,6 +705,46 @@
         background: radial-gradient(2px 2px at 60px 80px, var(--piltover-glow), transparent), radial-gradient(1px 1px at 80px 20px, var(--hextech-blue), transparent), radial-gradient(2px 2px at 120px 60px, var(--piltover-accent), transparent);
         background-size: 250px 250px, 180px 180px, 220px 220px;
         animation: floatUp 12s infinite linear;
+    }
+
+    /* Piltover Floating Runes */
+    .piltover-floating-runes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .piltover-floating-rune {
+        position: absolute;
+        color: rgba(68, 229, 231, 0.7);
+        font-size: 24px;
+        animation: floatRuneUp 20s linear infinite;
+        text-shadow: 0 0 12px rgba(68, 229, 231, 0.9);
+        font-weight: bold;
+        top: 100%;
+    }
+
+    @@keyframes floatRuneUp {
+        0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 0;
+        }
+        5% {
+            transform: translateY(-10vh) rotate(20deg);
+            opacity: 0.7;
+        }
+        95% {
+            transform: translateY(-110vh) rotate(340deg);
+            opacity: 0.7;
+        }
+        100% {
+            transform: translateY(-120vh) rotate(360deg);
+            opacity: 0;
+        }
     }
 
     @@keyframes floatUp {
@@ -1650,12 +1713,18 @@
         if (firstRender)
         {
             await CreateArcaneParticles();
+            await CreatePiltoverRunes();
         }
     }
 
     private async Task CreateArcaneParticles()
     {
         await JSRuntime.InvokeVoidAsync("createMagicParticles");
+    }
+
+    private async Task CreatePiltoverRunes()
+    {
+        await JSRuntime.InvokeVoidAsync("createPiltoverRunes");
     }
 
     private void NavigateToMission(string missionPath)

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Arcane_Coop.Services;
 using System.Collections.Concurrent;
 using System.Linq;
 using Arcane_Coop.Models;
@@ -7,6 +8,12 @@ namespace Arcane_Coop.Hubs;
 
 public class GameHub : Hub
 {
+    private readonly IAct1StoryEngine _act1StoryEngine;
+
+    public GameHub(IAct1StoryEngine act1StoryEngine)
+    {
+        _act1StoryEngine = act1StoryEngine;
+    }
     private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
     private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
     private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
@@ -256,6 +263,26 @@ public class GameHub : Hub
         var game = _codeCrackerGames.GetOrAdd(roomId, _ => new CodeCrackerGame());
         
         var playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("CodeCrackerGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("CodeCrackerGameStateUpdated", game.GetGameState());
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("CodeCrackerGameFull");
+        }
+    }
+    
+    public async Task JoinCodeCrackerGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        // Ensure player is in the SignalR group
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _codeCrackerGames.GetOrAdd(roomId, _ => new CodeCrackerGame());
+        
+        // Try to add player with requested role
+        var playerRole = game.AddPlayerWithRole(Context.ConnectionId, playerName, requestedRole);
         if (playerRole != null)
         {
             await Clients.Caller.SendAsync("CodeCrackerGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
@@ -525,6 +552,34 @@ public class GameHub : Hub
         var game = _alchemyGames.GetOrAdd(roomId, _ => new AlchemyGame());
         
         var playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("AlchemyGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("AlchemyGameStateUpdated", game.GetGameState());
+            
+            // Start game if both players are connected
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("AlchemyGameFull");
+        }
+    }
+    
+    public async Task JoinAlchemyGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _alchemyGames.GetOrAdd(roomId, _ => new AlchemyGame());
+        
+        // Try to add player with requested role
+        var playerRole = game.AddPlayerWithRole(Context.ConnectionId, playerName, requestedRole);
         if (playerRole != null)
         {
             await Clients.Caller.SendAsync("AlchemyGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
@@ -1486,7 +1541,7 @@ public class GameHub : Hub
             // Initialize game scene if first player
             if (game.Players.Count == 1)
             {
-                game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
                 game.GameState = new VisualNovelState 
                 { 
                     CurrentSceneId = game.CurrentScene.Id,
@@ -1497,7 +1552,7 @@ public class GameHub : Hub
             // Ensure scene is always set even for second player
             else if (game.CurrentScene == null)
             {
-                game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
                 game.GameState = new VisualNovelState 
                 { 
                     CurrentSceneId = game.CurrentScene.Id,
@@ -1609,7 +1664,29 @@ public class GameHub : Hub
             
             game.RecordAction();
             var oldIndex = game.GameState.CurrentDialogueIndex;
-            game.GameState.CurrentDialogueIndex++;
+            var oldDialogue = game.CurrentScene.DialogueLines[oldIndex];
+            
+            // Check if the current dialogue has a NextDialogueId for branching
+            if (!string.IsNullOrEmpty(oldDialogue.NextDialogueId))
+            {
+                // Find the dialogue with the specified ID
+                var nextIndex = game.CurrentScene.DialogueLines.FindIndex(d => d.Id == oldDialogue.NextDialogueId);
+                if (nextIndex >= 0)
+                {
+                    Console.WriteLine($"[Act1GameHub] BRANCH JUMP: Dialogue #{oldIndex} (ID: {oldDialogue.Id}) → jumping to dialogue ID '{oldDialogue.NextDialogueId}' (index: {nextIndex})");
+                    game.GameState.CurrentDialogueIndex = nextIndex;
+                }
+                else
+                {
+                    Console.WriteLine($"[Act1GameHub] BRANCH ERROR: Dialogue #{oldIndex} references missing dialogue ID '{oldDialogue.NextDialogueId}', falling back to next sequential dialogue");
+                    game.GameState.CurrentDialogueIndex++;
+                }
+            }
+            else
+            {
+                // Normal linear progression
+                game.GameState.CurrentDialogueIndex++;
+            }
             
             // Log dialogue progression for debugging
             var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
@@ -1665,40 +1742,31 @@ public class GameHub : Hub
 
     private async Task ProgressToNextAct1Scene(string roomId, Act1MultiplayerGame game)
     {
-        game.CurrentSceneIndex++;
-        
-        if (game.CurrentSceneIndex < game.StoryProgression.Count)
+        var result = _act1StoryEngine.ProgressToNextScene(game);
+
+        if (result.TransitionStarted)
         {
-            var nextPhase = game.StoryProgression[game.CurrentSceneIndex];
-            
-            if (nextPhase == "picture_explanation_transition")
+            await Clients.Group(roomId).SendAsync("Act1SceneTransition", result.NextGameName ?? "");
+            await BroadcastAct1GameState(roomId);
+
+            _ = Task.Delay(3000).ContinueWith(async _ =>
             {
-                // Show transition screen
-                game.Status = Act1GameStatus.SceneTransition;
-                game.ShowTransition = true;
-                game.NextGameName = "Visual Intelligence Analysis";
-                
-                await Clients.Group(roomId).SendAsync("Act1SceneTransition", "Visual Intelligence Analysis");
-                await BroadcastAct1GameState(roomId);
-                
-                // Auto-transition after 3 seconds
-                _ = Task.Delay(3000).ContinueWith(async _ =>
+                if (_act1Games.TryGetValue(roomId, out var currentGame) && currentGame.Status == Act1GameStatus.SceneTransition)
                 {
-                    if (_act1Games.TryGetValue(roomId, out var currentGame) && currentGame.Status == Act1GameStatus.SceneTransition)
+                    if (result.RedirectUrlsByPlayerId != null)
                     {
-                        foreach (var p in currentGame.Players)
+                        foreach (var kvp in result.RedirectUrlsByPlayerId)
                         {
-                            var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
-                            await Clients.Client(p.PlayerId).SendAsync("Act1RedirectToNextGame", $"/picture-explanation?{parameters}");
+                            var playerId = kvp.Key;
+                            var url = kvp.Value;
+                            await Clients.Client(playerId).SendAsync("Act1RedirectToNextGame", url);
                         }
                     }
-                });
-            }
+                }
+            });
         }
-        else
+        else if (result.StoryCompleted)
         {
-            // Story completed
-            game.Status = Act1GameStatus.Completed;
             await Clients.Group(roomId).SendAsync("Act1GameCompleted");
             await BroadcastAct1GameState(roomId);
         }
@@ -1725,7 +1793,7 @@ public class GameHub : Hub
             var originalSquadName = game.Players.FirstOrDefault()?.OriginalSquadName ?? "";
             game.Status = Act1GameStatus.InProgress;
             game.CurrentSceneIndex = 0;
-            game.CurrentScene = CreateAct1EmergencyBriefingScene(originalSquadName);
+            game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
             game.GameState.CurrentDialogueIndex = 0;
             game.GameState.IsTextFullyDisplayed = false;
             game.IsTextAnimating = true;
@@ -1895,328 +1963,10 @@ public class GameHub : Hub
 
     private Act1PlayerView CreateAct1PlayerView(Act1MultiplayerGame game, string playerId)
     {
-        var player = game.GetPlayer(playerId);
-        if (player == null) return new Act1PlayerView();
-        
-        var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
-        
-        // Check for pending choices
-        DialogueLine? pendingChoice = null;
-        bool canMakeChoice = false;
-        bool isWaitingForOtherPlayer = false;
-        
-        if (game.GameState.CurrentDialogueIndex < game.CurrentScene.DialogueLines.Count)
-        {
-            var currentDialogue = game.CurrentScene.DialogueLines[game.GameState.CurrentDialogueIndex];
-            if (currentDialogue.IsPlayerChoice && currentDialogue.Choices.Count > 0 && game.GameState.IsTextFullyDisplayed)
-            {
-                // Only show as pending choice if no choice has been made yet
-                if (string.IsNullOrEmpty(currentDialogue.SelectedChoiceId))
-                {
-                    pendingChoice = currentDialogue;
-                    
-                    // Check if this player can make the choice
-                    if (string.IsNullOrEmpty(currentDialogue.ChoiceOwnerRole))
-                    {
-                        // Either player can make the choice
-                        canMakeChoice = true;
-                    }
-                    else if (player.PlayerRole.Equals(currentDialogue.ChoiceOwnerRole, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // This player is the designated choice maker
-                        canMakeChoice = true;
-                    }
-                    else
-                    {
-                        // Other player is making the choice
-                        isWaitingForOtherPlayer = true;
-                    }
-                }
-                // If choice has already been made, don't show it as pending (allows continue)
-            }
-        }
-        
-        return new Act1PlayerView
-        {
-            RoomId = game.RoomId,
-            PlayerId = playerId,
-            PlayerRole = player.PlayerRole,
-            GameStatus = game.Status,
-            CurrentScene = game.CurrentScene,
-            GameState = game.GameState,
-            ConnectedPlayers = connectedPlayers,
-            CanSkip = game.IsTextAnimating && !game.GameState.IsTextFullyDisplayed && pendingChoice == null,
-            CanContinue = game.GameState.IsTextFullyDisplayed && !game.IsTextAnimating && pendingChoice == null,
-            IsTextAnimating = game.IsTextAnimating,
-            ShowTransition = game.ShowTransition,
-            NextGameName = game.NextGameName,
-            CurrentSceneIndex = game.CurrentSceneIndex,
-            TotalScenes = game.StoryProgression.Count,
-            PendingChoice = pendingChoice,
-            CanMakeChoice = canMakeChoice,
-            IsWaitingForOtherPlayer = isWaitingForOtherPlayer,
-            ChoiceHistory = game.ChoiceHistory,
-            StatusMessage = game.Status switch
-            {
-                Act1GameStatus.WaitingForPlayers => $"Waiting for players... ({game.Players.Count}/2)",
-                Act1GameStatus.InProgress => isWaitingForOtherPlayer ? "Waiting for partner's choice..." : "Story in progress",
-                Act1GameStatus.SceneTransition => $"Transitioning to {game.NextGameName}...",
-                Act1GameStatus.Completed => "Act 1 completed",
-                _ => ""
-            }
-        };
+        return _act1StoryEngine.CreatePlayerView(game, playerId);
     }
 
-    private VisualNovelScene CreateAct1EmergencyBriefingScene(string squadName)
-    {
-        var scene = new VisualNovelScene
-        {
-            Id = "emergency_briefing",
-            Name = "Emergency Briefing - Act I Scene I",
-            Layout = SceneLayout.DualCharacters,
-            Theme = NovelTheme.Zaun // Default theme, can be dynamic based on majority
-        };
-
-        // Add Vi and Caitlyn characters using transparent PNGs with expression support
-        scene.Characters.AddRange(new[]
-        {
-            new VisualNovelCharacter
-            {
-                Id = "vi",
-                Name = "Vi",
-                DisplayName = "Vi",
-                ImagePath = "/images/Characters/Vi/Vi_default.png",
-                Position = CharacterPosition.Left,
-                ThemeColor = "#00d4aa",
-                ExpressionPaths = new Dictionary<CharacterExpression, string>
-                {
-                    { CharacterExpression.Default, "/images/Characters/Vi/Vi_default.png" }
-                }
-            },
-            new VisualNovelCharacter
-            {
-                Id = "caitlyn",
-                Name = "Caitlyn",
-                DisplayName = "Sheriff Caitlyn",
-                ImagePath = "/images/Characters/Caitlyn/Caitlyn_default.png",
-                Position = CharacterPosition.Right,
-                ThemeColor = "#c8aa6e",
-                ExpressionPaths = new Dictionary<CharacterExpression, string>
-                {
-                    { CharacterExpression.Default, "/images/Characters/Caitlyn/Caitlyn_default.png" }
-                }
-            }
-        });
-
-        // Act I Scene I Dialogue - Emergency Briefing
-        scene.DialogueLines.AddRange(new[]
-        {
-            new DialogueLine
-            {
-                CharacterId = "caitlyn",
-                Text = "Vi, we have a critical situation. Hextech energy readings across three districts are showing cascade patterns. If we don't act within the next two hours...",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45
-            },
-            new DialogueLine
-            {
-                CharacterId = "vi",
-                Text = "Let me guess - boom goes the neighborhood? How big we talking, Cupcake?",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40
-            },
-            new DialogueLine
-            {
-                CharacterId = "caitlyn",
-                Text = "Potentially three city blocks. Both Piltover infrastructure and Zaun residential areas. The epicenter appears to be in the industrial district.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 50
-            },
-            new DialogueLine
-            {
-                CharacterId = "vi",
-                Text = "Shit. That's where families live, not just the Chem-Barons and their labs. What do you need from me?",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 35,
-                SpeakerExpression = CharacterExpression.Worried
-            },
-            new DialogueLine
-            {
-                CharacterId = "caitlyn",
-                Text = "I can coordinate from HQ - I have access to surveillance, technical analysis, and tactical resources. But I need someone who knows Zaun's underground networks.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45,
-                SpeakerExpression = CharacterExpression.Serious
-            },
-            // Player choice - Zaun player decides the approach
-            new DialogueLine
-            {
-                Id = "approach_choice",
-                CharacterId = "vi",
-                Text = "How should we approach this crisis?",
-                IsPlayerChoice = true,
-                ChoiceOwnerRole = "zaun", // Only Zaun player can make this choice
-                Choices = new List<DialogueChoice>
-                {
-                    new DialogueChoice
-                    {
-                        Id = "stealth_approach",
-                        Text = "We go in quiet. Use the maintenance tunnels - I know every back route.",
-                        NextDialogueId = "stealth_response",
-                        ResultExpression = CharacterExpression.Determined,
-                        Consequences = new Dictionary<string, object> { { "approach", "stealth" } }
-                    },
-                    new DialogueChoice
-                    {
-                        Id = "direct_approach",
-                        Text = "No time for subtlety. We hit them hard and fast before they can react.",
-                        NextDialogueId = "direct_response",
-                        ResultExpression = CharacterExpression.Angry,
-                        Consequences = new Dictionary<string, object> { { "approach", "direct" } }
-                    },
-                    new DialogueChoice
-                    {
-                        Id = "diplomatic_approach",
-                        Text = "Let me reach out to my contacts first. The Firelights might help if we ask right.",
-                        NextDialogueId = "diplomatic_response",
-                        ResultExpression = CharacterExpression.Default,
-                        Consequences = new Dictionary<string, object> { { "approach", "diplomatic" } }
-                    }
-                }
-            },
-            // Stealth response branch
-            new DialogueLine
-            {
-                Id = "stealth_response",
-                CharacterId = "caitlyn",
-                Text = "Smart. The element of surprise could give us the edge we need. I'll mark the blind spots in their surveillance.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45
-            },
-            // Direct response branch
-            new DialogueLine
-            {
-                Id = "direct_response",
-                CharacterId = "caitlyn",
-                Text = "Bold, but risky. If we're doing this, we'll need backup. I'll mobilize the Enforcers.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45,
-                SpeakerExpression = CharacterExpression.Worried
-            },
-            // Diplomatic response branch
-            new DialogueLine
-            {
-                Id = "diplomatic_response",
-                CharacterId = "caitlyn",
-                Text = "The Firelights? That's... unexpected. But if they can help evacuate civilians, it's worth trying.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45,
-                SpeakerExpression = CharacterExpression.Surprised
-            },
-            new DialogueLine
-            {
-                CharacterId = "vi",
-                Text = "And you need someone who won't ask questions when you say 'jump', right? What about the newbies?",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40
-            },
-            new DialogueLine
-            {
-                CharacterId = "caitlyn",
-                Text = $"Squad {squadName} will need to learn quickly. One will adapt to Zaun's ways, the other to field conditions.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45
-            },
-            new DialogueLine
-            {
-                CharacterId = "vi",
-                Text = "Fair enough. First test then - let's see if they can work together when intel's scrambled and time's running out.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40,
-                SpeakerExpression = CharacterExpression.Determined
-            },
-            // Piltover player choice - decides priority
-            new DialogueLine
-            {
-                Id = "priority_choice",
-                CharacterId = "caitlyn",
-                Text = "We have limited resources. What should be our priority?",
-                IsPlayerChoice = true,
-                ChoiceOwnerRole = "piltover", // Only Piltover player can make this choice
-                Choices = new List<DialogueChoice>
-                {
-                    new DialogueChoice
-                    {
-                        Id = "save_data",
-                        Text = "Secure the Hextech research data before it falls into the wrong hands.",
-                        NextDialogueId = "data_priority",
-                        Consequences = new Dictionary<string, object> { { "priority", "data" } }
-                    },
-                    new DialogueChoice
-                    {
-                        Id = "evacuate_civilians",
-                        Text = "Focus on civilian evacuation. Lives are more important than data.",
-                        NextDialogueId = "civilian_priority",
-                        ResultExpression = CharacterExpression.Worried,
-                        Consequences = new Dictionary<string, object> { { "priority", "civilians" } }
-                    },
-                    new DialogueChoice
-                    {
-                        Id = "track_saboteur",
-                        Text = "Track down who's responsible. We need to stop them before they strike again.",
-                        NextDialogueId = "saboteur_priority",
-                        ResultExpression = CharacterExpression.Determined,
-                        Consequences = new Dictionary<string, object> { { "priority", "investigation" } }
-                    }
-                }
-            },
-            // Data priority response
-            new DialogueLine
-            {
-                Id = "data_priority",
-                CharacterId = "vi",
-                Text = "Typical Piltover - always thinking about the tech first. But... you're not wrong. That data in the wrong hands could level the Lanes.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40
-            },
-            // Civilian priority response
-            new DialogueLine
-            {
-                Id = "civilian_priority",
-                CharacterId = "vi",
-                Text = "Now you're talking my language, Cupcake. The people come first. Always.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40,
-                SpeakerExpression = CharacterExpression.Happy
-            },
-            // Investigation priority response
-            new DialogueLine
-            {
-                Id = "saboteur_priority",
-                CharacterId = "vi",
-                Text = "Going straight for the source? I like it. But we better be ready for a fight.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40,
-                SpeakerExpression = CharacterExpression.Determined
-            },
-            new DialogueLine
-            {
-                CharacterId = "caitlyn",
-                Text = "The initial blast damaged our surveillance network. We have fragments of security footage, but they need analysis. Visual intelligence that could reveal who's behind this.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 45
-            },
-            new DialogueLine
-            {
-                CharacterId = "vi",
-                Text = $"Visual intel, huh? Good thing Squad {squadName} knows how to read between the lines. Time to put those detective skills to work.",
-                AnimationType = TextAnimationType.Typewriter,
-                TypewriterSpeed = 40
-            }
-        });
-
-        return scene;
-    }
+    // Content moved to IAct1StoryEngine
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
@@ -2498,6 +2248,35 @@ public class AlchemyGame
         Players[connectionId] = role;
         PlayerNames[connectionId] = playerName;
         return role;
+    }
+    
+    public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        // Check if requested role is available
+        var requestedEnum = requestedRole.ToLower() switch
+        {
+            "piltover" => PlayerRole.Piltover,
+            "zaun" => PlayerRole.Zaunite,
+            "zaunite" => PlayerRole.Zaunite,
+            _ => Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
+        };
+        
+        // If role is already taken, assign the other one
+        if (Players.Values.Contains(requestedEnum))
+        {
+            requestedEnum = requestedEnum == PlayerRole.Piltover ? PlayerRole.Zaunite : PlayerRole.Piltover;
+        }
+        
+        Players[connectionId] = requestedEnum;
+        PlayerNames[connectionId] = playerName;
+        return requestedEnum;
     }
     
     public bool RemovePlayer(string connectionId)
@@ -2935,6 +2714,35 @@ public class CodeCrackerGame
         Players[connectionId] = role;
         PlayerNames[connectionId] = playerName;
         return role;
+    }
+    
+    public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
+    {
+        // If player is already in the game, return their existing role
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        // Check if requested role is available
+        var requestedEnum = requestedRole.ToLower() switch
+        {
+            "piltover" => PlayerRole.Piltover,
+            "zaunite" => PlayerRole.Zaunite,
+            _ => Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
+        };
+        
+        // If role is already taken, assign the other one
+        if (Players.Values.Contains(requestedEnum))
+        {
+            requestedEnum = requestedEnum == PlayerRole.Piltover ? PlayerRole.Zaunite : PlayerRole.Piltover;
+        }
+        
+        Players[connectionId] = requestedEnum;
+        PlayerNames[connectionId] = playerName;
+        return requestedEnum;
     }
 
     public bool RemovePlayer(string connectionId)

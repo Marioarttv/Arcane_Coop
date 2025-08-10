@@ -10,8 +10,22 @@
 
 <div class="container">
     <div class="header-section">
-        <h2 class="game-title">🔐 Code Cracker: Lexical Puzzle</h2>
-        <p class="game-subtitle">Caitlyn vs Vi - Decode the Corrupted Archives</p>
+        @if (isFromStory)
+        {
+            <h2 class="game-title">🔐 Message Decryption Analysis</h2>
+            <p class="game-subtitle">Emergency Protocol - Decrypt intercepted communications</p>
+            <div class="story-context">
+                <div class="story-badge @GetRoleThemeClass()">
+                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
+                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h2 class="game-title">🔐 Code Cracker: Lexical Puzzle</h2>
+            <p class="game-subtitle">Caitlyn vs Vi - Decode the Corrupted Archives</p>
+        }
     </div>
     
     <div class="connection-status mb-3">
@@ -73,30 +87,33 @@
         </div>
     }
 
-    <div class="game-setup mb-4">
-        <div class="row">
-            <div class="col-md-6">
-                <label for="roomInput" class="form-label">Room ID:</label>
-                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+    @if (!inGame)
+    {
+        <div class="game-setup mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="roomInput" class="form-label">Room ID:</label>
+                    <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+                </div>
+                <div class="col-md-6">
+                    <label for="nameInput" class="form-label">Player Name:</label>
+                    <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+                </div>
             </div>
-            <div class="col-md-6">
-                <label for="nameInput" class="form-label">Player Name:</label>
-                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
-            </div>
-        </div>
 
-        <div class="setup-buttons mt-3">
-            <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
-                Join Room
-            </button>
-            <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
-                Leave Room
-            </button>
-            <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
-                Join Game
-            </button>
+            <div class="setup-buttons mt-3">
+                <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    Join Room
+                </button>
+                <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                    Leave Room
+                </button>
+                <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    Join Game
+                </button>
+            </div>
         </div>
-    </div>
+    }
 
     @if (inGame && playerView != null)
     {
@@ -1085,6 +1102,43 @@
         40% { transform: scale(1); opacity: 1; }
     }
 
+    /* Story mode styles */
+    .story-context {
+        text-align: center;
+        margin: 1rem 0;
+    }
+    
+    .story-badge {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-family: 'Orbitron', monospace;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .story-badge.zaun-theme {
+        background: linear-gradient(45deg, var(--zaun-primary), var(--zaun-secondary));
+        border: 1px solid var(--zaun-accent);
+        color: var(--zaun-glow);
+    }
+    
+    .story-badge.piltover-theme {
+        background: linear-gradient(45deg, var(--piltover-primary), var(--piltover-secondary));
+        border: 1px solid var(--piltover-accent);
+        color: var(--piltover-light);
+    }
+    
+    .badge-icon {
+        display: inline-block;
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+    }
+
     /* Responsive Design */
     @@media (max-width: 768px) {
         .game-title {
@@ -1149,6 +1203,12 @@
     private string successMessage = "";
     private bool wordTransitioning = false;
     private string clueAnimationClass = "";
+    
+    // Story mode parameters
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1177,12 +1237,25 @@
             var avatar = query["avatar"];
             var name = query["name"];
             var squad = query["squad"];
+            var story = query["story"];
+            
+            if (!string.IsNullOrEmpty(role))
+                playerRole = role;
+                
+            if (!string.IsNullOrEmpty(avatar))
+                playerAvatar = avatar;
             
             if (!string.IsNullOrEmpty(name))
                 playerName = Uri.UnescapeDataString(name);
             
             if (!string.IsNullOrEmpty(squad))
+            {
                 roomId = Uri.UnescapeDataString(squad);
+                squadName = Uri.UnescapeDataString(squad);
+            }
+            
+            if (story == "true")
+                isFromStory = true;
         }
         catch (Exception ex)
         {
@@ -1370,9 +1443,28 @@
             {
                 await JoinRoom();
                 await Task.Delay(200); // Brief delay between operations
-                await JoinGame();
                 
-                gameStatus = "Auto-connecting to your squad...";
+                // If from story mode and have a role, join with that role
+                if (isFromStory && !string.IsNullOrEmpty(playerRole))
+                {
+                    await JoinGameWithRole();
+                }
+                else
+                {
+                    await JoinGame();
+                }
+                
+                // If from story mode, automatically set inGame to true to skip lobby
+                if (isFromStory)
+                {
+                    inGame = true;
+                    gameStatus = "Message decryption system initializing...";
+                }
+                else
+                {
+                    gameStatus = "Auto-connecting to your squad...";
+                }
+                
                 StateHasChanged();
             }
         }
@@ -1410,6 +1502,22 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
             await hubConnection.SendAsync("JoinCodeCrackerGame", roomId, playerName);
+        }
+    }
+    
+    private async Task JoinGameWithRole()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName) && !string.IsNullOrEmpty(playerRole))
+        {
+            // Convert role format from story ("zaun"/"piltover") to game format ("Zaunite"/"Piltover")
+            string requestedRole = playerRole.ToLower() switch
+            {
+                "zaun" => "Zaunite",
+                "piltover" => "Piltover",
+                _ => "Piltover"
+            };
+            
+            await hubConnection.SendAsync("JoinCodeCrackerGameWithRole", roomId, playerName, requestedRole);
         }
     }
 
@@ -1468,6 +1576,16 @@
     public bool IsConnected =>
         hubConnection?.State == HubConnectionState.Connected;
 
+    private string GetRoleThemeClass()
+    {
+        return playerRole?.ToLower() switch
+        {
+            "zaun" => "zaun-theme",
+            "piltover" => "piltover-theme",
+            _ => ""
+        };
+    }
+    
     public async ValueTask DisposeAsync()
     {
         if (hubConnection is not null)

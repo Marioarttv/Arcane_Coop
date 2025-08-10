@@ -1,0 +1,1081 @@
+﻿@page "/landing-page-alternative1"
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<script>
+    window.createFloatingRunes = function() {
+        const container = document.getElementById('piltover-runes');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const runes = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛊ'];
+        
+        for (let i = 0; i < 15; i++) {
+            const rune = document.createElement('div');
+            rune.className = 'floating-rune';
+            rune.textContent = runes[Math.floor(Math.random() * runes.length)];
+            
+            rune.style.left = Math.random() * 100 + '%';
+            rune.style.animationDelay = Math.random() * 20 + 's';
+            rune.style.animationDuration = (15 + Math.random() * 10) + 's';
+            rune.style.fontSize = (20 + Math.random() * 20) + 'px';
+            
+            container.appendChild(rune);
+        }
+    };
+    
+    window.createMagicalOrbs = function() {
+        const container = document.getElementById('magical-orbs');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        for (let i = 0; i < 8; i++) {
+            const orb = document.createElement('div');
+            orb.className = 'magical-orb';
+            
+            orb.style.left = Math.random() * 100 + '%';
+            orb.style.top = Math.random() * 100 + '%';
+            orb.style.animationDelay = Math.random() * 10 + 's';
+            orb.style.animationDuration = (20 + Math.random() * 15) + 's';
+            
+            container.appendChild(orb);
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        window.createFloatingRunes();
+        window.createMagicalOrbs();
+    });
+</script>
+
+<!-- Puzzle Sidebar -->
+<div class="puzzle-sidebar @(isPuzzleSidebarOpen ? "open" : "")">
+    <div class="sidebar-header">
+        <h3>Arcane Puzzles</h3>
+        <button class="close-btn" @onclick="TogglePuzzleSidebar">
+            <span>✕</span>
+        </button>
+    </div>
+    <div class="sidebar-content">
+        <a href="/code-cracker" class="puzzle-link">
+            <div class="puzzle-icon">🔐</div>
+            <span>Code Cracker</span>
+        </a>
+        <a href="/signal-decoder" class="puzzle-link">
+            <div class="puzzle-icon">📡</div>
+            <span>Signal Decoder</span>
+        </a>
+        <a href="/navigation-maze" class="puzzle-link">
+            <div class="puzzle-icon">🧭</div>
+            <span>Navigation Maze</span>
+        </a>
+        <a href="/picture-explanation" class="puzzle-link">
+            <div class="puzzle-icon">🖼️</div>
+            <span>Picture Explanation</span>
+        </a>
+        <a href="/rune-protocol" class="puzzle-link">
+            <div class="puzzle-icon">🔮</div>
+            <span>Rune Protocol</span>
+        </a>
+        <a href="/alchemy-lab" class="puzzle-link">
+            <div class="puzzle-icon">⚗️</div>
+            <span>Alchemy Lab</span>
+        </a>
+        <a href="/visual-novel-demo" class="puzzle-link">
+            <div class="puzzle-icon">📖</div>
+            <span>Visual Novel Demo</span>
+        </a>
+        <a href="/test-signalr" class="puzzle-link">
+            <div class="puzzle-icon">🎯</div>
+            <span>Training Ground</span>
+        </a>
+    </div>
+</div>
+
+<!-- Puzzle Menu Button -->
+<button class="puzzle-menu-toggle" @onclick="TogglePuzzleSidebar">
+    <div class="menu-crystal">🔮</div>
+    <span>Puzzles</span>
+</button>
+
+<div class="arcane-container">
+    <!-- Magical Background Effects -->
+    <div class="arcane-bg">
+        <div class="mystical-gradient"></div>
+        <div class="arcane-stars"></div>
+        <div class="magical-orbs" id="magical-orbs"></div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <!-- Title Section -->
+        <div class="title-area">
+            <div class="arcane-emblem">
+                <div class="emblem-outer"></div>
+                <div class="emblem-inner"></div>
+                <div class="emblem-core"></div>
+            </div>
+            
+            <h1 class="main-title">
+                <span class="title-word">ARCANE</span>
+                <span class="subtitle">Cooperative Escape Room</span>
+            </h1>
+            
+            <div class="magic-divider">
+                <div class="divider-crystal"></div>
+                <div class="divider-line left"></div>
+                <div class="divider-line right"></div>
+            </div>
+        </div>
+        
+        <!-- City Selection Cards -->
+        <div class="selection-container">
+            <h2 class="section-title">Choose Your Destiny</h2>
+            
+            <div class="city-cards">
+                <!-- Zaun Card -->
+                <div class="city-card zaun-card" @onclick="() => SelectCity(City.Zaun)">
+                    <div class="card-glow zaun-glow"></div>
+                    <div class="card-content">
+                        <div class="city-emblem zaun-emblem">
+                            <div class="emblem-hex"></div>
+                            <div class="emblem-symbol">⚙</div>
+                        </div>
+                        
+                        <h3 class="city-title">ZAUN</h3>
+                        <p class="city-tagline">The Undercity Rises</p>
+                        
+                        <div class="character-showcase">
+                            <div class="character-frame">
+                                <img src="/images/Characters/Vi/Vi_default.png" alt="Vi" class="character-img" />
+                                <div class="character-aura zaun-aura"></div>
+                            </div>
+                            <div class="character-details">
+                                <h4>Vi</h4>
+                                <p>The Piltover Enforcer</p>
+                            </div>
+                        </div>
+                        
+                        <div class="abilities-list">
+                            <div class="ability-item">
+                                <span class="ability-icon">👊</span>
+                                <span>Combat Expert</span>
+                            </div>
+                            <div class="ability-item">
+                                <span class="ability-icon">🔍</span>
+                                <span>Street Savvy</span>
+                            </div>
+                            <div class="ability-item">
+                                <span class="ability-icon">⚡</span>
+                                <span>Underground Network</span>
+                            </div>
+                        </div>
+                        
+                        <button class="enter-btn zaun-enter">
+                            <span>Enter Zaun</span>
+                            <div class="btn-shimmer"></div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Central Mystical Divider -->
+                <div class="central-divider">
+                    <div class="divider-orb">
+                        <div class="orb-ring"></div>
+                        <div class="orb-core"></div>
+                    </div>
+                    <div class="vs-label">VS</div>
+                </div>
+                
+                <!-- Piltover Card -->
+                <div class="city-card piltover-card" @onclick="() => SelectCity(City.Piltover)">
+                    <div class="card-glow piltover-glow"></div>
+                    <div class="piltover-runes" id="piltover-runes"></div>
+                    <div class="card-content">
+                        <div class="city-emblem piltover-emblem">
+                            <div class="emblem-hex"></div>
+                            <div class="emblem-symbol">⚜</div>
+                        </div>
+                        
+                        <h3 class="city-title">PILTOVER</h3>
+                        <p class="city-tagline">City of Progress</p>
+                        
+                        <div class="character-showcase">
+                            <div class="character-frame">
+                                <img src="/images/Characters/Caitlyn/Caitlyn_default.png" alt="Caitlyn" class="character-img" />
+                                <div class="character-aura piltover-aura"></div>
+                            </div>
+                            <div class="character-details">
+                                <h4>Caitlyn</h4>
+                                <p>The Sheriff of Piltover</p>
+                            </div>
+                        </div>
+                        
+                        <div class="abilities-list">
+                            <div class="ability-item">
+                                <span class="ability-icon">🎯</span>
+                                <span>Precision</span>
+                            </div>
+                            <div class="ability-item">
+                                <span class="ability-icon">🔍</span>
+                                <span>Investigation</span>
+                            </div>
+                            <div class="ability-item">
+                                <span class="ability-icon">⚙️</span>
+                                <span>Tactical Analysis</span>
+                            </div>
+                        </div>
+                        
+                        <button class="enter-btn piltover-enter">
+                            <span>Enter Piltover</span>
+                            <div class="btn-shimmer"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Features -->
+        <div class="features-section">
+            <div class="feature-card">
+                <div class="feature-icon">🎭</div>
+                <h4>Immersive Story</h4>
+                <p>Experience the conflict between two cities through interactive storytelling</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <h4>Asymmetric Co-op</h4>
+                <p>Each player sees different clues - work together to solve the mystery</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⏱️</div>
+                <h4>60 Minute Challenge</h4>
+                <p>Race against time as the Hextech crisis threatens both cities</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Toggle -->
+    <button class="audio-btn" @onclick="ToggleAudio">
+        <span class="audio-icon">@(isAudioEnabled ? "🔊" : "🔇")</span>
+    </button>
+</div>
+
+<style>
+    @@font-face {
+        font-family: 'Arcane Nine';
+        src: url('/fonts/Arcane Nine.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    .arcane-container {
+        position: relative;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #0a0a1f;
+    }
+    
+    /* Background Effects */
+    .arcane-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+    }
+    
+    .mystical-gradient {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at top, #1a237e 0%, #0a0a1f 50%, #000814 100%);
+    }
+    
+    .arcane-stars {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(2px 2px at 20px 30px, #ffd700, transparent),
+            radial-gradient(2px 2px at 40px 70px, #4169e1, transparent),
+            radial-gradient(1px 1px at 50px 50px, white, transparent),
+            radial-gradient(1px 1px at 80px 10px, white, transparent),
+            radial-gradient(2px 2px at 130px 80px, #ffd700, transparent);
+        background-size: 200px 200px;
+        animation: starMove 200s linear infinite;
+    }
+    
+    @@keyframes starMove {
+        from { transform: translateY(0); }
+        to { transform: translateY(-2000px); }
+    }
+    
+    .magical-orb {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: radial-gradient(circle, rgba(65, 105, 225, 0.8) 0%, transparent 70%);
+        border-radius: 50%;
+        filter: blur(3px);
+        animation: orbFloat 20s ease-in-out infinite;
+    }
+    
+    @@keyframes orbFloat {
+        0%, 100% {
+            transform: translate(0, 0) scale(1);
+        }
+        25% {
+            transform: translate(50px, -30px) scale(1.2);
+        }
+        50% {
+            transform: translate(-30px, 50px) scale(0.8);
+        }
+        75% {
+            transform: translate(30px, 30px) scale(1.1);
+        }
+    }
+    
+    /* Content Wrapper */
+    .content-wrapper {
+        position: relative;
+        z-index: 10;
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    /* Title Section */
+    .title-area {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-top: 2rem;
+    }
+    
+    .arcane-emblem {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 2rem;
+    }
+    
+    .emblem-outer, .emblem-inner, .emblem-core {
+        position: absolute;
+        border: 2px solid #ffd700;
+        border-radius: 50%;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .emblem-outer {
+        width: 120px;
+        height: 120px;
+        animation: rotateEmblem 20s linear infinite;
+    }
+    
+    .emblem-inner {
+        width: 80px;
+        height: 80px;
+        border-color: #4169e1;
+        animation: rotateEmblem 15s linear infinite reverse;
+    }
+    
+    .emblem-core {
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, #ffd700 0%, #4169e1 100%);
+        border: none;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @@keyframes rotateEmblem {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    
+    @@keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.2); }
+    }
+    
+    .main-title {
+        margin-bottom: 2rem;
+    }
+    
+    .title-word {
+        display: block;
+        font-family: 'Arcane Nine', serif;
+        font-size: clamp(4rem, 10vw, 8rem);
+        background: linear-gradient(135deg, #ffd700 0%, #4169e1 50%, #ffd700 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 0.3em;
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        animation: titleGlow 3s ease-in-out infinite;
+    }
+    
+    @@keyframes titleGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.3) drop-shadow(0 0 30px rgba(255, 215, 0, 0.8)); }
+    }
+    
+    .subtitle {
+        display: block;
+        font-size: 1.5rem;
+        color: #ffd700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-top: 1rem;
+        opacity: 0.9;
+    }
+    
+    .magic-divider {
+        position: relative;
+        width: 300px;
+        height: 2px;
+        margin: 2rem auto;
+    }
+    
+    .divider-crystal {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        background: radial-gradient(circle, #ffd700 0%, #4169e1 100%);
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    
+    .divider-line {
+        position: absolute;
+        top: 50%;
+        height: 2px;
+        width: 140px;
+        background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    }
+    
+    .divider-line.left {
+        right: 50%;
+        margin-right: 15px;
+    }
+    
+    .divider-line.right {
+        left: 50%;
+        margin-left: 15px;
+    }
+    
+    /* Selection Section */
+    .selection-container {
+        margin-bottom: 4rem;
+    }
+    
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        color: #ffd700;
+        margin-bottom: 3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .city-cards {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 3rem;
+        align-items: stretch;
+    }
+    
+    .city-card {
+        position: relative;
+        background: rgba(10, 10, 31, 0.8);
+        border-radius: 20px;
+        padding: 2.5rem;
+        border: 2px solid rgba(255, 215, 0, 0.2);
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+    
+    .city-card:hover {
+        transform: translateY(-10px) scale(1.02);
+    }
+    
+    .card-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, transparent 40%, rgba(255, 215, 0, 0.1) 100%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+    
+    .city-card:hover .card-glow {
+        opacity: 1;
+    }
+    
+    .zaun-card {
+        border-color: rgba(0, 255, 200, 0.3);
+        background: linear-gradient(135deg, rgba(0, 40, 30, 0.9), rgba(10, 10, 31, 0.8));
+    }
+    
+    .zaun-card:hover .zaun-glow {
+        background: radial-gradient(circle, transparent 40%, rgba(0, 255, 200, 0.2) 100%);
+    }
+    
+    .piltover-card {
+        border-color: rgba(65, 105, 225, 0.3);
+        background: linear-gradient(135deg, rgba(26, 35, 126, 0.9), rgba(10, 10, 31, 0.8));
+    }
+    
+    .piltover-card:hover .piltover-glow {
+        background: radial-gradient(circle, transparent 40%, rgba(65, 105, 225, 0.2) 100%);
+    }
+    
+    /* Floating Runes for Piltover */
+    .piltover-runes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    
+    .floating-rune {
+        position: absolute;
+        color: rgba(68, 229, 231, 0.7);
+        font-size: 24px;
+        animation: floatRune 20s linear infinite;
+        text-shadow: 0 0 10px rgba(68, 229, 231, 0.8);
+    }
+    
+    @@keyframes floatRune {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100px) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    .card-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .city-emblem {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .emblem-hex {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #ffd700;
+        transform: rotate(30deg);
+        border-radius: 10px;
+    }
+    
+    .zaun-card .emblem-hex {
+        border-color: #00ffc8;
+    }
+    
+    .piltover-card .emblem-hex {
+        border-color: #4169e1;
+    }
+    
+    .emblem-symbol {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5rem;
+        color: #ffd700;
+    }
+    
+    .city-title {
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.2em;
+        color: #ffd700;
+    }
+    
+    .city-tagline {
+        text-align: center;
+        font-style: italic;
+        color: rgba(255, 215, 0, 0.7);
+        margin-bottom: 2rem;
+    }
+    
+    .character-showcase {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .character-frame {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1rem;
+    }
+    
+    .character-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #ffd700;
+    }
+    
+    .character-aura {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        border-radius: 50%;
+        animation: auraRotate 4s linear infinite;
+        pointer-events: none;
+    }
+    
+    .zaun-aura {
+        background: conic-gradient(from 0deg, transparent, rgba(0, 255, 200, 0.3), transparent);
+    }
+    
+    .piltover-aura {
+        background: conic-gradient(from 0deg, transparent, rgba(65, 105, 225, 0.3), transparent);
+    }
+    
+    @@keyframes auraRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .character-details h4 {
+        font-size: 1.3rem;
+        color: #ffd700;
+        margin-bottom: 0.3rem;
+    }
+    
+    .character-details p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    
+    .abilities-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .ability-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 215, 0, 0.2);
+    }
+    
+    .ability-icon {
+        font-size: 1.2rem;
+    }
+    
+    .ability-item span:last-child {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+    }
+    
+    .enter-btn {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .zaun-enter {
+        background: linear-gradient(135deg, #00ffc8, #00d4aa);
+        color: #0a1e16;
+    }
+    
+    .piltover-enter {
+        background: linear-gradient(135deg, #4169e1, #ffd700);
+        color: #0a0a1f;
+    }
+    
+    .enter-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    .btn-shimmer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.6s ease;
+    }
+    
+    .enter-btn:hover .btn-shimmer {
+        left: 100%;
+    }
+    
+    /* Central Divider */
+    .central-divider {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .divider-orb {
+        position: relative;
+        width: 100px;
+        height: 100px;
+    }
+    
+    .orb-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #ffd700;
+        border-radius: 50%;
+        animation: ringPulse 2s ease-in-out infinite;
+    }
+    
+    .orb-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, #ffd700 0%, #4169e1 100%);
+        border-radius: 50%;
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+    }
+    
+    @@keyframes ringPulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.5;
+        }
+    }
+    
+    .vs-label {
+        font-size: 2rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ffd700, #4169e1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    /* Features Section */
+    .features-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 4rem;
+    }
+    
+    .feature-card {
+        background: rgba(26, 35, 126, 0.2);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 215, 0, 0.5);
+        box-shadow: 0 10px 30px rgba(65, 105, 225, 0.3);
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-card h4 {
+        color: #ffd700;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-card p {
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+    }
+    
+    /* Puzzle Menu Toggle */
+    .puzzle-menu-toggle {
+        position: fixed;
+        top: 30px;
+        right: 30px;
+        z-index: 1001;
+        background: linear-gradient(135deg, #4169e1, #ffd700);
+        border: 2px solid rgba(255, 215, 0, 0.5);
+        border-radius: 15px;
+        padding: 0.8rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: white;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    
+    .puzzle-menu-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .menu-crystal {
+        font-size: 1.5rem;
+        animation: crystalSpin 3s linear infinite;
+    }
+    
+    @@keyframes crystalSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Puzzle Sidebar */
+    .puzzle-sidebar {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 380px;
+        height: 100vh;
+        background: linear-gradient(135deg, rgba(26, 35, 126, 0.95), rgba(10, 10, 31, 0.95));
+        backdrop-filter: blur(20px);
+        border-left: 2px solid rgba(255, 215, 0, 0.3);
+        z-index: 1002;
+        transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+    }
+    
+    .puzzle-sidebar.open {
+        right: 0;
+    }
+    
+    .sidebar-header {
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sidebar-header h3 {
+        color: #ffd700;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+    
+    .close-btn {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #ffd700;
+        font-size: 1.3rem;
+    }
+    
+    .close-btn:hover {
+        background: rgba(255, 215, 0, 0.2);
+        transform: rotate(90deg);
+    }
+    
+    .sidebar-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .puzzle-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(255, 215, 0, 0.05);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 10px;
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.9);
+        transition: all 0.3s ease;
+    }
+    
+    .puzzle-link:hover {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: rgba(255, 215, 0, 0.5);
+        transform: translateX(-10px);
+    }
+    
+    .puzzle-icon {
+        font-size: 1.5rem;
+    }
+    
+    /* Audio Button */
+    .audio-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4169e1, #ffd700);
+        border: 2px solid rgba(255, 215, 0, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .audio-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+    
+    .audio-icon {
+        font-size: 1.5rem;
+    }
+    
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .city-cards {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .central-divider {
+            transform: rotate(90deg);
+            margin: 2rem 0;
+        }
+    }
+    
+    @@media (max-width: 768px) {
+        .content-wrapper {
+            padding: 1rem;
+        }
+        
+        .city-card {
+            padding: 1.5rem;
+        }
+        
+        .features-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .puzzle-sidebar {
+            width: 100%;
+            right: -100%;
+        }
+    }
+</style>
+
+@code {
+    public enum City
+    {
+        Zaun,
+        Piltover
+    }
+
+    private bool isAudioEnabled = true;
+    private bool isPuzzleSidebarOpen = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("createFloatingRunes");
+            await JSRuntime.InvokeVoidAsync("createMagicalOrbs");
+        }
+    }
+
+    private void SelectCity(City selectedCity)
+    {
+        var role = selectedCity == City.Zaun ? "zaun" : "piltover";
+        NavigationManager.NavigateTo($"/lobby/{role}");
+    }
+
+    private void ToggleAudio()
+    {
+        isAudioEnabled = !isAudioEnabled;
+        // Implement audio system toggle here
+    }
+
+    private void TogglePuzzleSidebar()
+    {
+        isPuzzleSidebarOpen = !isPuzzleSidebarOpen;
+    }
+}

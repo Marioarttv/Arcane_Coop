@@ -24,6 +24,8 @@ builder.Services.AddDbContext<GameDbContext>(options =>
 
 // Add Visual Novel Service
 builder.Services.AddScoped<IVisualNovelService, VisualNovelService>();
+// Add Act 1 Story Engine
+builder.Services.AddSingleton<Arcane_Coop.Services.IAct1StoryEngine, Arcane_Coop.Services.Act1StoryEngine>();
 
 var app = builder.Build();
 

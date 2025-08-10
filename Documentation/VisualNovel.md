@@ -12,6 +12,7 @@ The Visual Novel System is a sophisticated narrative engine designed specificall
 2. **VisualNovelModels.cs** - Data models and enums for type-safe operations  
 3. **VisualNovelService.cs** - Service layer for scene management and data persistence
 4. **VisualNovelDemo.razor** - Demo interface for testing and showcasing features
+5. **Act1StoryEngine.cs (2025)** - Server-side story engine for Act 1 content, branching, and player view construction
 
 ### Key Features
 
@@ -65,6 +66,28 @@ The Visual Novel engine powers a synchronized, two-player story intro for Act 1 
 - Scene transition:
   - Server emits `Act1SceneTransition` and per-player `Act1RedirectToNextGame(/picture-explanation?...params...)`
   - Client has a 4s local fallback to navigate if a redirect is missed
+
+#### Server-authoritative story engine (2025)
+- Act 1 content, branching, and player-view construction live in `Services/Act1StoryEngine.cs` via `IAct1StoryEngine`.
+- `GameHub` delegates: scene creation, player-view building, scene progression (transition + per-player redirect URLs).
+- Benefits: thin hub, testable content, secure multiplayer flow.
+
+### Adding New Acts (per‑act story engine pattern)
+
+To keep multiplayer robust and the hub thin, each new Act should have its own server-side story engine following the Act 1 pattern.
+
+- Create a new engine file and interface:
+  - `Services/Act2StoryEngine.cs` implementing `IAct2StoryEngine` (mirror Act 1 signatures: scene creation, player view, progression)
+- Register in DI (`Program.cs`):
+  - `builder.Services.AddSingleton<IAct2StoryEngine, Act2StoryEngine>();`
+- Add hub methods for the act (naming mirrors Act 1):
+  - `JoinAct2Game`, `SkipAct2Text`, `ContinueAct2`, `Act2TypingCompleted`, `MakeAct2Choice`, `RestartAct2`
+  - Each method delegates to the Act 2 engine for content/branching and broadcasts `Act2PlayerView`
+- Keep the page component (e.g., `Act2Multiplayer.razor`) presentational:
+  - Render data from `Act2PlayerView`, handle local typewriter animation, and relay user intents to the hub
+
+Notes and future flexibility:
+- If the number of Acts grows, consider unifying to a generic `IStoryEngine` and a content provider/factory. For now, per‑act engines maximize clarity and speed of development.
 
 ## Usage Guide
 
@@ -407,6 +430,7 @@ The service provides pre-built scene templates:
 - `CreatePiltoverIntroScene()` - Piltover introduction with Jayce
 - `CreateZaunIntroScene()` - Zaun introduction with Vi  
 - `CreateEscapeRoomScene(theme, context)` - Dynamic context-aware scenes
+ - `Act1StoryEngine.CreateEmergencyBriefingScene(squadName)` - Act 1 Emergency Briefing scene used by multiplayer
 
 ### Narrative Branching
 

@@ -1,4 +1,5 @@
 @page "/alchemy-lab"
+@page "/alchemy-lab/{*parameters}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
@@ -10,8 +11,22 @@
 
 <div class="alchemy-container">
     <div class="header-section">
-        <h2 class="game-title">🧪 Alchemy Lab</h2>
-        <p class="game-subtitle">Caitlyn & Vi - Brew Vi's Healing Potion</p>
+        @if (isFromStory)
+        {
+            <h2 class="game-title">🧪 Chemical Analysis Lab</h2>
+            <p class="game-subtitle">Emergency Protocol - Analyze unknown chemical compound</p>
+            <div class="story-context">
+                <div class="story-badge @GetRoleThemeClass()">
+                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
+                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h2 class="game-title">🧪 Alchemy Lab</h2>
+            <p class="game-subtitle">Caitlyn & Vi - Brew Vi's Healing Potion</p>
+        }
     </div>
     
     <div class="connection-status mb-3">
@@ -436,6 +451,8 @@
 </div>
 
 @code {
+    [Parameter] public string? Parameters { get; set; }
+    
     // Connection and SignalR
     private HubConnection? hubConnection;
     private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
@@ -447,6 +464,12 @@
     private bool inGame = false;
     private AlchemyPlayerView? playerView;
     private AlchemyGameState? gameState;
+    
+    // Story mode parameters
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
     
     // UI feedback
     private string statusMessage = "";
@@ -465,6 +488,9 @@
     
     protected override async Task OnInitializedAsync()
     {
+        // Parse URL parameters if provided
+        ParseUrlParameters();
+        
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
@@ -566,6 +592,93 @@
         });
 
         await hubConnection.StartAsync();
+        
+        // Auto-connect and join if parameters are provided
+        if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
+    }
+    
+    private void ParseUrlParameters()
+    {
+        if (string.IsNullOrEmpty(Parameters)) return;
+        
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            var role = query["role"];
+            var avatar = query["avatar"];
+            var name = query["name"];
+            var squad = query["squad"];
+            var story = query["story"];
+            
+            if (!string.IsNullOrEmpty(role))
+                playerRole = role;
+                
+            if (!string.IsNullOrEmpty(avatar))
+                playerAvatar = avatar;
+            
+            if (!string.IsNullOrEmpty(name))
+                playerName = Uri.UnescapeDataString(name);
+            
+            if (!string.IsNullOrEmpty(squad))
+            {
+                roomId = Uri.UnescapeDataString(squad);
+                squadName = Uri.UnescapeDataString(squad);
+            }
+            
+            if (story == "true")
+                isFromStory = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing URL parameters: {ex.Message}");
+        }
+    }
+    
+    private async Task AutoConnect()
+    {
+        try
+        {
+            // Small delay to ensure connection is established
+            await Task.Delay(500);
+            
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(200); // Brief delay between operations
+                
+                // If from story mode and have a role, join with that role
+                if (isFromStory && !string.IsNullOrEmpty(playerRole))
+                {
+                    await JoinGameWithRole();
+                }
+                else
+                {
+                    await JoinGame();
+                }
+                
+                // If from story mode, automatically set inGame to true to skip lobby
+                if (isFromStory)
+                {
+                    inGame = true;
+                    ShowStatus("Chemical analysis system initializing...", "info");
+                }
+                else
+                {
+                    ShowStatus("Auto-connecting to lab...", "info");
+                }
+                
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-connect failed: {ex.Message}");
+        }
     }
 
     private async Task JoinRoom()
@@ -588,6 +701,32 @@
         {
             await hubConnection.SendAsync("JoinAlchemyGame", roomId, playerName);
         }
+    }
+    
+    private async Task JoinGameWithRole()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName) && !string.IsNullOrEmpty(playerRole))
+        {
+            // Convert role format from story ("zaun"/"piltover") to game format ("Zaun"/"Piltover")
+            string requestedRole = playerRole.ToLower() switch
+            {
+                "zaun" => "Zaun",
+                "piltover" => "Piltover",
+                _ => "Piltover"
+            };
+            
+            await hubConnection.SendAsync("JoinAlchemyGameWithRole", roomId, playerName, requestedRole);
+        }
+    }
+    
+    private string GetRoleThemeClass()
+    {
+        return playerRole?.ToLower() switch
+        {
+            "zaun" => "zaun-theme",
+            "piltover" => "piltover-theme",
+            _ => ""
+        };
     }
 
     // Cauldron drop handler - sync with SignalR backend
@@ -1862,6 +2001,43 @@
     background: rgba(0, 123, 255, 0.2);
     border: 1px solid #007bff;
     color: #007bff;
+}
+
+/* Story mode styles */
+.story-context {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.story-badge {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.story-badge.zaun-theme {
+    background: linear-gradient(45deg, #0a1e16, #1e5f47);
+    border: 1px solid #00d4aa;
+    color: #00ffc8;
+}
+
+.story-badge.piltover-theme {
+    background: linear-gradient(45deg, #2c1810, #5c3317);
+    border: 1px solid #c8aa6e;
+    color: #f5e6a3;
+}
+
+.badge-icon {
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
 }
 
 @@media (max-width: 768px) {

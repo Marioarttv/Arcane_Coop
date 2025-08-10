@@ -1,0 +1,1383 @@
+@page "/landing-page-alternative2"
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<script>
+    window.createArcaneOrbs = function () {
+        const container = document.getElementById('arcane-orbs');
+        if (!container) return;
+        
+        // Clear existing orbs
+        container.innerHTML = '';
+        
+        // Create floating arcane orbs
+        for (let i = 0; i < 15; i++) {
+            const orb = document.createElement('div');
+            orb.className = 'arcane-orb';
+            
+            // Randomize position and timing
+            orb.style.left = Math.random() * 100 + '%';
+            orb.style.top = Math.random() * 100 + '%';
+            orb.style.animationDelay = Math.random() * 10 + 's';
+            orb.style.animationDuration = (8 + Math.random() * 4) + 's';
+            
+            // Vary orb sizes and colors
+            const colors = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            orb.style.background = `radial-gradient(circle, ${color}, transparent)`;
+            orb.style.boxShadow = `0 0 20px ${color}`;
+            
+            const size = Math.random() * 8 + 4;
+            orb.style.width = size + 'px';
+            orb.style.height = size + 'px';
+            
+            container.appendChild(orb);
+        }
+    };
+
+    window.createFloatingRunes = function () {
+        const container = document.getElementById('floating-runes');
+        if (!container) return;
+        
+        // Clear existing runes
+        container.innerHTML = '';
+        
+        // Rune symbols
+        const runeSymbols = ['ᚱ', 'ᚢ', 'ᚾ', 'ᛖ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛚ', 'ᛗ', 'ᛞ', 'ᛟ', 'ᚠ', 'ᚦ', 'ᚨ', 'ᚷ'];
+        
+        // Create floating runes
+        for (let i = 0; i < 12; i++) {
+            const rune = document.createElement('div');
+            rune.className = 'floating-rune';
+            rune.textContent = runeSymbols[Math.floor(Math.random() * runeSymbols.length)];
+            
+            // Randomize position and timing
+            rune.style.left = Math.random() * 100 + '%';
+            rune.style.top = Math.random() * 100 + '%';
+            rune.style.animationDelay = Math.random() * 15 + 's';
+            rune.style.animationDuration = (20 + Math.random() * 10) + 's';
+            
+            // Random size
+            const size = Math.random() * 20 + 15;
+            rune.style.fontSize = size + 'px';
+            
+            container.appendChild(rune);
+        }
+    };
+    
+    // Auto-initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        window.createArcaneOrbs();
+        window.createFloatingRunes();
+    });
+</script>
+
+<!-- Puzzle Sidebar -->
+<div class="puzzle-sidebar @(isPuzzleSidebarOpen ? "open" : "")">
+    <div class="sidebar-header">
+        <h3>Available Puzzles</h3>
+        <button class="close-sidebar-btn" @onclick="TogglePuzzleSidebar">
+            <span>✕</span>
+        </button>
+    </div>
+    <div class="sidebar-content">
+        <a href="/code-cracker" class="puzzle-item">
+            <span class="puzzle-icon">🔐</span>
+            <span>Code Cracker</span>
+        </a>
+        <a href="/signal-decoder" class="puzzle-item">
+            <span class="puzzle-icon">📡</span>
+            <span>Signal Decoder</span>
+        </a>
+        <a href="/navigation-maze" class="puzzle-item">
+            <span class="puzzle-icon">🧭</span>
+            <span>Navigation Maze</span>
+        </a>
+        <a href="/picture-explanation" class="puzzle-item">
+            <span class="puzzle-icon">🖼️</span>
+            <span>Picture Explanation</span>
+        </a>
+        <a href="/rune-protocol" class="puzzle-item">
+            <span class="puzzle-icon">🔮</span>
+            <span>Rune Protocol</span>
+        </a>
+        <a href="/alchemy-lab" class="puzzle-item">
+            <span class="puzzle-icon">⚗️</span>
+            <span>Alchemy Lab</span>
+        </a>
+        <a href="/visual-novel-demo" class="puzzle-item">
+            <span class="puzzle-icon">📖</span>
+            <span>Visual Novel Demo</span>
+        </a>
+        <a href="/test-signalr" class="puzzle-item">
+            <span class="puzzle-icon">🎯</span>
+            <span>Training Ground</span>
+        </a>
+    </div>
+</div>
+
+<!-- Puzzle Menu Button -->
+<button class="puzzle-menu-btn" @onclick="TogglePuzzleSidebar">
+    <span class="menu-icon">🧩</span>
+    <span class="menu-text">Puzzles</span>
+</button>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700;800&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+
+<div class="arcane-realm" @ref="landingContainer">
+    <!-- Mystical Grid Overlay -->
+    <div class="mystical-grid"></div>
+    
+    <!-- Arcane Orbs -->
+    <div class="arcane-orbs" id="arcane-orbs"></div>
+    
+    <!-- Floating Runes (Piltover Side) -->
+    <div class="floating-runes" id="floating-runes"></div>
+    
+    <!-- Split Realm Background -->
+    <div class="realm-divide">
+        <div class="zaun-realm">
+            <div class="zaun-essence"></div>
+            <div class="shadow-tendrils"></div>
+            <div class="underground-mist"></div>
+        </div>
+        <div class="piltover-realm">
+            <div class="golden-aura"></div>
+            <div class="royal-radiance"></div>
+            <div class="celestial-patterns"></div>
+        </div>
+        <div class="realm-barrier">
+            <div class="energy-flow"></div>
+            <div class="mystic-lightning"></div>
+        </div>
+    </div>
+
+    <!-- Main Arcane Content -->
+    <div class="realm-content">
+        <!-- Arcane Title -->
+        <div class="title-sanctum">
+            <div class="title-constellation">
+                <h1 class="arcane-inscription">
+                    <span class="primary-glyph">ARCANE</span>
+                    <span class="shadow-glyph">ARCANE</span>
+                    <span class="light-glyph">ARCANE</span>
+                </h1>
+                <div class="subtitle-scroll">
+                    <span class="scroll-text">~ ESCAPE ROOM ADVENTURE ~</span>
+                    <div class="scroll-ornament"></div>
+                </div>
+            </div>
+            <div class="cooperation-seal">
+                <div class="seal-core">⚡</div>
+                <div class="seal-ring"></div>
+                <span class="seal-inscription">COOPERATIVE PUZZLE EXPERIENCE</span>
+                <div class="seal-radiance"></div>
+            </div>
+        </div>
+
+        <!-- Realm Selection -->
+        <div class="realm-selection">
+            <div class="selection-oracle">
+                <h2>Choose Your Destiny</h2>
+                <p>Two realms separated by ancient magic. Which path calls to your soul?</p>
+            </div>
+
+            <div class="realms-altar">
+                <!-- Zaun Realm -->
+                <div class="realm-shrine zaun-shrine" @onclick="() => SelectCity(City.Zaun)">
+                    <div class="shrine-crown">
+                        <h3 class="realm-title zaun-title">ZAUN</h3>
+                        <p class="realm-creed">"From Shadows, Truth Emerges"</p>
+                    </div>
+
+                    <div class="champion-alcove">
+                        <h4>Your Champion</h4>
+                        <div class="champion-crystal">
+                            <div class="crystal-frame vi-crystal">
+                                <div class="champion-avatar">
+                                    <img src="/images/Characters/Vi/Vi_default.png" alt="Vi" class="avatar-image vi-avatar" />
+                                </div>
+                                <div class="champion-essence">
+                                    <h5>Vi</h5>
+                                    <p>The Piltover Enforcer</p>
+                                    <p class="essence-note">Champion of Underground Justice</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quest-scroll">
+                        <h4>Your Quest</h4>
+                        <p>Traverse the shadowed depths where secrets lurk. Channel raw determination and street wisdom to uncover ancient conspiracies hidden beneath layers of corruption.</p>
+                        <div class="power-runes">
+                            <span class="power-rune">⚔️ Combat Mastery</span>
+                            <span class="power-rune">🕵️ Shadow Investigation</span>
+                            <span class="power-rune">🌩️ Underground Networks</span>
+                        </div>
+                    </div>
+
+                    <div class="dark-prophecy">
+                        <div class="prophecy-shadow">
+                            <span>Ancient forces stir in the darkness below...</span>
+                        </div>
+                    </div>
+
+                    <button class="realm-portal zaun-portal">
+                        <span>Enter the Shadows</span>
+                        <div class="portal-energy"></div>
+                    </button>
+                </div>
+
+                <!-- Sacred Divider -->
+                <div class="sacred-divider">
+                    <div class="divider-pillar"></div>
+                    <div class="ancient-seal">
+                        <div class="seal-center"></div>
+                        <div class="seal-rings"></div>
+                    </div>
+                    <div class="cosmic-text">VS</div>
+                </div>
+
+                <!-- Piltover Realm -->
+                <div class="realm-shrine piltover-shrine" @onclick="() => SelectCity(City.Piltover)">
+                    <div class="shrine-crown">
+                        <h3 class="realm-title piltover-title">PILTOVER</h3>
+                        <p class="realm-creed">"Through Wisdom, Order Prevails"</p>
+                    </div>
+
+                    <div class="champion-alcove">
+                        <h4>Your Champion</h4>
+                        <div class="champion-crystal">
+                            <div class="crystal-frame caitlyn-crystal">
+                                <div class="champion-avatar">
+                                    <img src="/images/Characters/Caitlyn/Caitlyn_default.png" alt="Caitlyn" class="avatar-image caitlyn-avatar" />
+                                </div>
+                                <div class="champion-essence">
+                                    <h5>Caitlyn</h5>
+                                    <p>The Sheriff of Piltover</p>
+                                    <p class="essence-note">Guardian of Celestial Order</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quest-scroll">
+                        <h4>Your Quest</h4>
+                        <p>Ascend to the golden spires where knowledge illuminates truth. Employ precision, strategic insight, and celestial wisdom to maintain divine order and protect the innocent.</p>
+                        <div class="power-runes">
+                            <span class="power-rune">🏹 Precision Targeting</span>
+                            <span class="power-rune">🔍 Divine Investigation</span>
+                            <span class="power-rune">⚜️ Tactical Mastery</span>
+                        </div>
+                    </div>
+
+                    <div class="light-prophecy">
+                        <div class="prophecy-light">
+                            <span>The golden light reveals all hidden truths...</span>
+                        </div>
+                    </div>
+
+                    <button class="realm-portal piltover-portal">
+                        <span>Ascend to Glory</span>
+                        <div class="portal-radiance"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arcane Lore -->
+        <div class="lore-codex">
+            <div class="codex-grid">
+                <div class="lore-fragment">
+                    <div class="fragment-rune">📜</div>
+                    <h4>Immersive Chronicles</h4>
+                    <p>Experience the eternal struggle between realms through mystical visual narratives with enchanting voice work and ethereal soundscapes.</p>
+                </div>
+                <div class="lore-fragment">
+                    <div class="fragment-rune">🔮</div>
+                    <h4>Asymmetric Harmony</h4>
+                    <p>Each soul perceives different fragments of truth but must unite in purpose. Shadows reveal the mysteries, light provides the solutions.</p>
+                </div>
+                <div class="lore-fragment">
+                    <div class="fragment-rune">⏳</div>
+                    <h4>60 Minutes of Destiny</h4>
+                    <p>Race against the cosmic hourglass as arcane forces reach their crescendo. Every choice shapes the fate of both realms.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mystical Audio Controls -->
+    <div class="mystical-controls">
+        <button class="audio-orb" @onclick="ToggleAudio">
+            <span class="orb-symbol">@(isAudioEnabled ? "🔊" : "🔇")</span>
+        </button>
+    </div>
+</div>
+
+<style>
+    :root {
+        /* Royal Blue and Gold Arcane Theme */
+        --royal-blue: #1e3a8a;
+        --deep-blue: #1e40af;
+        --mystic-blue: #3b82f6;
+        --celestial-blue: #60a5fa;
+        --ethereal-blue: #93c5fd;
+        --divine-gold: #f59e0b;
+        --ancient-gold: #d97706;
+        --sacred-gold: #b45309;
+        --luminous-gold: #fbbf24;
+        --radiant-gold: #fcd34d;
+        
+        /* Shadows and Lights */
+        --shadow-realm: #0f0f23;
+        --deep-shadow: #1a1a2e;
+        --light-realm: #f8fafc;
+        --pure-light: #ffffff;
+        
+        /* Arcane Effects */
+        --mystic-glow: rgba(59, 130, 246, 0.6);
+        --divine-aura: rgba(251, 191, 36, 0.6);
+        --ethereal-shimmer: rgba(147, 197, 253, 0.4);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .arcane-realm {
+        position: relative;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Cinzel', serif;
+        color: var(--light-realm);
+        background: radial-gradient(ellipse at center, var(--royal-blue) 0%, var(--shadow-realm) 100%);
+    }
+
+    /* Mystical Grid Overlay */
+    .mystical-grid {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(59, 130, 246, 0.08) 49px, rgba(59, 130, 246, 0.08) 50px),
+            repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(251, 191, 36, 0.05) 49px, rgba(251, 191, 36, 0.05) 50px);
+        pointer-events: none;
+        z-index: 1;
+        animation: gridMystic 6s ease-in-out infinite;
+    }
+
+    @@keyframes gridMystic {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.8; }
+    }
+
+    /* Arcane Orbs */
+    .arcane-orbs {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .arcane-orb {
+        position: absolute;
+        border-radius: 50%;
+        animation: orbFloat 10s infinite ease-in-out;
+        filter: blur(1px);
+    }
+
+    @@keyframes orbFloat {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.4;
+        }
+        50% {
+            transform: translateY(-30px) rotate(180deg);
+            opacity: 0.8;
+        }
+    }
+
+    /* Floating Runes (Piltover Side) */
+    .floating-runes {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    .floating-rune {
+        position: absolute;
+        color: var(--divine-gold);
+        text-shadow: 0 0 20px var(--divine-aura);
+        font-family: serif;
+        font-weight: bold;
+        animation: runeFloat 25s infinite linear;
+        opacity: 0.7;
+    }
+
+    @@keyframes runeFloat {
+        0% {
+            transform: translateY(10px) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.7;
+        }
+        90% {
+            opacity: 0.7;
+        }
+        100% {
+            transform: translateY(-100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+
+    /* Realm Divide */
+    .realm-divide {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+
+    .zaun-realm, .piltover-realm {
+        position: absolute;
+        top: 0;
+        width: 50%;
+        height: 100%;
+    }
+
+    .zaun-realm {
+        left: 0;
+        background: linear-gradient(135deg, var(--shadow-realm) 0%, var(--deep-shadow) 50%, var(--royal-blue) 100%);
+    }
+
+    .piltover-realm {
+        right: 0;
+        background: linear-gradient(135deg, var(--royal-blue) 0%, var(--deep-blue) 50%, var(--ancient-gold) 100%);
+    }
+
+    .zaun-essence {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 30% 70%, rgba(30, 58, 138, 0.3) 0%, transparent 70%);
+        animation: essenceFlow 8s ease-in-out infinite alternate;
+    }
+
+    .golden-aura {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 70% 30%, rgba(251, 191, 36, 0.2) 0%, transparent 70%);
+        animation: auraFlow 6s ease-in-out infinite alternate;
+    }
+
+    @@keyframes essenceFlow {
+        0% { opacity: 0.4; transform: translateY(0px); }
+        100% { opacity: 0.8; transform: translateY(-20px); }
+    }
+
+    @@keyframes auraFlow {
+        0% { opacity: 0.5; transform: translateY(0px); }
+        100% { opacity: 0.9; transform: translateY(-15px); }
+    }
+
+    .realm-barrier {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 6px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--mystic-blue), var(--divine-gold));
+        transform: translateX(-50%);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        animation: barrierPulse 4s ease-in-out infinite;
+    }
+
+    @@keyframes barrierPulse {
+        0%, 100% {
+            opacity: 0.8;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        }
+        50% {
+            opacity: 1;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.9);
+        }
+    }
+
+    /* Main Content */
+    .realm-content {
+        position: relative;
+        z-index: 10;
+        padding: 3rem;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* Title Sanctum */
+    .title-sanctum {
+        text-align: center;
+        margin-bottom: 5rem;
+        padding-top: 2rem;
+    }
+
+    .title-constellation {
+        position: relative;
+        margin-bottom: 3rem;
+    }
+
+    .arcane-inscription {
+        position: relative;
+        font-family: 'Playfair Display', serif;
+        margin-bottom: 2rem;
+    }
+
+    .primary-glyph, .shadow-glyph, .light-glyph {
+        display: block;
+        font-size: clamp(6rem, 15vw, 12rem);
+        font-weight: 800;
+        letter-spacing: 0.5em;
+        margin-left: 0.5em;
+        position: relative;
+    }
+
+    .primary-glyph {
+        background: linear-gradient(90deg, var(--divine-gold) 0%, var(--luminous-gold) 50%, var(--divine-gold) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px var(--divine-aura);
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+        animation: primaryGlow 4s ease-in-out infinite;
+    }
+
+    .shadow-glyph, .light-glyph {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+    }
+
+    .shadow-glyph {
+        color: var(--royal-blue);
+        animation: shadowGlitch 4s infinite;
+        z-index: -1;
+    }
+
+    .light-glyph {
+        color: var(--radiant-gold);
+        animation: lightGlitch 4s infinite;
+        z-index: -2;
+    }
+
+    @@keyframes primaryGlow {
+        0%, 100% {
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) brightness(1);
+        }
+        50% {
+            filter: drop-shadow(0 0 40px rgba(251, 191, 36, 0.8)) brightness(1.2);
+        }
+    }
+
+    @@keyframes shadowGlitch {
+        0%, 100% { opacity: 0; }
+        25% { opacity: 0; }
+        25.02% { opacity: 1; transform: translateX(-12px); }
+        25.04% { opacity: 0; transform: translateX(0); }
+    }
+
+    @@keyframes lightGlitch {
+        0%, 100% { opacity: 0; }
+        75% { opacity: 0; }
+        75.02% { opacity: 1; transform: translateX(12px); }
+        75.04% { opacity: 0; transform: translateX(0); }
+    }
+
+    .subtitle-scroll {
+        position: relative;
+        margin-top: 2rem;
+    }
+
+    .scroll-text {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 600;
+        background: linear-gradient(90deg, var(--mystic-blue) 0%, var(--divine-gold) 50%, var(--mystic-blue) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 0.3em;
+        font-family: 'Crimson Text', serif;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .cooperation-seal {
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 1.5rem 3rem;
+        border-radius: 60px;
+        border: 2px solid var(--divine-gold);
+        backdrop-filter: blur(15px);
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cooperation-seal::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.3), transparent);
+        animation: sealSweep 3s ease-in-out infinite;
+    }
+
+    @@keyframes sealSweep {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+
+    .seal-core {
+        font-size: 2rem;
+        animation: sealRotate 3s ease-in-out infinite;
+        color: var(--divine-gold);
+        text-shadow: 0 0 20px var(--divine-aura);
+    }
+
+    @@keyframes sealRotate {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.3) rotate(180deg); }
+    }
+
+    /* Realm Selection */
+    .realm-selection {
+        margin-bottom: 5rem;
+    }
+
+    .selection-oracle {
+        text-align: center;
+        margin-bottom: 4rem;
+        position: relative;
+    }
+
+    .selection-oracle h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        margin-bottom: 1.5rem;
+        color: var(--pure-light);
+        text-shadow: 0 0 30px var(--mystic-glow);
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        position: relative;
+        display: inline-block;
+        padding: 1rem 4rem;
+    }
+
+    .selection-oracle h2::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 58, 138, 0.6) 50%, rgba(0, 0, 0, 0.8) 100%);
+        border-radius: 30px;
+        border: 1px solid var(--divine-gold);
+        backdrop-filter: blur(10px);
+        z-index: -1;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .selection-oracle p {
+        font-size: 1.4rem;
+        opacity: 0.9;
+        font-style: italic;
+        color: var(--radiant-gold);
+        text-shadow: 0 0 15px var(--divine-aura);
+        background: rgba(0, 0, 0, 0.6);
+        padding: 1rem 3rem;
+        border-radius: 25px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        display: inline-block;
+        margin-top: 1.5rem;
+    }
+
+    .realms-altar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 4rem;
+        align-items: start;
+    }
+
+    .realm-shrine {
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 25px;
+        padding: 3rem;
+        backdrop-filter: blur(20px);
+        cursor: pointer;
+        transition: all 0.5s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 750px;
+        border: 3px solid transparent;
+    }
+
+    .zaun-shrine {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(15, 15, 35, 0.9));
+        border-image: linear-gradient(135deg, var(--mystic-blue), var(--royal-blue)) 1;
+    }
+
+    .piltover-shrine {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(185, 83, 9, 0.7));
+        border-image: linear-gradient(135deg, var(--divine-gold), var(--ancient-gold)) 1;
+    }
+
+    .realm-shrine:hover {
+        transform: translateY(-20px) scale(1.03);
+    }
+
+    .zaun-shrine:hover {
+        box-shadow: 0 30px 60px rgba(59, 130, 246, 0.4);
+    }
+
+    .piltover-shrine:hover {
+        box-shadow: 0 30px 60px rgba(251, 191, 36, 0.4);
+    }
+
+    .shrine-crown {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .realm-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.8rem;
+        font-weight: 800;
+        margin-bottom: 0.8rem;
+        letter-spacing: 0.2em;
+    }
+
+    .zaun-title {
+        color: var(--celestial-blue);
+        text-shadow: 0 0 25px var(--mystic-glow);
+    }
+
+    .piltover-title {
+        color: var(--luminous-gold);
+        text-shadow: 0 0 25px var(--divine-aura);
+    }
+
+    .realm-creed {
+        font-style: italic;
+        opacity: 0.85;
+        font-size: 1.2rem;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .champion-alcove {
+        margin-bottom: 2.5rem;
+    }
+
+    .champion-alcove h4 {
+        font-size: 1.4rem;
+        margin-bottom: 1.5rem;
+        color: var(--light-realm);
+        text-align: center;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .champion-crystal {
+        display: flex;
+        justify-content: center;
+    }
+
+    .crystal-frame {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        max-width: 320px;
+        backdrop-filter: blur(10px);
+        transition: all 0.4s ease;
+    }
+
+    .vi-crystal {
+        border: 2px solid var(--mystic-blue);
+    }
+
+    .caitlyn-crystal {
+        border: 2px solid var(--divine-gold);
+    }
+
+    .champion-avatar {
+        margin-bottom: 1.5rem;
+    }
+
+    .avatar-image {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.4s ease;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .vi-avatar {
+        border-color: var(--mystic-blue);
+        box-shadow: 0 0 20px var(--mystic-glow);
+    }
+
+    .caitlyn-avatar {
+        border-color: var(--divine-gold);
+        box-shadow: 0 0 20px var(--divine-aura);
+    }
+
+    .vi-avatar:hover {
+        border-color: var(--celestial-blue);
+        box-shadow: 0 0 40px var(--mystic-glow);
+        transform: scale(1.1);
+    }
+
+    .caitlyn-avatar:hover {
+        border-color: var(--luminous-gold);
+        box-shadow: 0 0 40px var(--divine-aura);
+        transform: scale(1.1);
+    }
+
+    .champion-essence h5 {
+        font-size: 1.3rem;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+        font-family: 'Playfair Display', serif;
+    }
+
+    .champion-essence p {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin-bottom: 0.3rem;
+    }
+
+    .essence-note {
+        font-size: 0.9rem !important;
+        opacity: 0.7 !important;
+        font-style: italic;
+        margin-top: 0.5rem;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .quest-scroll {
+        margin-bottom: 2.5rem;
+    }
+
+    .quest-scroll h4 {
+        font-size: 1.4rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .quest-scroll p {
+        line-height: 1.8;
+        margin-bottom: 1.5rem;
+        opacity: 0.9;
+        font-size: 1rem;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .power-runes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        justify-content: center;
+    }
+
+    .power-rune {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-family: 'Crimson Text', serif;
+    }
+
+    .dark-prophecy, .light-prophecy {
+        margin-bottom: 2.5rem;
+        text-align: center;
+    }
+
+    .prophecy-shadow, .prophecy-light {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 1.2rem;
+        border-radius: 15px;
+        font-style: italic;
+        opacity: 0.8;
+        font-size: 1rem;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .prophecy-shadow {
+        border: 1px solid var(--mystic-blue);
+        box-shadow: 0 0 20px var(--mystic-glow);
+    }
+
+    .prophecy-light {
+        border: 1px solid var(--divine-gold);
+        box-shadow: 0 0 20px var(--divine-aura);
+    }
+
+    .realm-portal {
+        width: 100%;
+        padding: 1.5rem 2.5rem;
+        border: none;
+        border-radius: 40px;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+    }
+
+    .zaun-portal {
+        background: linear-gradient(135deg, var(--celestial-blue), var(--mystic-blue));
+        color: var(--shadow-realm);
+    }
+
+    .piltover-portal {
+        background: linear-gradient(135deg, var(--luminous-gold), var(--divine-gold));
+        color: var(--deep-shadow);
+    }
+
+    .realm-portal:hover {
+        transform: scale(1.08);
+    }
+
+    .portal-energy, .portal-radiance {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        transition: left 0.8s ease;
+    }
+
+    .realm-portal:hover .portal-energy,
+    .realm-portal:hover .portal-radiance {
+        left: 100%;
+    }
+
+    /* Sacred Divider */
+    .sacred-divider {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 3rem 0;
+    }
+
+    .divider-pillar {
+        width: 4px;
+        height: 180px;
+        background: linear-gradient(180deg, var(--mystic-blue), var(--divine-gold));
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+
+    .ancient-seal {
+        position: relative;
+        width: 100px;
+        height: 100px;
+    }
+
+    .seal-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, var(--divine-gold), var(--mystic-blue));
+        border-radius: 50%;
+        animation: sealSpin 5s linear infinite;
+    }
+
+    .seal-rings {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        border: 2px solid var(--divine-gold);
+        border-radius: 50%;
+        opacity: 0.7;
+        animation: ringSpin 8s linear infinite reverse;
+    }
+
+    .seal-rings::before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: -15px;
+        right: -15px;
+        bottom: -15px;
+        border: 1px solid var(--mystic-blue);
+        border-radius: 50%;
+        opacity: 0.5;
+    }
+
+    @@keyframes sealSpin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @@keyframes ringSpin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .cosmic-text {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        background: linear-gradient(45deg, var(--mystic-blue), var(--divine-gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+
+    /* Lore Codex */
+    .lore-codex {
+        margin-top: 5rem;
+    }
+
+    .codex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 2.5rem;
+    }
+
+    .lore-fragment {
+        background: rgba(0, 0, 0, 0.7);
+        padding: 2.5rem;
+        border-radius: 25px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        transition: all 0.4s ease;
+    }
+
+    .lore-fragment:hover {
+        transform: translateY(-10px);
+        border-color: var(--divine-gold);
+        box-shadow: 0 20px 40px rgba(251, 191, 36, 0.2);
+    }
+
+    .fragment-rune {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .lore-fragment h4 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: var(--luminous-gold);
+        font-family: 'Playfair Display', serif;
+    }
+
+    .lore-fragment p {
+        line-height: 1.8;
+        opacity: 0.9;
+        font-size: 1.1rem;
+        font-family: 'Crimson Text', serif;
+    }
+
+    /* Puzzle Menu Button */
+    .puzzle-menu-btn {
+        position: fixed;
+        top: 25px;
+        right: 25px;
+        z-index: 1001;
+        background: linear-gradient(135deg, var(--divine-gold), var(--mystic-blue));
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-radius: 15px;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(15px);
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        color: white;
+        font-size: 1.1rem;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .puzzle-menu-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .menu-icon {
+        font-size: 1.4rem;
+    }
+
+    .menu-text {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    /* Puzzle Sidebar */
+    .puzzle-sidebar {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 400px;
+        height: 100vh;
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.95), rgba(185, 83, 9, 0.85));
+        backdrop-filter: blur(25px);
+        border-left: 2px solid rgba(255, 255, 255, 0.2);
+        z-index: 1002;
+        transition: right 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .puzzle-sidebar.open {
+        right: 0;
+    }
+
+    .sidebar-header {
+        padding: 2.5rem 2rem;
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-header h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--light-realm);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .close-sidebar-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--light-realm);
+        font-size: 1.4rem;
+    }
+
+    .close-sidebar-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+    }
+
+    .sidebar-content {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    .puzzle-item {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        text-decoration: none;
+        color: var(--light-realm);
+        transition: all 0.3s ease;
+        font-family: 'Crimson Text', serif;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .puzzle-item:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--divine-gold);
+        transform: translateX(-12px);
+        box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3);
+    }
+
+    .puzzle-icon {
+        font-size: 1.8rem;
+        width: 45px;
+        text-align: center;
+    }
+
+    /* Mystical Audio Controls */
+    .mystical-controls {
+        position: fixed;
+        bottom: 2.5rem;
+        right: 2.5rem;
+        z-index: 1000;
+    }
+
+    .audio-orb {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--divine-gold), var(--ancient-gold));
+        border: 3px solid var(--mystic-blue);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.4s ease;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px var(--divine-aura);
+    }
+
+    .audio-orb:hover {
+        transform: scale(1.15);
+        box-shadow: 0 0 50px var(--divine-aura);
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .realms-altar {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+
+        .sacred-divider {
+            flex-direction: row;
+            padding: 1.5rem 0;
+        }
+
+        .divider-pillar {
+            width: 180px;
+            height: 4px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .realm-content {
+            padding: 1.5rem;
+        }
+
+        .realm-shrine {
+            padding: 2rem;
+            min-height: auto;
+        }
+
+        .codex-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .puzzle-sidebar {
+            width: 100%;
+            right: -100%;
+        }
+    }
+</style>
+
+@code {
+    public enum City
+    {
+        Zaun,
+        Piltover
+    }
+
+    private bool isAudioEnabled = true;
+    private bool isPuzzleSidebarOpen = false;
+    private City? hoveredCity = null;
+    private ElementReference landingContainer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CreateArcaneEffects();
+        }
+    }
+
+    private async Task CreateArcaneEffects()
+    {
+        await JSRuntime.InvokeVoidAsync("createArcaneOrbs");
+        await JSRuntime.InvokeVoidAsync("createFloatingRunes");
+    }
+
+    private void NavigateToMission(string missionPath)
+    {
+        NavigationManager.NavigateTo($"/{missionPath}");
+    }
+
+    private void SelectCity(City selectedCity)
+    {
+        var role = selectedCity == City.Zaun ? "zaun" : "piltover";
+        NavigationManager.NavigateTo($"/lobby/{role}");
+    }
+
+    private void OnCityHover(City city)
+    {
+        hoveredCity = city;
+    }
+
+    private void OnCityLeave()
+    {
+        hoveredCity = null;
+    }
+
+    private void ToggleAudio()
+    {
+        isAudioEnabled = !isAudioEnabled;
+        // Implement audio system toggle here
+    }
+
+    private void TogglePuzzleSidebar()
+    {
+        isPuzzleSidebarOpen = !isPuzzleSidebarOpen;
+    }
+}
