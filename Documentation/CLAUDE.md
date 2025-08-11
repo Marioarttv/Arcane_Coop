@@ -142,11 +142,12 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 **Mechanics**: Describe → Hide → Choose from 4 options
 **Education**: Descriptive language, active listening
 **Documentation**: [PictureExplanation.md](./PictureExplanation.md)
-**Story Transition and Role Preservation**
 
-- From Act 1, send each client an individualized redirect (not a single group URL) including: `role`, `avatar`, `name`, `squad`, `story=true`
-- In `PictureExplanation.razor`, when `story=true`, immediately set `inGame = true` after join to bypass the lobby for both Piltover and Zaun
-- Add `JoinPictureExplanationGameWithRole(roomId, playerName, requestedRole)` to honor requested roles while preventing duplicates (second player is assigned the remaining role)
+**Story Integration Features:**
+- **Story Mode Entry**: Accepts `story=true` parameter to bypass lobby setup
+- **Role Preservation**: Uses `JoinPictureExplanationGameWithRole()` to maintain Piltover/Zaun assignments from visual novel
+- **Completion Transition**: "Continue Story" button (instead of "Play Again") when completing puzzle in story mode
+- **Scene Targeting**: Redirects both players to next visual novel scene with `sceneIndex` parameter
 
 ### 5. RuneProtocol (/rune-protocol)
 **Purpose**: Logic puzzles and conditional reasoning
@@ -192,6 +193,258 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 - **Shared Services**: Common functionality via dependency injection
 - **CSS Theming**: Consistent Piltover/Zaun visual identity
 - **Responsive Design**: Desktop-first with mobile support
+
+## Story-Puzzle Transition System
+
+The project implements a sophisticated transition system that allows seamless navigation between visual novel scenes and puzzle gameplay while preserving player roles, state, and multiplayer synchronization.
+
+### Architecture Overview
+
+**Flow Control Pattern:**
+```
+Visual Novel Scene → Puzzle → Next Visual Novel Scene
+```
+
+**Key Components:**
+- **StoryProgression**: Ordered list defining the sequence (scenes and puzzle transitions)
+- **Scene Index Management**: Tracks current position in the story progression
+- **Role Preservation**: Maintains player roles (Piltover/Zaun) across transitions
+- **Parameter Passing**: URL-based state transfer between different game types
+
+### Story Progression Configuration
+
+The story flow is controlled by the `StoryProgression` array in `Act1MultiplayerGame`:
+
+```csharp
+public List<string> StoryProgression { get; set; } = new() 
+{ 
+    "emergency_briefing",           // Scene 1 & 2 - Visual Novel
+    "picture_explanation_transition", // Puzzle - Picture Explanation
+    "database_revelation"           // Scene 3 - Visual Novel
+};
+```
+
+### From Scene to Puzzle Transitions
+
+**Step 1: Scene Completion Detection**
+- Visual novel reaches end of dialogue
+- `_act1StoryEngine.ProgressToNextScene()` is called
+- System detects `*_transition` phase in StoryProgression
+
+**Step 2: Transition Initialization**
+```csharp
+case "picture_explanation_transition":
+    game.Status = Act1GameStatus.SceneTransition;
+    game.ShowTransition = true;
+    game.NextGameName = "Visual Intelligence Analysis";
+```
+
+**Step 3: URL Construction with State Preservation**
+```csharp
+var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+var url = $"/picture-explanation?{parameters}";
+```
+
+**Critical Parameters:**
+- `role`: Preserves Piltover/Zaun assignment
+- `avatar`: Maintains visual identity
+- `name`: Player identification
+- `squad`: Room/session identifier
+- `story=true`: Enables story mode in puzzle
+
+**Step 4: Synchronized Player Redirection**
+```csharp
+foreach (var p in game.Players)
+{
+    result.RedirectUrlsByPlayerId[p.PlayerId] = url;
+}
+```
+
+### From Puzzle to Scene Transitions
+
+**Step 1: Puzzle Completion**
+- Puzzle game reaches completion state
+- Story-mode conditional UI appears
+
+**Step 2: Continue Story Button**
+```razor
+@if (isFromStory)
+{
+    <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+        ➡️ Continue Story
+    </button>
+}
+```
+
+**Step 3: Hub Method for Story Continuation**
+```csharp
+public async Task ContinueStoryToScene3(string roomId)
+{
+    // Get puzzle players
+    var connectedPlayers = game.GetConnectedPlayers();
+    
+    // Build Act1 URLs with scene targeting
+    var parameters = $"role={roleName}&avatar=1&name={playerName}&roomId={roomId}&squad={roomId}&sceneIndex=2";
+    var url = $"/act1-multiplayer?{parameters}";
+}
+```
+
+**Critical Parameters for Scene Targeting:**
+- `roomId`: Primary identifier for Act1 game room
+- `squad`: Secondary identifier (same as roomId for continuity)  
+- `sceneIndex`: Specifies which scene to start at (bypasses early scenes)
+
+**Step 4: Scene Index Handling**
+```csharp
+public async Task JoinAct1GameAtScene(string roomId, string playerName, string originalSquadName, string role, string avatar, int? startAtSceneIndex)
+{
+    if (startAtSceneIndex.HasValue && startAtSceneIndex.Value >= 0)
+    {
+        game.CurrentSceneIndex = startAtSceneIndex.Value;
+        var currentPhase = game.StoryProgression[game.CurrentSceneIndex];
+        
+        if (currentPhase == "database_revelation")
+        {
+            game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
+        }
+    }
+}
+```
+
+### Implementation Requirements
+
+#### For Scene-to-Puzzle Transitions
+
+**1. StoryEngine Updates (Services/Act1StoryEngine.cs)**
+```csharp
+case "puzzle_name_transition":
+    game.Status = Act1GameStatus.SceneTransition;
+    game.ShowTransition = true;
+    game.NextGameName = "Puzzle Display Name";
+    
+    result.TransitionStarted = true;
+    result.NextGameName = game.NextGameName;
+    
+    var puzzleUrls = new Dictionary<string, string>();
+    foreach (var p in game.Players)
+    {
+        var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+        puzzleUrls[p.PlayerId] = $"/puzzle-url?{parameters}";
+    }
+    result.RedirectUrlsByPlayerId = puzzleUrls;
+```
+
+**2. Visual Novel UI (Act1Multiplayer.razor)**
+- Transition screen with loading animation
+- Fallback redirect mechanism (4-second timer)
+- `hasNavigatedToNextGame` flag to prevent duplicate redirects
+
+#### For Puzzle-to-Scene Transitions
+
+**1. Puzzle Completion UI**
+```razor
+@if (isFromStory && gameState.IsCompleted)
+{
+    <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+        ➡️ Continue Story
+    </button>
+}
+```
+
+**2. SignalR Hub Method (GameHub.cs)**
+```csharp
+public async Task ContinuePuzzleToNextScene(string roomId, int targetSceneIndex)
+{
+    var puzzleGame = GetPuzzleGame(roomId);
+    var players = puzzleGame.GetConnectedPlayers();
+    
+    foreach (var connectionId in players)
+    {
+        var playerData = GetPlayerData(connectionId);
+        var url = $"/act1-multiplayer?role={playerData.Role}&roomId={roomId}&squad={roomId}&sceneIndex={targetSceneIndex}";
+        await Clients.Client(connectionId).SendAsync("RedirectToNextScene", url);
+    }
+}
+```
+
+**3. Scene Index Support (Act1Multiplayer.razor)**
+```csharp
+// URL Parsing
+if (int.TryParse(query["sceneIndex"], out int targetSceneIndex))
+{
+    startAtSceneIndex = targetSceneIndex;
+}
+
+// Hub Method Selection
+if (startAtSceneIndex.HasValue)
+{
+    await hubConnection.SendAsync("JoinAct1GameAtScene", currentRoomId, playerName, originalSquadName, playerRole, playerAvatar, startAtSceneIndex.Value);
+}
+```
+
+### Critical Implementation Details
+
+#### Parameter Name Consistency
+**❌ Common Error:**
+```
+Puzzle redirects to: /act1-multiplayer?squad=roomName&sceneIndex=2
+Act1Multiplayer expects: roomId parameter
+Result: Empty currentRoomId → Squad Synchronization failure
+```
+
+**✅ Correct Implementation:**
+```
+Puzzle redirects to: /act1-multiplayer?roomId=roomName&squad=roomName&sceneIndex=2
+Act1Multiplayer parses: currentRoomId = roomName ✓
+```
+
+#### Role Preservation Strategy
+- **Never rely on automatic assignment** (first=Piltover, second=Zaun) 
+- **Always pass explicit `role` parameter** in transition URLs
+- **Handle role conflicts** in puzzle join methods (second player gets remaining role)
+- **Maintain role consistency** throughout entire session
+
+#### State Synchronization Points
+1. **Scene Completion**: Check if all players reached the end
+2. **Transition Start**: Ensure both players get redirect simultaneously  
+3. **Puzzle Join**: Wait for both players before starting puzzle
+4. **Puzzle Completion**: Only show continue button when both players finished
+5. **Scene Resume**: Both players must join Act1 game before story continues
+
+#### Error Handling Requirements
+- **Connection Failures**: Graceful degradation with fallback redirects
+- **Parameter Errors**: Clear error messages for debugging
+- **Room Mismatches**: Prevent players from joining wrong sessions
+- **State Desync**: Automatic recovery mechanisms
+
+### Testing and Debugging
+
+#### Debug Logging Strategy
+```csharp
+Console.WriteLine($"[GameHub] Redirecting player {connectionId} to: {url}");
+Console.WriteLine($"[Act1Multiplayer] Parsed URL params - RoomId: '{currentRoomId}', SceneIndex: {startAtSceneIndex}");
+Console.WriteLine($"[Act1Multiplayer] Joining Act1 game at scene {startAtSceneIndex.Value}");
+```
+
+#### Common Issues and Solutions
+
+**Issue: "Squad Synchronization" Loop**
+- **Cause**: Missing or incorrect `roomId` parameter
+- **Solution**: Verify URL construction includes both `roomId` and `squad` parameters
+
+**Issue: Players Start at Wrong Scene**  
+- **Cause**: Scene index not handled for second player
+- **Solution**: Update join logic to handle `startAtSceneIndex` for all players
+
+**Issue: Role Assignments Switch**
+- **Cause**: Relying on join order instead of explicit role parameter
+- **Solution**: Always use `JoinPuzzleGameWithRole` methods with explicit role requests
+
+**Issue: Players Get Stuck in Transition**
+- **Cause**: Redirect URLs not sent or navigation blocked
+- **Solution**: Implement fallback redirect timer and verify SignalR connection state
+
+This comprehensive transition system enables seamless story-driven gameplay where puzzles feel integrated into the narrative rather than separate mini-games.
 
 ## Development Guidelines
 

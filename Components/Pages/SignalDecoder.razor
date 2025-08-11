@@ -1577,9 +1577,18 @@
     // Animation state
     private bool showSuccessAnimation = false;
     private string successMessage = "";
+    
+    // Story integration parameters
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Parse URL parameters for story integration
+        ParseUrlParameters();
+        
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();

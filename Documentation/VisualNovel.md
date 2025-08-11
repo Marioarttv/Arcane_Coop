@@ -50,8 +50,9 @@ The Visual Novel System is a sophisticated narrative engine designed specificall
 
 ### Multiplayer (Act 1) Integration
 
-The Visual Novel engine powers a synchronized, two-player story intro for Act 1 via SignalR. The multiplayer page (`Components/Pages/Act1Multiplayer.razor`) mirrors the single-player experience while coordinating state with the server.
+The Visual Novel engine powers a synchronized, two-player story intro for Act 1 via SignalR. The multiplayer page (`Components/Pages/Storyline/Act1Multiplayer.razor`) mirrors the single-player experience while coordinating state with the server.
 
+#### Core Hub Events
 - Hub events (subset):
   - `Act1GameJoined(Act1PlayerView)`, `Act1PlayerViewUpdated(Act1PlayerView)`
   - `Act1TextSkipped()`, `Act1DialogueContinued(int)`
@@ -63,9 +64,35 @@ The Visual Novel engine powers a synchronized, two-player story intro for Act 1 
 - Typing completion handshake:
   - Client calls `Act1TypingCompleted(roomId)` when a line finishes animating or is shown instantly
   - Server sets `IsTextAnimating=false`, `GameState.IsTextFullyDisplayed=true`, then broadcasts updated views
-- Scene transition:
-  - Server emits `Act1SceneTransition` and per-player `Act1RedirectToNextGame(/picture-explanation?...params...)`
-  - Client has a 4s local fallback to navigate if a redirect is missed
+
+#### Story-Puzzle Transition System
+
+**Scene Transitions to Puzzles:**
+- Server emits `Act1SceneTransition` and per-player `Act1RedirectToNextGame(/picture-explanation?...params...)`
+- Client has a 4s local fallback to navigate if a redirect is missed
+- Parameters include: `role`, `avatar`, `name`, `squad`, `story=true` for role preservation
+
+**Puzzle to Scene Transitions:**
+- New hub methods: `JoinAct1GameAtScene(roomId, playerName, originalSquadName, role, avatar, sceneIndex)`
+- Scene index support: `?sceneIndex=2` allows direct navigation to specific scenes
+- URL parameter handling: Both `roomId` and `squad` parameters for consistency
+- Bidirectional role preservation throughout the entire story flow
+
+**Story Progression Control:**
+```csharp
+public List<string> StoryProgression = new() 
+{ 
+    "emergency_briefing",           // Scene 1 & 2 (Visual Novel)
+    "picture_explanation_transition", // Puzzle transition
+    "database_revelation"           // Scene 3 (Visual Novel) 
+};
+```
+
+**Critical Implementation Details:**
+- `MainContentEndIndex` properly set to prevent premature scene transitions
+- Scene index handling for both first and second players joining
+- Parameter name consistency: `roomId` (not just `squad`) required for proper game room joining
+- Debug logging for transition flow troubleshooting
 
 #### Server-authoritative story engine (2025)
 - Act 1 content, branching, and player-view construction live in `Services/Act1StoryEngine.cs` via `IAct1StoryEngine`.
@@ -878,7 +905,16 @@ The service provides pre-built scene templates:
 - `CreatePiltoverIntroScene()` - Piltover introduction with Jayce
 - `CreateZaunIntroScene()` - Zaun introduction with Vi  
 - `CreateEscapeRoomScene(theme, context)` - Dynamic context-aware scenes
- - `Act1StoryEngine.CreateEmergencyBriefingScene(squadName)` - Act 1 Emergency Briefing scene used by multiplayer
+
+#### Act 1 Story Scenes (Act1StoryEngine)
+- `CreateEmergencyBriefingScene(squadName)` - Scene 1 & 2: Emergency Briefing with dual player choices
+- `CreateDatabaseRevelationScene(squadName, game)` - Scene 3: Database discovery and radio setup, accessed after Picture Explanation puzzle
+
+**Scene 3 Implementation Features:**
+- 29 dialogue lines covering database discovery, Project Safeguard revelation, and radio interruption
+- Database access simulation with character expressions (Surprised, Worried, Determined)
+- Radio setup sequence preparing for future missions
+- Smooth integration with story-puzzle transition system
 
 ### Narrative Branching
 
@@ -1013,6 +1049,43 @@ To ensure predictable behavior in multiplayer and the visual editor:
 - Continue behavior
   - Cancels animation, advances dialogue, then starts fresh animation on the next line
 
+### Story-Puzzle Transition Debugging (2025)
+
+#### Common Transition Issues and Solutions
+
+**"Squad Synchronization" Loop:**
+```
+Problem: Players stuck waiting after puzzle completion
+Cause: Missing or incorrect roomId parameter in transition URL
+Solution: Ensure both roomId and squad parameters in puzzle-to-scene transitions
+```
+
+**Scene Index Not Working:**
+```
+Problem: Players start at wrong scene after puzzle
+Cause: Scene index parameter ignored for second player
+Solution: Update JoinAct1GameAtScene to handle startAtSceneIndex for all players
+```
+
+**Role Assignment Problems:**
+```  
+Problem: Player roles switch between puzzle and scene
+Cause: Relying on join order instead of explicit role preservation
+Solution: Always pass role parameter in transition URLs
+```
+
+#### Debug Logging Strategy
+The system provides comprehensive logging for transition debugging:
+
+```
+[Act1Multiplayer] Parsed URL params - RoomId: 'test', SceneIndex: 2
+[GameHub] Redirecting player {connectionId} to: /act1-multiplayer?role=zaun&roomId=test&squad=test&sceneIndex=2  
+[Act1Multiplayer] Joining Act1 game at scene 2 - Room: test, Player: Alex, Role: zaun
+[GameHub] Act1 game started with 2 players at scene index 2 (database_revelation)
+```
+
+This logging helps identify parameter parsing issues, URL construction problems, and scene initialization failures.
+
 ### Modular Architecture
 - Service-based design
 - Dependency injection
@@ -1052,9 +1125,18 @@ To ensure predictable behavior in multiplayer and the visual editor:
 5. **Position controls outside dialogue** to prevent text overlap
 6. **Provide smooth visual transitions** for professional feel
 
-## Recent Improvements (2024 Update)
+## Recent Improvements
 
-### ✨ Enhanced Expression System
+### 🔄 2025 Update: Story-Puzzle Transition System
+- **Seamless Puzzle Integration**: Full bidirectional transitions between visual novel scenes and puzzle games
+- **Role Preservation**: Maintains Piltover/Zaun player assignments across story and puzzle phases
+- **Scene Index Navigation**: Direct scene targeting with `?sceneIndex=N` parameter support
+- **Hub Method Extensions**: New `JoinAct1GameAtScene` for puzzle-to-scene transitions
+- **Scene 3 Implementation**: Database Revelation scene with 29 dialogue lines and character expressions
+- **Debug Infrastructure**: Comprehensive logging for transition troubleshooting
+- **Parameter Consistency**: Proper `roomId`/`squad` parameter handling for multiplayer sync
+
+### ✨ 2024 Update: Enhanced Expression System
 - **Dynamic Character Expressions**: Added 10 different character expressions with per-dialogue line control
 - **Structured Asset Organization**: Implemented `/images/Characters/{Name}/{Name}_{expression}.png` file structure
 - **Smooth Expression Transitions**: Characters now smoothly transition between emotions during dialogue
@@ -1071,7 +1153,7 @@ To ensure predictable behavior in multiplayer and the visual editor:
 - **Type Safety**: Full integration of expression system with strongly-typed models
 
 ### 🎯 Implementation Examples
-See the multiplayer story intro in **Act1Multiplayer.razor** for practical examples of the expression system in action, including Vi showing worry and determination, and Caitlyn displaying serious expressions during critical story moments.
+See the multiplayer story intro in **Act1Multiplayer.razor** for practical examples of the expression system in action, including Vi showing worry and determination, and Caitlyn displaying serious expressions during critical story moments. The new Scene 3 demonstrates seamless integration with the Picture Explanation puzzle transition system.
 
 ---
 

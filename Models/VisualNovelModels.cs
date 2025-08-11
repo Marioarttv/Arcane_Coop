@@ -231,7 +231,7 @@ namespace Arcane_Coop.Models
         public bool IsTextAnimating { get; set; } = false;
         public DateTime TextAnimationStartTime { get; set; } = DateTime.UtcNow;
         public int CurrentSceneIndex { get; set; } = 0;
-        public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition", "database_revelation" };
+        public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition" };
         public string NextGameName { get; set; } = "";
         public bool ShowTransition { get; set; } = false;
         public List<string> ChoiceHistory { get; set; } = new(); // Track all choices made
