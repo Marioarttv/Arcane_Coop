@@ -4292,48 +4292,48 @@ public class PictureExplanationGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Picture bank with Arcane-themed images
+    // Picture bank with character images for demo
     private static readonly List<PictureData> PictureBank = new()
     {
         new PictureData
         {
-            ImageUrl = "/images/pictures/hextech_crystal.jpg",
-            Title = "Hextech Crystal",
-            Category = "Technology",
-            DistractorImages = new() { "/images/pictures/shimmer_crystal.jpg", "/images/pictures/zaun_pipe.jpg", "/images/pictures/piltover_gear.jpg" },
-            Description = "A glowing blue crystal with intricate geometric patterns"
+            ImageUrl = "/images/Viktor.jpeg",
+            CharacterName = "Viktor",
+            Title = "Viktor - The Machine Herald",
+            Category = "Scientist",
+            DistractorImages = new() { "/images/Jayce.jpeg", "/images/Vi.jpeg", "/images/Cait.jpeg" },
+            Description = "Pale scientist with mechanical augmentations, amber eyes, and dark hair",
+            StoryContext = "Former Hextech partner, now pursuing dangerous evolution research"
         },
         new PictureData
         {
-            ImageUrl = "/images/pictures/zaun_undercity.jpg", 
-            Title = "Zaun Undercity",
-            Category = "Location",
-            DistractorImages = new() { "/images/pictures/piltover_academy.jpg", "/images/pictures/bridge_progress.jpg", "/images/pictures/hexgate.jpg" },
-            Description = "Dark underground city with green chemical lighting and industrial pipes"
+            ImageUrl = "/images/Jayce.jpeg",
+            CharacterName = "Jayce",
+            Title = "Jayce Talis",
+            Category = "Scientist",
+            DistractorImages = new() { "/images/Viktor.jpeg", "/images/Vi.jpeg", "/images/Cait.jpeg" },
+            Description = "Tall inventor with strong build, dark hair, and confident demeanor",
+            StoryContext = "Hextech inventor and Piltover councilor, defender of progress"
         },
         new PictureData
         {
-            ImageUrl = "/images/pictures/vi_gauntlets.jpg",
-            Title = "Vi's Gauntlets", 
-            Category = "Weapon",
-            DistractorImages = new() { "/images/pictures/jayce_hammer.jpg", "/images/pictures/caitlyn_rifle.jpg", "/images/pictures/viktor_staff.jpg" },
-            Description = "Large metal gauntlets with blue energy cores and mechanical joints"
+            ImageUrl = "/images/Vi.jpeg",
+            CharacterName = "Vi",
+            Title = "Vi - The Enforcer",
+            Category = "Enforcer",
+            DistractorImages = new() { "/images/Cait.jpeg", "/images/Jayce.jpeg", "/images/Viktor.jpeg" },
+            Description = "Pink-haired fighter with tattoos, gauntlets, and fierce expression",
+            StoryContext = "Former Zaun undercity resident, now working with Piltover enforcers"
         },
         new PictureData
         {
-            ImageUrl = "/images/pictures/piltover_council.jpg",
-            Title = "Piltover Council Chamber",
-            Category = "Location", 
-            DistractorImages = new() { "/images/pictures/zaun_factory.jpg", "/images/pictures/bridge_progress.jpg", "/images/pictures/hexgate.jpg" },
-            Description = "Elegant golden chamber with circular seating and ornate architecture"
-        },
-        new PictureData
-        {
-            ImageUrl = "/images/pictures/shimmer_vial.jpg",
-            Title = "Shimmer Vial",
-            Category = "Chemistry",
-            DistractorImages = new() { "/images/pictures/hextech_potion.jpg", "/images/pictures/zaun_medicine.jpg", "/images/pictures/healing_elixir.jpg" },
-            Description = "Small glass vial containing glowing purple-pink liquid"
+            ImageUrl = "/images/Cait.jpeg",
+            CharacterName = "Caitlyn",
+            Title = "Caitlyn Kiramman",
+            Category = "Enforcer",
+            DistractorImages = new() { "/images/Vi.jpeg", "/images/Jayce.jpeg", "/images/Viktor.jpeg" },
+            Description = "Blue-haired sharpshooter with aristocratic bearing and rifle",
+            StoryContext = "Elite enforcer from noble family, partner to Vi"
         }
     };
 
@@ -4341,7 +4341,7 @@ public class PictureExplanationGame
     private readonly Dictionary<string, string> PlayerNames = new();
     
     public int CurrentRound { get; private set; } = 1;
-    public int TotalRounds { get; private set; } = 5;
+    public int TotalRounds { get; private set; } = 4;
     public int Score { get; private set; } = 0;
     public bool IsGameCompleted { get; private set; } = false;
     
@@ -4443,14 +4443,15 @@ public class PictureExplanationGame
             return;
         }
 
-        var random = new Random();
-        CurrentPicture = PictureBank[random.Next(PictureBank.Count)];
+        // For demo: cycle through the 4 characters in order
+        CurrentPicture = PictureBank[(CurrentRound - 1) % PictureBank.Count];
         
         // Create shuffled choices (correct + 3 distractors)
         CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
         CurrentChoices.AddRange(CurrentPicture.DistractorImages);
         
         // Shuffle the choices
+        var random = new Random();
         for (int i = CurrentChoices.Count - 1; i > 0; i--)
         {
             int j = random.Next(i + 1);

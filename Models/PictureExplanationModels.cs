@@ -6,7 +6,7 @@ namespace Arcane_Coop.Models
     public class PictureExplanationGameState
     {
         public int CurrentRound { get; set; } = 1;
-        public int TotalRounds { get; set; } = 5;
+        public int TotalRounds { get; set; } = 4;
         public int Score { get; set; } = 0;
         public bool IsCompleted { get; set; } = false;
         public string GameStatus { get; set; } = "Waiting";
