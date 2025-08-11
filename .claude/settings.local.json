@@ -18,7 +18,8 @@
       "WebFetch(domain:blazordragdrop.azurewebsites.net)",
       "Bash(mv:*)",
       "Bash(csc:*)",
-      "Bash(TestDialogueFlow.exe)"
+      "Bash(TestDialogueFlow.exe)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

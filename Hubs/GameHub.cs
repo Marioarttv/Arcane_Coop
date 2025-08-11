@@ -380,6 +380,33 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("SignalDecoderGameFull");
         }
     }
+    
+    public async Task JoinSignalDecoderGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _signalDecoderGames.GetOrAdd(roomId, _ => new SimpleSignalDecoderGame());
+        
+        var playerRole = game.AddPlayerWithRole(Context.ConnectionId, playerName, requestedRole);
+        if (playerRole != null)
+        {
+            await Clients.Caller.SendAsync("SignalDecoderGameJoined", playerRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
+            
+            // Start game if both players are connected
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("SignalDecoderPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("SignalDecoderGameFull");
+        }
+    }
 
     public async Task SubmitSignalDecoderGuess(string roomId, string guess)
     {
@@ -2281,6 +2308,41 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("PictureExplanationInvalidAction", "Error continuing story - please try again");
         }
     }
+
+    public async Task ContinueStoryAfterSignalDecoder(string roomId)
+    {
+        try
+        {
+            // Get players from Signal Decoder game  
+            if (!_signalDecoderGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("SignalDecoderInvalidGuess", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("SignalDecoderInvalidGuess", "Both players needed for story continuation");
+                return;
+            }
+
+            // TODO: Implement the next scene in the story progression
+            // For now, send a placeholder message indicating where the next scene would go
+            foreach (var connectionId in connectedPlayers)
+            {
+                await Clients.Client(connectionId).SendAsync("RedirectToNextStoryScene", "/");
+            }
+
+            Console.WriteLine($"[GameHub] Signal Decoder completed - story continuation ready for room {roomId} with {connectedPlayers.Count} players");
+            Console.WriteLine($"[GameHub] TODO: Implement next scene after Signal Decoder in story progression");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error continuing story after Signal Decoder: {ex.Message}");
+            await Clients.Caller.SendAsync("SignalDecoderInvalidGuess", "Error continuing story - please try again");
+        }
+    }
 }
 
 public class AlchemyGame
@@ -3144,6 +3206,35 @@ public class SimpleSignalDecoderGame
         Players[connectionId] = role;
         PlayerNames[connectionId] = playerName;
         return role;
+    }
+    
+    public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        // Check if requested role is available
+        var requestedEnum = requestedRole.ToLower() switch
+        {
+            "piltover" => PlayerRole.Piltover,
+            "zaunite" => PlayerRole.Zaunite,
+            "zaun" => PlayerRole.Zaunite,
+            _ => Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
+        };
+        
+        // If requested role is already taken, assign the other role
+        if (Players.Values.Contains(requestedEnum))
+        {
+            requestedEnum = requestedEnum == PlayerRole.Piltover ? PlayerRole.Zaunite : PlayerRole.Piltover;
+        }
+        
+        Players[connectionId] = requestedEnum;
+        PlayerNames[connectionId] = playerName;
+        return requestedEnum;
     }
 
     public bool RemovePlayer(string connectionId)

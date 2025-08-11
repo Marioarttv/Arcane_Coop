@@ -10,8 +10,22 @@
 
 <div class="container">
     <div class="header-section">
-        <h2 class="game-title">📡 Signal Decoder</h2>
-        <p class="game-subtitle">Caitlyn vs Vi - Intercept the Encrypted Transmissions</p>
+        @if (isFromStory)
+        {
+            <h2 class="game-title">📡 Signal Decoder Analysis</h2>
+            <p class="game-subtitle">Emergency Communications - Decode intercepted transmissions</p>
+            <div class="story-context">
+                <div class="story-badge @GetRoleThemeClass()">
+                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
+                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h2 class="game-title">📡 Signal Decoder</h2>
+            <p class="game-subtitle">Caitlyn vs Vi - Intercept the Encrypted Transmissions</p>
+        }
     </div>
     
     <div class="connection-status mb-3">
@@ -203,6 +217,12 @@
                     <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
                         Restart Mission
                     </button>
+                    @if (isFromStory && gameState?.IsCompleted == true)
+                    {
+                        <button class="btn btn-success ms-2" @onclick="ContinueStory" disabled="@(!IsConnected)">
+                            ➡️ Continue Story
+                        </button>
+                    }
                 </div>
             </div>
 
@@ -1708,6 +1728,13 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string>("RedirectToNextStoryScene", (url) =>
+        {
+            Console.WriteLine($"[SignalDecoder] Redirecting to next scene: {url}");
+            gameStatus = "Story continuing - Loading next scene...";
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
+
         hubConnection.On<string>("SignalDecoderCorrectGuess", (message) =>
         {
             // Only show success animation for complete signal decoding, not individual words
@@ -1741,6 +1768,44 @@
         });
 
         await hubConnection.StartAsync();
+        
+        // Auto-connect if parameters are provided
+        if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            // Small delay to ensure connection is established
+            await Task.Delay(500);
+            
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(200); // Brief delay between operations
+                await JoinGame();
+                
+                if (isFromStory)
+                {
+                    gameStatus = "Continuing story campaign - Signal Decoder Analysis initiated";
+                    inGame = true; // Skip lobby for story mode
+                }
+                else
+                {
+                    gameStatus = "Auto-connecting to your squad...";
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-connect failed: {ex.Message}");
+            gameStatus = "Auto-connection failed, please join manually";
+        }
     }
 
     private async Task JoinRoom()
@@ -1770,7 +1835,16 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
-            await hubConnection.SendAsync("JoinSignalDecoderGame", roomId, playerName);
+            if (isFromStory && !string.IsNullOrEmpty(playerRole))
+            {
+                // Use role-preserving join method for story mode
+                await hubConnection.SendAsync("JoinSignalDecoderGameWithRole", roomId, playerName, playerRole);
+            }
+            else
+            {
+                // Use regular join method for standalone mode
+                await hubConnection.SendAsync("JoinSignalDecoderGame", roomId, playerName);
+            }
         }
     }
 
@@ -1824,6 +1898,59 @@
             return "alert-danger";
         else
             return "alert-info";
+    }
+
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            playerRole = query["role"] ?? "";
+            playerAvatar = query["avatar"] ?? "";
+            var name = query["name"];
+            var squad = query["squad"];
+            isFromStory = query["story"] == "true";
+            
+            if (!string.IsNullOrEmpty(name))
+                playerName = Uri.UnescapeDataString(name);
+            
+            if (!string.IsNullOrEmpty(squad))
+            {
+                roomId = Uri.UnescapeDataString(squad);
+                squadName = roomId;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SignalDecoder] Error parsing URL parameters: {ex.Message}");
+        }
+        
+        Console.WriteLine($"[SignalDecoder] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, Story: {isFromStory}");
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                gameStatus = "Continuing story - preparing next mission...";
+                StateHasChanged();
+                await hubConnection.SendAsync("ContinueStoryAfterSignalDecoder", roomId);
+            }
+            catch (Exception ex)
+            {
+                gameStatus = $"Error continuing story: {ex.Message}";
+                StateHasChanged();
+            }
+        }
+    }
+
+    private string GetRoleThemeClass()
+    {
+        return playerRole == "zaun" ? "story-badge-zaun" : "story-badge-piltover";
     }
 
     public bool IsConnected =>
