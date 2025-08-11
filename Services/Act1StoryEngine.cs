@@ -7,6 +7,7 @@ namespace Arcane_Coop.Services
     {
         // Content builders
         VisualNovelScene CreateEmergencyBriefingScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateDatabaseRevelationScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -717,6 +718,370 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
+        public VisualNovelScene CreateDatabaseRevelationScene(string squadName, Act1MultiplayerGame game)
+        {
+            // Get player names for dynamic character naming
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
+            
+            var scene = new VisualNovelScene
+            {
+                Id = "database_revelation",
+                Name = "Enforcer Database - After Identification",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Piltover
+            };
+
+            // Characters - reusing existing character definitions
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/vi.jpeg" },
+                        { CharacterExpression.Confused, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Surprised, "/images/vi.jpeg" },
+                        { CharacterExpression.Determined, "/images/vi.jpeg" },
+                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Caitlyn",
+                    ImagePath = "/images/cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/cait.jpeg" },
+                        { CharacterExpression.Worried, "/images/cait.jpeg" },
+                        { CharacterExpression.Surprised, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" },
+                        { CharacterExpression.Determined, "/images/cait.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerA",
+                    Name = piltoverPlayerName,
+                    DisplayName = piltoverPlayerName,
+                    ImagePath = "/images/enforcer.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/enforcer.png" },
+                        { CharacterExpression.Surprised, "/images/enforcer.png" },
+                        { CharacterExpression.Serious, "/images/enforcer.png" },
+                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerB",
+                    Name = zaunPlayerName,
+                    DisplayName = zaunPlayerName,
+                    ImagePath = "/images/zaun_friend.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/zaun_friend.png" },
+                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
+                        { CharacterExpression.Confused, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "narrator",
+                    Name = "Narrator",
+                    DisplayName = "Narrator",
+                    ImagePath = "", // No image for narrator
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#888888",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "" }
+                    }
+                }
+            });
+
+            // Dialogue following Scene 3 markdown content
+            scene.DialogueLines.AddRange(new[]
+            {
+                // Discovery Complete - Scene 3 Start
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "Piltover Enforcer HQ Records Room - Discovery Complete",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Got them all. Four matches in the system... but this doesn't make sense.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "What do you mean? Who are they?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Dr. Werner Steinberg, Dr. Renni Stiltner, Professor Albus Ferros, and Dr. Corin Reveck. All of them worked on something called... Project Safeguard?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Never heard of it. What's Project Safeguard?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Wait... I recognize these names. My mother mentioned them once at a Council dinner. They're all former apprentices of Heimerdinger.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Heimerdinger? The Council guy with the fur?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "These aren't random targets... they all worked on early Hextech prototypes before the technology was regulated. Before Jayce's breakthrough.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "But why would Powder... why would Jinx care about old scientists?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Look at this - their project was shut down seven years ago. Right around the time of...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "The warehouse. The night Vander died.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                
+                // The Revelation section
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "According to these records, Project Safeguard was an attempt to create stable Hextech cores for industrial use. But it was deemed too dangerous and shut down.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "So what, Jinx thinks these people had something to do with that night?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "That's impossible. The explosion was... it was Powder's bomb. The hex crystals she put in it.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Vi... what if someone told her otherwise? What if someone made her believe—",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Silco. That bastard. He's been lying to her.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                
+                // Radio Interruption section
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "The enforcer radio from earlier suddenly crackles to life...",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "...incident at... street... blue hair seen fleeing...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 25
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "The radio! It's picking up enforcer chatter!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Quick, we need to hear this. But the signal's breaking up.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "I can barely make it out. Something about an explosion?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "We need to decode this. If it's about Jinx, we need to know what happened.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                
+                // Setting Up Signal Decoder section
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "The audio's fragmented but I can hear pieces. If we had the written patrol logs...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Wait! I saw a dispatch terminal over there. It shows transcripts but with missing words - probably corrupted data.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = $"Perfect. {piltoverPlayerName}, you listen to the audio transmission. {zaunPlayerName}, you read what's on the transcript.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Work together - fill in the gaps. We need to know what's happening out there.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "I'm getting clearer audio now. Ready when you are.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Transcript's up. There are blanks everywhere but I can see the structure.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Whatever you're about to hear... it might tell us where these scientists are. Or if we're already too late.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Focus on any mention of locations, names, or Deputy Stanton. He's covering something up and we need to know what.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                
+                // Transition to Signal Decoder Puzzle
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "The team prepares to decode the critical enforcer transmissions that could reveal Werner's attack and Renni's disappearance...",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                }
+            });
+
+            // Mark the end of main content
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+
+            Console.WriteLine($"[Act1StoryEngine] Database Revelation scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -793,31 +1158,70 @@ namespace Arcane_Coop.Services
             if (game.CurrentSceneIndex < game.StoryProgression.Count)
             {
                 var nextPhase = game.StoryProgression[game.CurrentSceneIndex];
+                var originalSquadName = game.Players.FirstOrDefault()?.OriginalSquadName ?? "";
 
-                if (nextPhase == "picture_explanation_transition")
+                switch (nextPhase)
                 {
-                    game.Status = Act1GameStatus.SceneTransition;
-                    game.ShowTransition = true;
-                    game.NextGameName = "Visual Intelligence Analysis";
+                    case "database_revelation":
+                        // Move to Scene 3 (Database Revelation)
+                        game.CurrentScene = CreateDatabaseRevelationScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Database Revelation scene");
+                        break;
 
-                    result.TransitionStarted = true;
-                    result.NextGameName = game.NextGameName;
+                    case "signal_decoder_transition":
+                        // Transition to Signal Decoder puzzle
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Signal Decoder Analysis";
 
-                    // Build per-player redirect URLs
-                    var urls = new Dictionary<string, string>();
-                    foreach (var p in game.Players)
-                    {
-                        var parameters =
-                            $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
-                        urls[p.PlayerId] = $"/picture-explanation?{parameters}";
-                    }
-                    result.RedirectUrlsByPlayerId = urls;
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Signal Decoder
+                        var signalDecoderUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+                            signalDecoderUrls[p.PlayerId] = $"/signal-decoder?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = signalDecoderUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Signal Decoder");
+                        break;
+
+                    case "picture_explanation_transition":
+                        // Legacy transition to Picture Explanation puzzle (if needed)
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Visual Intelligence Analysis";
+
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Picture Explanation
+                        var pictureUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+                            pictureUrls[p.PlayerId] = $"/picture-explanation?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = pictureUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Picture Explanation");
+                        break;
                 }
             }
             else
             {
                 game.Status = Act1GameStatus.Completed;
                 result.StoryCompleted = true;
+                Console.WriteLine($"[Act1StoryEngine] Act 1 story completed");
             }
 
             return result;

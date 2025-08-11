@@ -223,6 +223,13 @@
                             <div class="btn-effect"></div>
                         </button>
                     }
+                    
+                    <!-- Debug Button - Skip to last 2 messages -->
+                    <button class="control-btn debug-btn @GetControlButtonClass()" @onclick="DebugSkipToEnd" title="DEBUG: Skip to last 2 messages">
+                        <span class="btn-icon">🐛</span>
+                        <span class="btn-text">DEBUG</span>
+                        <div class="btn-effect"></div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -256,6 +263,7 @@
     private string playerAvatar = "1";
     private string originalSquadName = "";
     private int connectedPlayersCount = 0;
+    private int? startAtSceneIndex = null;
     private DialogueLine? currentDialogue;
     private string displayedText = "";
     private bool isDisposed = false;
@@ -311,6 +319,15 @@
             playerName = Uri.UnescapeDataString(query["name"] ?? "Unknown Agent");
             originalSquadName = Uri.UnescapeDataString(query["squad"] ?? "Squad Alpha");
             playerAvatar = query["avatar"] ?? "1";
+            
+            // Handle direct scene navigation (for continuing from puzzles)
+            if (int.TryParse(query["sceneIndex"], out int targetSceneIndex))
+            {
+                startAtSceneIndex = targetSceneIndex;
+                Console.WriteLine($"[Act1Multiplayer] Parsed sceneIndex: {targetSceneIndex}");
+            }
+            
+            Console.WriteLine($"[Act1Multiplayer] Parsed URL params - RoomId: '{currentRoomId}', Role: '{playerRole}', Name: '{playerName}', Squad: '{originalSquadName}', SceneIndex: {startAtSceneIndex}");
         }
         catch (Exception ex)
         {
@@ -505,7 +522,20 @@
         {
             statusMessage = "Joining story session...";
             StateHasChanged();
-            await hubConnection.SendAsync("JoinAct1Game", currentRoomId, playerName, originalSquadName, playerRole, playerAvatar);
+            if (startAtSceneIndex.HasValue)
+            {
+                Console.WriteLine($"[Act1Multiplayer] Joining Act1 game at scene {startAtSceneIndex.Value} - Room: {currentRoomId}, Player: {playerName}, Role: {playerRole}");
+                await hubConnection.SendAsync("JoinAct1GameAtScene", currentRoomId, playerName, originalSquadName, playerRole, playerAvatar, startAtSceneIndex.Value);
+            }
+            else
+            {
+                Console.WriteLine($"[Act1Multiplayer] Joining Act1 game normally - Room: {currentRoomId}, Player: {playerName}, Role: {playerRole}");
+                await hubConnection.SendAsync("JoinAct1Game", currentRoomId, playerName, originalSquadName, playerRole, playerAvatar);
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[Act1Multiplayer] Cannot join - HubConnection: {(hubConnection != null ? "Connected" : "Null")}, RoomId: '{currentRoomId}'");
         }
     }
 
@@ -795,6 +825,36 @@
         catch (Exception ex)
         {
             Console.WriteLine($"[Act1Multiplayer] Fallback transition error: {ex.Message}");
+        }
+    }
+
+    private async Task DebugSkipToEnd()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
+        {
+            try
+            {
+                // Get the total number of dialogues in current scene
+                var totalDialogues = playerView?.CurrentScene?.DialogueLines?.Count ?? 0;
+                if (totalDialogues >= 2)
+                {
+                    // Skip to second-to-last dialogue (last 2 messages)
+                    var targetIndex = totalDialogues - 2;
+                    
+                    Console.WriteLine($"[Act1Multiplayer] DEBUG: Skipping to dialogue index {targetIndex} (last 2 messages)");
+                    
+                    // Use SignalR to tell the server to jump to the target dialogue
+                    await hubConnection.SendAsync("DebugSkipToDialogue", currentRoomId, targetIndex);
+                }
+                else
+                {
+                    Console.WriteLine($"[Act1Multiplayer] DEBUG: Not enough dialogues to skip ({totalDialogues} total)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Act1Multiplayer] DEBUG: Error skipping to end: {ex.Message}");
+            }
         }
     }
 }
@@ -1399,6 +1459,24 @@
         inset 0 0 0 1px rgba(0, 212, 170, 0.9),
         0 0 25px rgba(0, 212, 170, 0.5),
         0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Debug Button Styling */
+.debug-btn {
+    background: linear-gradient(135deg, rgba(255, 69, 0, 0.8) 0%, rgba(255, 140, 0, 0.6) 100%) !important;
+    border: 2px solid rgba(255, 69, 0, 0.9) !important;
+    box-shadow: 
+        inset 0 0 0 1px rgba(255, 69, 0, 0.6),
+        0 0 15px rgba(255, 69, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.debug-btn:hover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(255, 69, 0, 0.9),
+        0 0 25px rgba(255, 69, 0, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    transform: translateY(-3px) scale(1.05) !important;
 }
 
 /********************************************

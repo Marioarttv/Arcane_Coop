@@ -1509,6 +1509,11 @@ public class GameHub : Hub
 
     public async Task JoinAct1Game(string roomId, string playerName, string originalSquadName, string role, string avatar)
     {
+        await JoinAct1GameAtScene(roomId, playerName, originalSquadName, role, avatar, null);
+    }
+
+    public async Task JoinAct1GameAtScene(string roomId, string playerName, string originalSquadName, string role, string avatar, int? startAtSceneIndex)
+    {
         try
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
@@ -1538,10 +1543,31 @@ public class GameHub : Hub
             
             game.Players.Add(player);
             
-            // Initialize game scene if first player
+            // Initialize game scene - handle both first player and scene updates
             if (game.Players.Count == 1)
             {
-                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                // Handle direct scene navigation (for continuing from puzzles)
+                if (startAtSceneIndex.HasValue && startAtSceneIndex.Value >= 0)
+                {
+                    game.CurrentSceneIndex = startAtSceneIndex.Value;
+                    var currentPhase = game.CurrentSceneIndex < game.StoryProgression.Count 
+                        ? game.StoryProgression[game.CurrentSceneIndex] 
+                        : "emergency_briefing";
+                    
+                    if (currentPhase == "database_revelation")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
+                    }
+                    else
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                    }
+                }
+                else
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                }
+                
                 game.GameState = new VisualNovelState 
                 { 
                     CurrentSceneId = game.CurrentScene.Id,
@@ -1549,7 +1575,32 @@ public class GameHub : Hub
                     IsTextFullyDisplayed = false
                 };
             }
-            // Ensure scene is always set even for second player
+            // For second player, check if we need to update the scene based on startAtSceneIndex
+            else if (startAtSceneIndex.HasValue && startAtSceneIndex.Value >= 0 && startAtSceneIndex.Value != game.CurrentSceneIndex)
+            {
+                Console.WriteLine($"[GameHub] Second player requesting scene index {startAtSceneIndex.Value}, updating from {game.CurrentSceneIndex}");
+                game.CurrentSceneIndex = startAtSceneIndex.Value;
+                var currentPhase = game.CurrentSceneIndex < game.StoryProgression.Count 
+                    ? game.StoryProgression[game.CurrentSceneIndex] 
+                    : "emergency_briefing";
+                
+                if (currentPhase == "database_revelation")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
+                }
+                else
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                }
+                
+                game.GameState = new VisualNovelState 
+                { 
+                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentDialogueIndex = 0,
+                    IsTextFullyDisplayed = false
+                };
+            }
+            // Ensure scene is always set even for second player (fallback)
             else if (game.CurrentScene == null)
             {
                 game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1567,6 +1618,7 @@ public class GameHub : Hub
                 game.Status = Act1GameStatus.InProgress;
                 game.IsTextAnimating = true;
                 game.TextAnimationStartTime = DateTime.UtcNow;
+                Console.WriteLine($"[GameHub] Act1 game started with 2 players at scene index {game.CurrentSceneIndex} ({(game.CurrentSceneIndex < game.StoryProgression.Count ? game.StoryProgression[game.CurrentSceneIndex] : "unknown")})");
             }
             
             // Send game state to all players
@@ -1987,6 +2039,49 @@ public class GameHub : Hub
         return _act1StoryEngine.CreatePlayerView(game, playerId);
     }
 
+    public async Task DebugSkipToDialogue(string roomId, int targetDialogueIndex)
+    {
+        try
+        {
+            if (!_act1Games.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Game not found");
+                return;
+            }
+            
+            var playerId = Context.ConnectionId;
+            if (game.GetPlayer(playerId) == null)
+            {
+                await Clients.Caller.SendAsync("Act1Error", "Player not in game");
+                return;
+            }
+            
+            // Validate target index
+            if (targetDialogueIndex < 0 || targetDialogueIndex >= game.CurrentScene.DialogueLines.Count)
+            {
+                await Clients.Caller.SendAsync("Act1Error", $"Invalid dialogue index: {targetDialogueIndex}");
+                return;
+            }
+            
+            // Jump to the target dialogue
+            game.GameState.CurrentDialogueIndex = targetDialogueIndex;
+            game.GameState.IsTextFullyDisplayed = false;
+            game.IsTextAnimating = true;
+            game.TextAnimationStartTime = DateTime.UtcNow;
+            game.RecordAction();
+            
+            Console.WriteLine($"[Act1GameHub] DEBUG: Jumped to dialogue index {targetDialogueIndex}");
+            
+            // Broadcast the state change to all players
+            await Clients.Group(roomId).SendAsync("Act1DialogueContinued", targetDialogueIndex);
+            await BroadcastAct1GameState(roomId);
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Act1Error", $"Debug skip failed: {ex.Message}");
+        }
+    }
+
     // Content moved to IAct1StoryEngine
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -2136,6 +2231,55 @@ public class GameHub : Hub
         }
         
         await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task ContinueStoryToScene3(string roomId)
+    {
+        try
+        {
+            // Get players from Picture Explanation game
+            if (!_pictureExplanationGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("PictureExplanationInvalidAction", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("PictureExplanationInvalidAction", "Both players needed for story continuation");
+                return;
+            }
+            
+            // Build redirect URLs for Act1 Scene 3 (database_revelation)
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var playerView = game.GetPlayerView(connectionId);
+                var roleName = playerView.Role.ToLower();
+                var playerName = playerView.DisplayName;
+                
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(roomId)}&squad={Uri.EscapeDataString(roomId)}&sceneIndex=2";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            // Send redirect to all players
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    Console.WriteLine($"[GameHub] Redirecting player {connectionId} to: {url}");
+                    await Clients.Client(connectionId).SendAsync("RedirectToStoryScene3", url);
+                }
+            }
+
+            Console.WriteLine($"[GameHub] Continuing story to Scene 3 for room {roomId} with {connectedPlayers.Count} players");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error continuing story to Scene 3: {ex.Message}");
+            await Clients.Caller.SendAsync("PictureExplanationInvalidAction", "Error continuing story - please try again");
+        }
     }
 }
 

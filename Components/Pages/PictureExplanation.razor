@@ -327,9 +327,18 @@
                         </div>
                     </div>
                     <div class="completion-actions">
-                        <button class="arcane-btn arcane-btn-success" @onclick="RestartGame">
-                            🔄 Play Again
-                        </button>
+                        @if (isFromStory)
+                        {
+                            <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+                                ➡️ Continue Story
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="arcane-btn arcane-btn-success" @onclick="RestartGame">
+                                🔄 Play Again
+                            </button>
+                        }
                     </div>
                 </div>
             }
@@ -503,6 +512,13 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string>("RedirectToStoryScene3", (url) =>
+        {
+            Console.WriteLine($"[PictureExplanation] Redirecting to Scene 3: {url}");
+            ShowStatus("Continuing story - Loading Scene 3...", "info");
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
+
         await hubConnection.StartAsync();
     }
 
@@ -649,6 +665,22 @@
             await hubConnection.SendAsync("RestartPictureExplanationGame", roomId);
             lastRoundResult = null;
             ShowStatus("Challenge restarted", "info");
+        }
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                ShowStatus("Continuing story - preparing Scene 3...", "info");
+                await hubConnection.SendAsync("ContinueStoryToScene3", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error continuing story: {ex.Message}", "danger");
+            }
         }
     }
 
