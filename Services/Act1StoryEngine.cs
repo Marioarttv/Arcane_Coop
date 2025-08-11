@@ -1152,12 +1152,15 @@ namespace Arcane_Coop.Services
         public Act1ProgressionResult ProgressToNextScene(Act1MultiplayerGame game)
         {
             var result = new Act1ProgressionResult();
+            Console.WriteLine($"[Act1StoryEngine] ProgressToNextScene: Current index={game.CurrentSceneIndex}, StoryProgression=[{string.Join(", ", game.StoryProgression)}]");
 
             game.CurrentSceneIndex++;
+            Console.WriteLine($"[Act1StoryEngine] After increment: New index={game.CurrentSceneIndex}");
 
             if (game.CurrentSceneIndex < game.StoryProgression.Count)
             {
                 var nextPhase = game.StoryProgression[game.CurrentSceneIndex];
+                Console.WriteLine($"[Act1StoryEngine] Next phase at index {game.CurrentSceneIndex}: '{nextPhase}'");
                 var originalSquadName = game.Players.FirstOrDefault()?.OriginalSquadName ?? "";
 
                 switch (nextPhase)

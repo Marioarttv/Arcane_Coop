@@ -156,6 +156,112 @@ public class GameHub : Hub
         var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}";
         await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{fallback}");
     }
+    
+    public async Task RedirectPlayersToAct1WithScene(string originalRoomId, string storyLobbyName, string role, string avatar, string playerName, int sceneIndex)
+    {
+        // Similar to RedirectPlayersToAct1 but with sceneIndex parameter
+        if (_lobbyPlayers.TryGetValue(originalRoomId, out var lobbyDict) && !lobbyDict.IsEmpty)
+        {
+            var players = lobbyDict
+                .Select(kvp => (ConnectionId: kvp.Key, Info: kvp.Value))
+                .OrderBy(p => p.Info.JoinedAt)
+                .ToList();
+
+            string? assignedPiltoverConn = null;
+            string? assignedZaunConn = null;
+
+            foreach (var p in players)
+            {
+                var desired = (p.Info.Role ?? string.Empty).Trim().ToLowerInvariant();
+                if (desired == "piltover" && assignedPiltoverConn == null)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if ((desired == "zaun" || desired == "zaunite") && assignedZaunConn == null)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            foreach (var p in players)
+            {
+                if (assignedPiltoverConn == null && p.ConnectionId != assignedZaunConn)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if (assignedZaunConn == null && p.ConnectionId != assignedPiltoverConn)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            foreach (var p in players)
+            {
+                var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
+                var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
+                var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
+                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}";
+                await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
+            }
+            return;
+        }
+
+        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}";
+        await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{fallback}");
+    }
+    
+    public async Task RedirectPlayersToPuzzle(string originalRoomId, string puzzleRoomName, string role, string avatar, string playerName, string puzzleName)
+    {
+        // Redirect both players to a puzzle with story mode enabled
+        if (_lobbyPlayers.TryGetValue(originalRoomId, out var lobbyDict) && !lobbyDict.IsEmpty)
+        {
+            var players = lobbyDict
+                .Select(kvp => (ConnectionId: kvp.Key, Info: kvp.Value))
+                .OrderBy(p => p.Info.JoinedAt)
+                .ToList();
+
+            string? assignedPiltoverConn = null;
+            string? assignedZaunConn = null;
+
+            foreach (var p in players)
+            {
+                var desired = (p.Info.Role ?? string.Empty).Trim().ToLowerInvariant();
+                if (desired == "piltover" && assignedPiltoverConn == null)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if ((desired == "zaun" || desired == "zaunite") && assignedZaunConn == null)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            foreach (var p in players)
+            {
+                if (assignedPiltoverConn == null && p.ConnectionId != assignedZaunConn)
+                {
+                    assignedPiltoverConn = p.ConnectionId;
+                }
+                else if (assignedZaunConn == null && p.ConnectionId != assignedPiltoverConn)
+                {
+                    assignedZaunConn = p.ConnectionId;
+                }
+            }
+
+            foreach (var p in players)
+            {
+                var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
+                var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
+                var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
+                var parameters = $"role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true";
+                await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/{puzzleName}?{parameters}");
+            }
+            return;
+        }
+
+        var fallback = $"role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true";
+        await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/{puzzleName}?{fallback}");
+    }
 
     // Update or set per-connection lobby metadata for personalized redirects
     public Task UpdateLobbyPlayerInfo(string roomId, string role, string avatar, string playerName)
@@ -1576,10 +1682,12 @@ public class GameHub : Hub
                 // Handle direct scene navigation (for continuing from puzzles)
                 if (startAtSceneIndex.HasValue && startAtSceneIndex.Value >= 0)
                 {
+                    Console.WriteLine($"[GameHub] Setting scene index to {startAtSceneIndex.Value} for first player");
                     game.CurrentSceneIndex = startAtSceneIndex.Value;
                     var currentPhase = game.CurrentSceneIndex < game.StoryProgression.Count 
                         ? game.StoryProgression[game.CurrentSceneIndex] 
                         : "emergency_briefing";
+                    Console.WriteLine($"[GameHub] Current phase at index {game.CurrentSceneIndex}: '{currentPhase}'");
                     
                     if (currentPhase == "database_revelation")
                     {

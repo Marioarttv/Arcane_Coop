@@ -269,6 +269,7 @@
     private bool isDisposed = false;
     private bool hasNavigatedToNextGame = false;
     private CancellationTokenSource? typingCts;
+    private int transitionFromSceneIndex = 0; // Store scene index when transition starts
     private bool isTypewriting = false;
     private int currentTextIndex = 0;
     private string? lastSelectedChoiceId = null;
@@ -418,8 +419,11 @@
         {
             await InvokeAsync(() =>
             {
+                // Store the current scene index before transition for fallback mechanism
+                transitionFromSceneIndex = playerView?.CurrentSceneIndex ?? 0;
                 statusMessage = $"Transitioning to {nextGameName}...";
                 Console.WriteLine($"[Act1Multiplayer] Scene transition to: {nextGameName}");
+                Console.WriteLine($"[Act1Multiplayer] Stored transition scene index: {transitionFromSceneIndex}");
                 StateHasChanged();
                 _ = ScheduleLocalTransitionFallback();
             });
@@ -751,6 +755,39 @@
         return character.Position.ToString().ToLower() + "-character";
     }
     
+    private string GetFallbackTransitionUrl(string nameParam, string squadParam)
+    {
+        // Use the stored scene index from when transition started
+        // This is more reliable than playerView during transition state
+        var currentSceneIndex = transitionFromSceneIndex;
+        var nextSceneIndex = currentSceneIndex + 1;
+        
+        Console.WriteLine($"[Act1Multiplayer] GetFallbackTransitionUrl called - Using stored scene index: {currentSceneIndex}");
+        
+        // Default story progression - should match Act1MultiplayerGame.StoryProgression
+        var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition" };
+        
+        if (nextSceneIndex < storyProgression.Length)
+        {
+            var nextPhase = storyProgression[nextSceneIndex];
+            Console.WriteLine($"[Act1Multiplayer] Fallback: Current scene index={currentSceneIndex}, Next index={nextSceneIndex}, Next phase='{nextPhase}'");
+            
+            var url = nextPhase switch
+            {
+                "picture_explanation_transition" => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true",
+                "signal_decoder_transition" => $"/signal-decoder?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true",
+                _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true" // Fallback to Picture Explanation as last resort
+            };
+            
+            Console.WriteLine($"[Act1Multiplayer] Generated fallback URL: {url}");
+            return url;
+        }
+        
+        // Ultimate fallback if progression data is unavailable
+        Console.WriteLine($"[Act1Multiplayer] Using ultimate fallback - nextSceneIndex {nextSceneIndex} >= storyProgression.Length {storyProgression.Length}");
+        return $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true";
+    }
+    
     // Choice-related methods
     private async Task MakeChoice(string choiceId)
     {
@@ -812,7 +849,9 @@
             {
                 var nameParam = Uri.EscapeDataString(playerName ?? "");
                 var squadParam = Uri.EscapeDataString(originalSquadName ?? "");
-                var url = $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true";
+                
+                // Determine the correct next game URL based on the current scene progression
+                var url = GetFallbackTransitionUrl(nameParam, squadParam);
                 Console.WriteLine($"[Act1Multiplayer] Fallback redirect triggering to: {url}");
                 hasNavigatedToNextGame = true;
                 NavigationManager.NavigateTo(url);
