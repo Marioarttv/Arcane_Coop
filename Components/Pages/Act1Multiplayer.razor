@@ -266,6 +266,8 @@
     private string? lastSelectedChoiceId = null;
     private string? lastChoiceBy = null;
     private string? lastChoiceText = null;
+    private int? lastAnimatedDialogueIndex = null;
+    private string? lastAnimatedText = null;
 
     // DTO for choice events to avoid dynamic binder issues
     private class ChoiceMadeDto
@@ -353,7 +355,12 @@
                     lastChoiceBy = null;
                     lastChoiceText = null;
                     lastSelectedChoiceId = null;
-                    _ = StartTypewriterAnimation();
+                    // Only start animation if we have a new dialogue index or nothing is displayed yet
+                    var currentIdx = playerView?.GameState?.CurrentDialogueIndex;
+                    if (currentIdx != lastAnimatedDialogueIndex || string.IsNullOrEmpty(displayedText))
+                    {
+                        _ = StartTypewriterAnimation();
+                    }
                 }
             });
         });
@@ -549,9 +556,21 @@
         if (isDisposed || currentDialogue == null)
             return;
 
+        var currentIndex = playerView?.GameState?.CurrentDialogueIndex ?? -1;
+
         if (currentDialogue.AnimationType != TextAnimationType.Typewriter)
         {
+            // Idempotent guard for non-typewriter lines
+            if (lastAnimatedDialogueIndex == currentIndex && displayedText == currentDialogue.Text)
+            {
+                return;
+            }
+            // Ensure no stale typewriter is running
+            CancelTypewriter();
+
             displayedText = currentDialogue.Text;
+            lastAnimatedDialogueIndex = currentIndex;
+            lastAnimatedText = displayedText;
             // Immediately inform server that this line is fully displayed
             if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
             {
@@ -560,11 +579,19 @@
             return;
         }
 
+        // If we're already animating this exact line, do nothing
+        if (isTypewriting && lastAnimatedDialogueIndex == currentIndex)
+        {
+            return;
+        }
+
         CancelTypewriter();
 
         typingCts = new CancellationTokenSource();
         var token = typingCts.Token;
         isTypewriting = true;
+        lastAnimatedDialogueIndex = currentIndex;
+        lastAnimatedText = null;
         currentTextIndex = 0;
         displayedText = "";
         StateHasChanged();
@@ -611,6 +638,11 @@
                 {
                     try { await hubConnection.SendAsync("Act1TypingCompleted", currentRoomId); } catch { }
                 }
+            }
+            // Record what we showed last for idempotency
+            if (!isDisposed)
+            {
+                lastAnimatedText = displayedText;
             }
         }
     }
