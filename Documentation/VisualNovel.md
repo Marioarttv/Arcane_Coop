@@ -327,17 +327,17 @@ Choice: "How do we approach?"
 
 The Act1 Emergency Briefing scene demonstrates the full choice system with:
 
-1. **First Choice Point**: Crisis Approach (3 branches)
-   - Stealth approach → Stealth response
-   - Direct approach → Direct response  
-   - Diplomatic approach → Diplomatic response
+1. **First Choice Point**: Investigation Approach (Piltover player chooses - 3 branches)
+   - Decode messages → "messages_response" → "messages_continue" → back to "priority_choice"
+   - Examine theft sites → "sites_response" → "sites_continue" → back to "priority_choice"  
+   - Split up approach → "split_response" → "split_continue" → back to "priority_choice"
 
-2. **Second Choice Point**: Priority Decision (3 branches)
-   - Secure data → Data priority response
-   - Evacuate civilians → Civilian priority response
-   - Track saboteur → Investigation priority response
+2. **Second Choice Point**: Priority Decision (Zaun player chooses - 3 branches)
+   - Save people first → "people_priority" → back to "mission_briefing"
+   - Prevent war → "war_priority" → back to "mission_briefing"
+   - Catch the thief → "thief_priority" → back to "mission_briefing"
 
-3. **Flow Convergence**: All branches eventually lead to the transition to Picture Explanation puzzle
+3. **Flow Convergence**: All branches converge back to "mission_briefing" and continue to scene completion, leading to transition to Picture Explanation puzzle
 
 ### Best Practices for Choice Design
 
@@ -361,39 +361,487 @@ The Act1 Emergency Briefing scene demonstrates the full choice system with:
 2. **Provide clear Continue flow**: Players should always know how to progress after seeing choice results
 3. **Use role restrictions wisely**: Don't lock players out unnecessarily
 
-### Debugging Choice Trees
+## 🌊 Dialogue Flow & Branching Architecture
 
-The system includes comprehensive console logging for debugging dialogue flow and choice trees:
+The Visual Novel system implements a sophisticated dialogue branching pattern that separates main story content from branch dialogues to ensure proper scene flow and transitions.
 
-#### **Client-Side Logging (Act1Multiplayer)**
-- **Dialogue Progression**: Every dialogue line displays with speaker, ID, and choice indicators
-- **Choice Selection**: Logs player name, role, choice text, and choice ID when selections are made
+### Core Branching Pattern
 
-#### **Server-Side Logging (GameHub)**  
-- **Branch Navigation**: Shows when choices trigger branches vs sequential flow
-- **Branch Errors**: Alerts when `NextDialogueId` references missing dialogue IDs
-- **Game State Changes**: Logs all consequence applications with key-value pairs
-- **Character Expressions**: Tracks expression changes from choice results
-- **Dialogue Continuation**: Shows normal progression between dialogue lines
-
-#### **Example Console Output**
+#### **The Fundamental Structure**
 ```
-[Act1Multiplayer] Dialogue #5: vi (ID: approach_choice) [CHOICE POINT] - "How should we approach this crisis?"
-[Act1Multiplayer] CHOICE MADE: Alex (zaun) selected "We go in quiet. Use the maintenance tunnels - I know every back route." (ID: stealth_approach)
-[Act1GameHub] CONSEQUENCES: Applying 1 game state changes:
-  - approach = stealth
-[Act1GameHub] EXPRESSION: Vi expression changed Default → Determined  
-[Act1GameHub] BRANCH TAKEN: Choice 'We go in quiet. Use the maintenance tunnels - I know every back route.' (ID: stealth_approach) → branching to dialogue ID 'stealth_response' (index: 12)
-[Act1Multiplayer] Dialogue #12: caitlyn (ID: stealth_response) - "Smart. The element of surprise could give us the edge we need. I'll mark the blind spots in their surveillance."
+DialogueLines Array Structure:
+[0-N]     Main Content Dialogues (sequential story flow)
+[N+1...]  Branch Response Dialogues (accessed via NextDialogueId jumps)
 ```
 
-#### **Using the Debug Output**
-1. **Open browser Developer Tools** (F12) → Console tab
-2. **Filter by component**: Search for `[Act1Multiplayer]` or `[Act1GameHub]`
-3. **Track dialogue flow**: Verify dialogue indices progress correctly
-4. **Verify branches**: Ensure `NextDialogueId` values match actual dialogue IDs
-5. **Monitor state**: Check that consequences are applied as expected
-6. **Debug missing branches**: Look for "BRANCH ERROR" messages indicating broken references
+#### **MainContentEndIndex Property**
+The `MainContentEndIndex` property marks the boundary between main content and branch dialogues:
+```csharp
+scene.MainContentEndIndex = 16; // Last main content dialogue at index 16
+```
+
+This critical property ensures:
+- Scene completion is triggered only when reaching the end of main content
+- Branch dialogues (after MainContentEndIndex) never trigger scene transitions
+- Proper flow control when jumping between dialogue sections
+
+### Implementation Pattern
+
+#### **1. Main Content First (Indices 0 to N)**
+```csharp
+// Sequential main story dialogues
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine { /* Index 0: Story intro */ },
+    new DialogueLine { /* Index 1: Character setup */ },
+    // ... more main content ...
+    new DialogueLine 
+    { 
+        Id = "first_choice",
+        IsPlayerChoice = true,
+        Choices = new List<DialogueChoice>
+        {
+            new DialogueChoice
+            {
+                Text = "Take the stealth approach",
+                NextDialogueId = "stealth_branch", // Jump to branch dialogue at end
+            }
+        }
+    },
+    new DialogueLine { /* More main content after choice */ },
+    new DialogueLine { /* Index N: Final main dialogue */ }
+});
+
+// Mark end of main content (CRITICAL - must be set before adding branches)
+scene.MainContentEndIndex = N; // Index of last main dialogue
+```
+
+#### **2. Branch Dialogues at End (Indices N+1 onwards)**
+```csharp
+// ALL branch dialogues placed after main content
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine
+    {
+        Id = "stealth_branch", // Matches NextDialogueId from choice
+        Text = "You choose the quiet approach...",
+        NextDialogueId = "stealth_continue" // Continue to next branch dialogue
+    },
+    new DialogueLine
+    {
+        Id = "stealth_continue",
+        Text = "Moving through the shadows...",
+        NextDialogueId = "next_main_choice" // Jump back to main content ID
+    },
+    new DialogueLine
+    {
+        Id = "combat_branch", // Different branch
+        Text = "You charge into battle...",
+        NextDialogueId = "next_main_choice" // Same return point
+    }
+    // ... more branch dialogues
+});
+```
+
+#### **3. Proper Flow Control**
+```csharp
+// Branch responses that continue the story
+new DialogueLine
+{
+    Id = "branch_response",
+    Text = "The consequence of your choice...",
+    NextDialogueId = "next_choice_point" // Jump to next main content point
+}
+
+// Branch responses that converge back to main story
+new DialogueLine
+{
+    Id = "branch_ending",
+    Text = "Your path leads back to...",
+    NextDialogueId = "story_continues" // Return to main content
+}
+```
+
+### Critical Implementation Details
+
+#### **Scene Completion Logic**
+The `ContinueAct1` method in GameHub implements this logic:
+
+```csharp
+// Get the boundary between main content and branches
+var mainContentEndIndex = scene.MainContentEndIndex ?? (scene.DialogueLines.Count - 1);
+var currentIndex = game.CurrentDialogueIndex;
+
+// Only check for scene end in main content range
+var isInMainContent = currentIndex <= mainContentEndIndex;
+var isLastDialogueInScene = isInMainContent && currentIndex == mainContentEndIndex;
+
+if (isLastDialogueInScene)
+{
+    // Trigger scene transition - only from main content end
+    await ProgressToNextScene();
+}
+```
+
+**Why This Matters:**
+- Branch dialogues (indices > MainContentEndIndex) never trigger scene completion
+- Only reaching the actual end of main content advances to the next scene
+- Prevents premature scene transitions when jumping to branch responses
+
+#### **Branching Navigation**
+```csharp
+// Check for branch jumps
+if (!string.IsNullOrEmpty(dialogue.NextDialogueId))
+{
+    // Find target dialogue by ID (can be anywhere in the array)
+    var nextIndex = scene.DialogueLines.FindIndex(d => d.Id == dialogue.NextDialogueId);
+    
+    if (nextIndex >= 0)
+    {
+        // Jump to the target dialogue (usually a branch)
+        game.CurrentDialogueIndex = nextIndex;
+    }
+}
+else
+{
+    // Normal sequential progression (main content flow)
+    game.CurrentDialogueIndex++;
+}
+```
+
+### Act1 Emergency Briefing Example
+
+Here's how the Act1StoryEngine implements this pattern:
+
+#### **Main Content Structure (Indices 0-16)**
+```csharp
+scene.DialogueLines.AddRange(new[]
+{
+    // Indices 0-10: Story introduction and setup
+    new DialogueLine { /* Caitlyn: "Squad Alpha, thank you for responding..." */ },
+    new DialogueLine { /* Vi: "You two are the only ones we can trust..." */ },
+    // ... more story setup ...
+    
+    // Index 11: First player choice (Piltover)
+    new DialogueLine
+    {
+        Id = "investigation_choice",
+        IsPlayerChoice = true,
+        ChoiceOwnerRole = "piltover",
+        Choices = new List<DialogueChoice>
+        {
+            new DialogueChoice
+            {
+                Id = "investigate_messages",
+                NextDialogueId = "messages_response", // Jump to index 17
+            }
+            // ... other choices
+        }
+    },
+    
+    // Index 12: Second player choice (Zaun)
+    new DialogueLine
+    {
+        Id = "priority_choice",
+        IsPlayerChoice = true,
+        ChoiceOwnerRole = "zaun",
+        Choices = new List<DialogueChoice>
+        {
+            new DialogueChoice
+            {
+                Id = "save_people",
+                NextDialogueId = "people_priority", // Jump to index 23
+            }
+            // ... other choices
+        }
+    },
+    
+    // Indices 13-16: Mission briefing and finale
+    new DialogueLine { Id = "mission_briefing", /* Vi: "Alright, Squad Alpha..." */ },
+    new DialogueLine { /* Caitlyn: "Your first task..." */ },
+    new DialogueLine { /* Vi: "The images are fragmented..." */ },
+    new DialogueLine { /* Vi: "No pressure, rookies..." */ } // Index 16 - last main dialogue
+});
+
+scene.MainContentEndIndex = 16; // Scene ends at index 16
+```
+
+#### **Branch Dialogues (Indices 17-25)**
+```csharp
+// ALL branches placed after main content
+scene.DialogueLines.AddRange(new[]
+{
+    // First choice branches (indices 17-22)
+    new DialogueLine
+    {
+        Id = "messages_response", // Index 17
+        CharacterId = "vi",
+        Text = "Smart call. Those codes use both Piltovan and Zaunite encryption...",
+        NextDialogueId = "messages_continue"
+    },
+    new DialogueLine
+    {
+        Id = "messages_continue", // Index 18
+        CharacterId = "caitlyn", 
+        Text = "One of you identifies the patterns, the other provides context...",
+        NextDialogueId = "priority_choice" // Jump back to index 12
+    },
+    
+    // More first choice branches...
+    new DialogueLine { Id = "sites_response", NextDialogueId = "sites_continue" },
+    new DialogueLine { Id = "sites_continue", NextDialogueId = "priority_choice" },
+    new DialogueLine { Id = "split_response", NextDialogueId = "split_continue" },
+    new DialogueLine { Id = "split_continue", NextDialogueId = "priority_choice" },
+    
+    // Second choice branches (indices 23-25)
+    new DialogueLine
+    {
+        Id = "people_priority", // Index 23
+        CharacterId = "caitlyn",
+        Text = "Good. That's exactly the mindset we need...",
+        NextDialogueId = "mission_briefing" // Jump back to index 13
+    },
+    new DialogueLine { Id = "war_priority", NextDialogueId = "mission_briefing" },
+    new DialogueLine { Id = "thief_priority", NextDialogueId = "mission_briefing" }
+});
+```
+
+### Common Pitfalls and Solutions
+
+#### **❌ WRONG: Branch Dialogues in Middle of Main Content**
+```csharp
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine { /* Index 0: Main content */ },
+    new DialogueLine { /* Index 1: Main content */ },
+    new DialogueLine 
+    { 
+        Id = "branch_response", // ❌ WRONG: Branch in main content
+        Text = "Branch response..." 
+    },
+    new DialogueLine { /* Index 3: More main content */ }
+});
+scene.MainContentEndIndex = 3; // ❌ Branch dialogue at index 2 is before MainContentEndIndex!
+```
+
+**Problem:** Branch dialogue at index 2 will be reached sequentially during main story flow, causing incorrect story progression and potentially triggering scene completion at the wrong time.
+
+#### **✅ CORRECT: All Branches at End**
+```csharp
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine { /* Index 0: Main content */ },
+    new DialogueLine { /* Index 1: Main content */ },
+    new DialogueLine { /* Index 2: Main content */ },
+    new DialogueLine { /* Index 3: Final main content */ }
+});
+scene.MainContentEndIndex = 3; // Main content ends here
+
+// All branches after main content
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine 
+    { 
+        Id = "branch_response", // ✅ CORRECT: Branch after main content
+        Text = "Branch response..." 
+    }
+});
+```
+
+#### **❌ WRONG: Forgetting MainContentEndIndex**
+```csharp
+// Scene with branches but no MainContentEndIndex set
+var scene = new VisualNovelScene { /* ... */ };
+// scene.MainContentEndIndex not set - defaults to last dialogue index!
+```
+
+**Problem:** Scene completion triggers at wrong time, potentially from branch dialogues.
+
+#### **✅ CORRECT: Always Set MainContentEndIndex**
+```csharp
+var scene = new VisualNovelScene { /* ... */ };
+// Add main content dialogues (indices 0-10)
+// Add branch dialogues (indices 11+)
+scene.MainContentEndIndex = 10; // ✅ Explicitly mark main content end
+```
+
+#### **❌ WRONG: Sequential Branch Dialogues Without Purpose**
+```csharp
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine 
+    { 
+        Id = "branch_a",
+        NextDialogueId = "branch_b" // ❌ Points to next sequential dialogue unnecessarily
+    },
+    new DialogueLine 
+    { 
+        Id = "branch_b", // Sequential to branch_a - this is OK for multi-part responses
+        NextDialogueId = "branch_c" // But make sure this eventually returns to main content
+    }
+});
+```
+
+**Problem:** Sequential branch dialogues are acceptable for multi-part responses, but they must eventually return to main content via NextDialogueId to continue the story properly.
+
+#### **✅ CORRECT: Strategic Branch Placement**
+```csharp
+scene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine 
+    { 
+        Id = "branch_a",
+        NextDialogueId = "priority_choice" // ✅ Jump back to main content by ID
+    },
+    new DialogueLine 
+    { 
+        Id = "different_branch", // ✅ Separate branch, not sequential
+        NextDialogueId = "priority_choice" // ✅ Same return point for convergence
+    },
+    new DialogueLine 
+    { 
+        Id = "multi_part_branch", // ✅ Multi-part branch response
+        NextDialogueId = "multi_part_continue"
+    },
+    new DialogueLine 
+    { 
+        Id = "multi_part_continue", // ✅ Second part of branch
+        NextDialogueId = "priority_choice" // ✅ Eventually returns to main content
+    }
+});
+```
+
+### Best Practices for Dialogue Structure
+
+#### **1. Plan Your Content Boundaries**
+```csharp
+// Always determine your main story flow first
+var mainContentDialogues = new[]
+{
+    /* intro, character setup, choice points, conclusions - sequential flow */
+    new DialogueLine { /* Story intro */ },
+    new DialogueLine { Id = "first_choice", IsPlayerChoice = true, Choices = { /* ... */ } },
+    new DialogueLine { Id = "second_choice", IsPlayerChoice = true, Choices = { /* ... */ } },
+    new DialogueLine { Id = "conclusion" /* Final main content */ }
+};
+
+// Set the boundary BEFORE adding branches
+scene.DialogueLines.AddRange(mainContentDialogues);
+scene.MainContentEndIndex = mainContentDialogues.Length - 1;
+
+var branchDialogues = new[]
+{
+    /* all choice responses and branches - placed AFTER main content */
+    new DialogueLine { Id = "choice_response_1", NextDialogueId = "second_choice" },
+    new DialogueLine { Id = "choice_response_2", NextDialogueId = "conclusion" }
+};
+
+scene.DialogueLines.AddRange(branchDialogues);
+```
+
+#### **2. Use Descriptive IDs for Branches**
+```csharp
+new DialogueChoice
+{
+    Id = "stealth_approach",
+    NextDialogueId = "stealth_response", // ✅ Clear, descriptive
+}
+
+// Instead of:
+new DialogueChoice
+{
+    Id = "choice1",
+    NextDialogueId = "response_a", // ❌ Unclear purpose
+}
+```
+
+#### **3. Create Clear Convergence Points**
+```csharp
+// Multiple branches can converge to same main content point
+// These would be in the branch dialogues section (after MainContentEndIndex)
+new DialogueLine { Id = "stealth_end", NextDialogueId = "mission_briefing" },
+new DialogueLine { Id = "combat_end", NextDialogueId = "mission_briefing" },
+new DialogueLine { Id = "diplomatic_end", NextDialogueId = "mission_briefing" },
+
+// Common continuation in main content (this would be in main content section)
+new DialogueLine { Id = "mission_briefing", Text = "Now for your mission..." }
+
+// Example from Act1: all priority choice branches converge back to mission_briefing
+// "people_priority" → "mission_briefing"
+// "war_priority" → "mission_briefing"  
+// "thief_priority" → "mission_briefing"
+```
+
+#### **4. Validate Branch References**
+```csharp
+// Always verify NextDialogueId targets exist
+foreach (var dialogue in scene.DialogueLines.Where(d => !string.IsNullOrEmpty(d.NextDialogueId)))
+{
+    var targetExists = scene.DialogueLines.Any(d => d.Id == dialogue.NextDialogueId);
+    if (!targetExists)
+    {
+        throw new InvalidOperationException($"NextDialogueId '{dialogue.NextDialogueId}' not found");
+    }
+}
+```
+
+### Debugging Dialogue Flow
+
+#### **Console Logging for Branch Detection**
+The system provides comprehensive logging to debug dialogue flow:
+
+```
+[Act1StoryEngine] Scene created with 26 dialogues:
+  [0] no ID - caitlyn: "Squad Alpha, thank you for responding. We..."
+  [1] no ID - vi: "You two are the only ones we can trust..."
+  ...
+  [11] ID='investigation_choice' - caitlyn: "Your Piltover operative has tactical..." [CHOICE]
+  [12] ID='priority_choice' - vi: "Your Zaun operative knows the streets..." [CHOICE]
+  ...
+  [16] no ID - vi: "No pressure, rookies. Just the difference..."
+  [17] ID='messages_response' - vi: "Smart call. Those codes use both..." → NextDialogueId='messages_continue'
+  [18] ID='messages_continue' - caitlyn: "One of you identifies the patterns, the..." → NextDialogueId='priority_choice'
+  [19] ID='sites_response' - vi: "Good instincts. That residue is unlike..." → NextDialogueId='sites_continue'
+  ...
+MainContentEndIndex = 16
+```
+
+#### **Runtime Flow Validation**
+The GameHub logs show the exact branching behavior during gameplay:
+
+```
+[Act1GameHub] BRANCH TAKEN: Choice 'investigate_messages' (ID: investigate_messages) → branching to dialogue ID 'messages_response' (index: 17)
+[Act1GameHub] Target dialogue: Speaker=vi, Text="Smart call. Those codes use both Piltovan and Zaunite..."
+[Act1GameHub] BRANCH JUMP: Dialogue #17 (ID: messages_response) → jumping to dialogue ID 'messages_continue' (index: 18)
+[Act1GameHub] BRANCH JUMP: Dialogue #18 (ID: messages_continue) → jumping to dialogue ID 'priority_choice' (index: 12)
+[Act1GameHub] Target dialogue: Speaker=vi, ID=priority_choice, Text="Your Zaun operative knows the streets. What's your gut..."
+```
+
+This comprehensive branching system ensures reliable dialogue flow, proper scene transitions, and maintainable story structure while supporting complex choice-driven narratives.
+
+### ⚠️ Critical Implementation Warning
+
+**ALWAYS set `MainContentEndIndex` correctly!** This is the most common source of dialogue flow bugs:
+
+```csharp
+// ✅ CORRECT: Set MainContentEndIndex BEFORE adding branch dialogues
+scene.DialogueLines.AddRange(mainContentDialogues);
+scene.MainContentEndIndex = mainContentDialogues.Length - 1; // Last main content index
+scene.DialogueLines.AddRange(branchDialogues); // Now add branches
+
+// ❌ WRONG: Adding branches before setting MainContentEndIndex
+scene.DialogueLines.AddRange(mainContentDialogues);
+scene.DialogueLines.AddRange(branchDialogues); // ❌ Branches added first
+scene.MainContentEndIndex = ...; // ❌ Too late! Will cause scene completion issues
+```
+
+**What happens if MainContentEndIndex is wrong:**
+- Scene completes too early (if set too low)
+- Scene never completes (if set too high)
+- Branch dialogues might trigger scene transitions
+- Players get stuck or skip content unexpectedly
+
+**The Act1StoryEngine sets `MainContentEndIndex = 16` because dialogue index 16 contains the final main story dialogue before transitioning to the Picture Explanation puzzle.**
 
 ## Configuration Options
 
