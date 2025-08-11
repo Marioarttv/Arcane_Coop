@@ -129,6 +129,12 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 **Education**: Listening skills, emergency vocabulary
 **Documentation**: [SignalDecoder.md](./SignalDecoder.md)
 
+**Story Integration Features:**
+- **Story Mode Entry**: Accepts `story=true` parameter to bypass lobby setup
+- **Role Preservation**: Uses `JoinSignalDecoderGameWithRole()` and `AddPlayerWithRole()` to maintain Piltover/Zaun assignments from visual novel
+- **Complete Hub Integration**: New `JoinSignalDecoderGameWithRole()` hub method eliminates "Game is Full" errors during story transitions
+- **Multiplayer Synchronization**: Fixed story-mode entry ensures both players transported to same testing room simultaneously
+
 ### 3. NavigationMaze (/navigation-maze)
 **Purpose**: Spatial reasoning and direction following
 **Players**: Piltover (map navigator) + Zaunite (first-person explorer)
@@ -220,9 +226,15 @@ public List<string> StoryProgression { get; set; } = new()
 { 
     "emergency_briefing",           // Scene 1 & 2 - Visual Novel
     "picture_explanation_transition", // Puzzle - Picture Explanation
-    "database_revelation"           // Scene 3 - Visual Novel
+    "database_revelation",          // Scene 3 - Visual Novel  
+    "signal_decoder_transition"     // Puzzle - Signal Decoder (NEW: Complete integration)
 };
 ```
+
+**Key Updates (2025):**
+- **Complete Signal Decoder Integration**: Full story-to-puzzle and puzzle-to-story transitions
+- **Fixed Scene 3 Transitions**: Scene 3 (Database Revelation) now correctly transitions to Signal Decoder instead of Picture Explanation
+- **Dynamic Progression Logic**: System automatically determines next puzzle based on current scene index
 
 ### From Scene to Puzzle Transitions
 
@@ -384,6 +396,52 @@ if (startAtSceneIndex.HasValue)
 
 ### Critical Implementation Details
 
+#### Enhanced Fallback Mechanism (2025)
+The system now features a **dynamic fallback URL generation** system that eliminates hardcoded transitions and handles scene index loss:
+
+**Problem Solved:**
+- **Scene Index Loss**: Transition state was causing scene index to be lost during fallback
+- **Hardcoded URLs**: Fallback mechanism had hardcoded Picture Explanation URL regardless of actual story position
+- **Incorrect Transitions**: Scene 3 was incorrectly transitioning to Picture Explanation instead of Signal Decoder
+
+**Solution Implementation:**
+```csharp
+// Scene index storage during transition (Act1Multiplayer.razor)
+private int transitionFromSceneIndex = 0;
+
+// Store scene index when transition starts
+private async Task HandleSceneTransition(string nextGameName)
+{
+    transitionFromSceneIndex = currentSceneIndex; // Capture before transition state
+    hasNavigatedToNextGame = false;
+    StateHasChanged();
+}
+
+// Dynamic URL generation based on story progression
+private string GetFallbackTransitionUrl(string nameParam, string squadParam)
+{
+    var currentSceneIndex = transitionFromSceneIndex; // Use stored index
+    var nextSceneIndex = currentSceneIndex + 1;
+    var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition" };
+    
+    var nextPhase = nextSceneIndex < storyProgression.Length ? storyProgression[nextSceneIndex] : "";
+    
+    return nextPhase switch
+    {
+        "picture_explanation_transition" => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={Uri.EscapeDataString(nameParam)}&squad={Uri.EscapeDataString(squadParam)}&story=true",
+        "signal_decoder_transition" => $"/signal-decoder?role={playerRole}&avatar={playerAvatar}&name={Uri.EscapeDataString(nameParam)}&squad={Uri.EscapeDataString(squadParam)}&story=true",
+        _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={Uri.EscapeDataString(nameParam)}&squad={Uri.EscapeDataString(squadParam)}&story=true" // Fallback
+    };
+}
+```
+
+**Enhanced Debug Logging:**
+```csharp
+Console.WriteLine($"[Act1Multiplayer] Fallback triggered - stored scene index: {transitionFromSceneIndex}");
+Console.WriteLine($"[Act1Multiplayer] Next phase determined: {nextPhase}");
+Console.WriteLine($"[Act1Multiplayer] Fallback URL: {fallbackUrl}");
+```
+
 #### Parameter Name Consistency
 **❌ Common Error:**
 ```
@@ -428,23 +486,233 @@ Console.WriteLine($"[Act1Multiplayer] Joining Act1 game at scene {startAtSceneIn
 
 #### Common Issues and Solutions
 
-**Issue: "Squad Synchronization" Loop**
+**Issue: "Squad Synchronization" Loop** ✅ FIXED (2025)
 - **Cause**: Missing or incorrect `roomId` parameter
 - **Solution**: Verify URL construction includes both `roomId` and `squad` parameters
+- **Implementation**: Enhanced parameter validation and debug logging added
 
-**Issue: Players Start at Wrong Scene**  
+**Issue: Players Start at Wrong Scene** ✅ FIXED (2025)
 - **Cause**: Scene index not handled for second player
 - **Solution**: Update join logic to handle `startAtSceneIndex` for all players
+- **Implementation**: `JoinAct1GameAtScene` now handles scene index for all joining players
 
-**Issue: Role Assignments Switch**
+**Issue: Role Assignments Switch** ✅ IMPROVED (2025)
 - **Cause**: Relying on join order instead of explicit role parameter
 - **Solution**: Always use `JoinPuzzleGameWithRole` methods with explicit role requests
+- **Implementation**: Signal Decoder now uses `JoinSignalDecoderGameWithRole()` and `AddPlayerWithRole()`
 
-**Issue: Players Get Stuck in Transition**
-- **Cause**: Redirect URLs not sent or navigation blocked
-- **Solution**: Implement fallback redirect timer and verify SignalR connection state
+**Issue: Players Get Stuck in Transition** ✅ FIXED (2025)
+- **Cause**: Redirect URLs not sent or navigation blocked, scene index loss during fallback
+- **Solution**: Implement dynamic fallback redirect with scene index storage
+- **Implementation**: Enhanced fallback mechanism with `transitionFromSceneIndex` storage and dynamic URL generation
+
+**Issue: Scene 3 Wrong Transition** ✅ FIXED (2025)
+- **Cause**: Hardcoded fallback URL always redirected to Picture Explanation
+- **Solution**: Dynamic fallback URL generation based on current story progression
+- **Implementation**: `GetFallbackTransitionUrl()` method with story progression awareness
+
+**Issue: Signal Decoder "Game is Full" Errors** ✅ FIXED (2025)
+- **Cause**: Missing hub methods for story mode integration
+- **Solution**: Added `JoinSignalDecoderGameWithRole()` hub method and `AddPlayerWithRole()` game logic
+- **Implementation**: Complete Signal Decoder story integration with role preservation
 
 This comprehensive transition system enables seamless story-driven gameplay where puzzles feel integrated into the narrative rather than separate mini-games.
+
+## Scene Selection Testing System (2025)
+
+The project now includes a comprehensive testing system that allows developers to quickly test specific story scenes and puzzle transitions without playing through the entire campaign. This system is accessible through the Character Lobby once a squad is verified.
+
+### Architecture Overview
+
+**Access Pattern:**
+```
+Character Lobby → Squad Verification → "Continue Where You Left Off" → Scene Selection Grid
+```
+
+**Key Components:**
+- **Two-Step Testing Process**: Initial button reveals full scene selection interface
+- **Synchronized Transport**: Both players transported to same testing room simultaneously via SignalR
+- **Role Preservation**: Maintains Piltover/Zaun assignments throughout testing
+- **Scene & Puzzle Options**: Start from visual novel scenes OR puzzle transitions
+
+### Implementation Details
+
+#### **Testing Section UI (CharacterLobby.razor)**
+```csharp
+// Development Testing Section (lines 202-264)
+@if (squadVerified)
+{
+    <div class="testing-section">
+        <div class="testing-card">
+            @if (!showSceneSelection)
+            {
+                // Step 1: Initial testing option
+                <button class="nav-btn test-option-btn" @onclick="ShowSceneSelection">
+                    Continue Where You Left Off
+                </button>
+            }
+            else
+            {
+                // Step 2: Full scene selection grid
+                <div class="scene-selection-grid">
+                    <div class="scene-group">
+                        <h5>📖 Visual Novel Scenes</h5>
+                        <button @onclick="() => StartFromScene(0)">Emergency Briefing</button>
+                        <button @onclick="() => StartFromScene(2)">Database Revelation</button>
+                    </div>
+                    <div class="scene-group">
+                        <h5>🧩 Puzzle Transitions</h5>
+                        <button @onclick="StartFromPictureExplanation">Picture Explanation</button>
+                        <button @onclick="StartFromSignalDecoder">Signal Decoder</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+```
+
+#### **Hub Methods for Testing (GameHub.cs)**
+```csharp
+// Redirect both players to specific Act1 scene
+public async Task RedirectPlayersToAct1WithScene(string roomId, int sceneIndex)
+{
+    // Generate shared room name for testing
+    var sharedTestLobbyName = GenerateSharedTestLobbyName(roomId, sceneIndex);
+    
+    // Transport both players to same Act1 testing room
+    await Clients.Group(roomId).SendAsync("RedirectToAct1WithScene", 
+        sharedTestLobbyName, sceneIndex);
+}
+
+// Redirect both players to specific puzzle
+public async Task RedirectPlayersToPuzzle(string roomId, string puzzleName)
+{
+    var sharedTestLobbyName = GenerateSharedTestLobbyName(roomId, puzzleName);
+    var puzzleUrl = GetPuzzleUrlForTesting(puzzleName, sharedTestLobbyName);
+    
+    await Clients.Group(roomId).SendAsync("RedirectToPuzzle", puzzleUrl);
+}
+
+// Ensure both players get same room name for synchronized testing
+private string GenerateSharedTestLobbyName(string originalRoomId, object testIdentifier)
+{
+    return $"{originalRoomId}_test_{testIdentifier}_{DateTime.UtcNow:HHmmss}";
+}
+```
+
+### Available Testing Options
+
+#### **Visual Novel Scenes**
+1. **Emergency Briefing (Scene 0)**: 
+   - Start from story beginning
+   - Includes both player choice points
+   - Full character introductions and mission setup
+
+2. **Database Revelation (Scene 2)**:
+   - Start after Picture Explanation puzzle
+   - Database discovery and Project Safeguard revelation
+   - Radio setup sequence
+
+#### **Puzzle Transitions**
+1. **Picture Explanation**:
+   - Story mode enabled (`story=true`)
+   - Role preservation from character selection
+   - "Continue Story" button leads to Scene 3
+
+2. **Signal Decoder**:
+   - Complete story integration with role preservation
+   - Uses `JoinSignalDecoderGameWithRole()` hub method
+   - Synchronized multiplayer entry
+
+### Technical Implementation Features
+
+#### **Shared Room Generation**
+```csharp
+private string GenerateSharedTestLobbyName(string originalRoomId, object identifier)
+{
+    // Creates unique room name that both players receive
+    // Format: "originalRoom_test_sceneIndex_timestamp"
+    // Example: "squad_alpha_test_2_143052"
+    return $"{originalRoomId}_test_{identifier}_{DateTime.UtcNow:HHmmss}";
+}
+```
+
+#### **Role Preservation Logic**
+```csharp
+private async Task StartFromScene(int sceneIndex)
+{
+    Console.WriteLine($"[CharacterLobby] Starting from scene {sceneIndex}");
+    
+    // Preserve role assignments from character selection
+    await hubConnection.SendAsync("RedirectPlayersToAct1WithScene", currentRoomId, sceneIndex);
+}
+
+private async Task StartFromPictureExplanation()
+{
+    // Story mode puzzle with role preservation
+    var puzzleUrl = $"/picture-explanation?story=true&role={selectedRole}";
+    await hubConnection.SendAsync("RedirectPlayersToPuzzle", currentRoomId, "picture_explanation");
+}
+```
+
+#### **Synchronized Player Transport**
+Both players receive the same redirect simultaneously via SignalR:
+```csharp
+// Client-side redirect handling
+hubConnection.On<string, int>("RedirectToAct1WithScene", (roomId, sceneIndex) =>
+{
+    var url = $"/act1-multiplayer?roomId={roomId}&squad={roomId}&sceneIndex={sceneIndex}&role={selectedRole}";
+    navigationManager.NavigateTo(url);
+});
+
+hubConnection.On<string>("RedirectToPuzzle", (puzzleUrl) =>
+{
+    navigationManager.NavigateTo(puzzleUrl);
+});
+```
+
+### Benefits for Development and Testing
+
+#### **Rapid Testing Workflow**
+1. **Quick Scene Access**: Jump directly to any story scene without playing through prerequisites
+2. **Puzzle Testing**: Test puzzle integration with story mode enabled
+3. **Multiplayer Sync**: Verify both players receive same experience
+4. **Role Testing**: Ensure role preservation works across transitions
+
+#### **Debug and QA Support**
+1. **Isolated Testing**: Test specific scenes without dependencies
+2. **Transition Validation**: Verify story-puzzle-story flow works correctly
+3. **Performance Testing**: Measure loading times for different entry points
+4. **Content Review**: Review dialogue and scenes without full playthrough
+
+#### **Developer Experience**
+```
+Traditional Flow: Character Select → Story Start → Scene 1 → Scene 2 → Puzzle 1 → Scene 3
+Testing Flow:     Character Select → Scene Selection → Direct Scene 3 Access (saves ~10+ minutes)
+```
+
+### Usage Guidelines
+
+#### **For Developers**
+1. **Use for Content Review**: Quickly access any story scene to review dialogue or visuals
+2. **Debug Transitions**: Test specific transition points that may be problematic
+3. **Performance Testing**: Measure scene loading and transition times
+4. **Integration Testing**: Verify story-puzzle-story flow integrity
+
+#### **For QA Testing**
+1. **Scene Validation**: Verify each scene renders correctly and handles player choices
+2. **Role Consistency**: Ensure player roles are preserved throughout testing
+3. **Multiplayer Sync**: Confirm both players experience synchronized content
+4. **Transition Testing**: Validate all story-to-puzzle and puzzle-to-story transitions
+
+#### **Testing Best Practices**
+1. **Always test with two players**: Testing system preserves multiplayer mechanics
+2. **Verify role assignments**: Check that Piltover/Zaun roles remain consistent
+3. **Test full transitions**: Use "Continue Story" buttons to verify end-to-end flow
+4. **Use shared rooms**: Ensure both players join same testing room for synchronized experience
+
+This testing system dramatically improves development velocity by providing instant access to any story content while maintaining the full multiplayer experience and role preservation mechanics.
 
 ## Development Guidelines
 

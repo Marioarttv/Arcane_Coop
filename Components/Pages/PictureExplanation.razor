@@ -13,8 +13,8 @@
     <div class="header-section">
         @if (isFromStory)
         {
-            <h2 class="game-title">🔍 Visual Intelligence Analysis</h2>
-            <p class="game-subtitle">Emergency Briefing - Analyze corrupted surveillance footage</p>
+            <h2 class="game-title">🔍 Enforcer Database Search</h2>
+            <p class="game-subtitle">Identify the marked scientists from Project Safeguard files</p>
             <div class="story-context">
                 <div class="story-badge @GetRoleThemeClass()">
                     <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
@@ -24,8 +24,8 @@
         }
         else
         {
-            <h2 class="game-title">🖼️ Picture Explanation Challenge</h2>
-            <p class="game-subtitle">Voice Chat Visual Communication - Describe, Hide, Choose!</p>
+            <h2 class="game-title">👤 Character Identification Challenge</h2>
+            <p class="game-subtitle">Describe and identify key personnel from memory</p>
         }
     </div>
     
@@ -40,50 +40,50 @@
     {
         <div class="instructions-panel">
             <div class="instruction-header">
-                <h3>📸 How to Play Picture Explanation Challenge</h3>
+                <h3>⚠️ How to Access the Enforcer Database</h3>
             </div>
             <div class="instruction-content">
                 <div class="step-by-step">
                     <div class="instruction-step">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h4>Share Room Code</h4>
-                            <p>Both players enter the <strong>same Room ID</strong> below. Choose any code like "pictures123" or "visual".</p>
+                            <h4>Access the Database</h4>
+                            <p>Both players enter the <strong>same Room ID</strong> below to access the enforcer database terminal.</p>
                         </div>
                     </div>
                     <div class="instruction-step">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h4>Join Together</h4>
-                            <p>Click <strong>"Join Room"</strong> then <strong>"Start Challenge"</strong>. First player becomes Piltover (Describer), second becomes Zaunite (Guesser).</p>
+                            <h4>Split Responsibilities</h4>
+                            <p><strong>Piltover Agent</strong> accesses the visual records. <strong>Zaun Operative</strong> handles the identification terminal.</p>
                         </div>
                     </div>
                     <div class="instruction-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h4>Play Together</h4>
-                            <p><strong>Piltover</strong> describes archive images over voice chat, then hides the image. <strong>Zaunite</strong> chooses from 4 options. Work through 5 rounds!</p>
+                            <h4>Identify the Targets</h4>
+                            <p><strong>Piltover</strong> describes the person's features from the file photo. <strong>Zaun</strong> identifies them from the database options. Find all 4 marked scientists!</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="role-preview">
                     <div class="role-card piltover-preview">
-                        <h4>📋 Caitlyn (Archive Analyst)</h4>
-                        <p>You analyze Piltover's visual archives:</p>
+                        <h4>📋 Caitlyn (Database Access)</h4>
+                        <p>You have visual access to the corrupted files:</p>
                         <ul class="preview-clues">
-                            <li><strong>🖼️ Image Analysis:</strong> View detailed archive images</li>
-                            <li><strong>📢 Voice Description:</strong> Describe over Discord/voice chat</li>
-                            <li><strong>👁️ Strategic Choice:</strong> Hide image after describing</li>
+                            <li><strong>📁 File Access:</strong> View photos from Marcus's hidden files</li>
+                            <li><strong>🔍 Detail Analysis:</strong> Describe distinguishing features</li>
+                            <li><strong>⚠️ Time Pressure:</strong> Files auto-corrupt after viewing</li>
                         </ul>
                     </div>
                     <div class="role-card zaunite-preview">
-                        <h4>🕵️ Vi (Intelligence Agent)</h4>
-                        <p>You receive field intelligence reports:</p>
+                        <h4>🕵️ Vi (Street Knowledge)</h4>
+                        <p>You know these faces from the underground:</p>
                         <ul class="preview-clues">
-                            <li><strong>👂 Active Listening:</strong> Listen carefully over voice chat</li>
-                            <li><strong>🔍 Image Selection:</strong> Choose from 4 options</li>
-                            <li><strong>⚡ Quick Decisions:</strong> Image disappears after description</li>
+                            <li><strong>👥 Recognition:</strong> Match descriptions to known faces</li>
+                            <li><strong>🎯 Quick ID:</strong> Select from database matches</li>
+                            <li><strong>⏰ Urgency:</strong> These people are in danger</li>
                         </ul>
                     </div>
                 </div>
@@ -199,7 +199,7 @@
                 <div class="piltover-interface">
                     <div class="archive-panel">
                         <div class="panel-header">
-                            <h4>📂 Archive Image Analysis</h4>
+                            <h4>📁 Marcus's Hidden Files - Project Safeguard</h4>
                         </div>
                         
                         @if (!string.IsNullOrEmpty(playerView.CurrentImageUrl))
@@ -208,7 +208,7 @@
                                 <img src="@playerView.CurrentImageUrl" alt="Archive Image" class="main-image" />
                                 <div class="image-overlay">
                                     <div class="image-info">
-                                        <span class="image-label">Classified Archive Image</span>
+                                        <span class="image-label">TARGET FILE - RED MARKED</span>
                                     </div>
                                 </div>
                             </div>
@@ -218,11 +218,11 @@
                         {
                             <div class="voice-description-panel">
                                 <div class="voice-instructions">
-                                    <h5>📢 Describe this image to your partner over voice chat</h5>
-                                    <p>Take your time to describe what you see in detail. Once you're finished explaining, press the button below to hide the image and show your partner the choices.</p>
+                                    <h5>⚠️ Describe this person's features quickly</h5>
+                                    <p>This file is corrupting - describe their face, hair, clothing, and any distinguishing features. Vi might recognize them from the underground. Press below when done.</p>
                                 </div>
-                                <button class="arcane-btn arcane-btn-success" @onclick="FinishDescribing">
-                                    ✅ Finished Describing
+                                <button class="arcane-btn arcane-btn-warning" @onclick="FinishDescribing">
+                                    📁 Lock File & Send to Vi
                                 </button>
                             </div>
                         }
@@ -245,15 +245,15 @@
                 <div class="zaunite-interface">
                     <div class="intelligence-panel">
                         <div class="panel-header">
-                            <h4>🕵️ Intelligence Report</h4>
+                            <h4>🕵️ Zaun Database Terminal - Facial Recognition</h4>
                         </div>
                         
                         @if (!playerView.CanChoose && !playerView.RoundCompleted)
                         {
                             <div class="waiting-description">
                                 <div class="loading-spinner">👂</div>
-                                <p>Your partner is describing the image over voice chat...</p>
-                                <small class="voice-reminder">💬 Listen carefully! They can only show you the image once.</small>
+                                <p>Caitlyn is accessing the corrupted file...</p>
+                                <small class="voice-reminder">⚠️ Listen for descriptions - these people are marked for elimination!</small>
                             </div>
                         }
                         
@@ -261,7 +261,7 @@
                         {
                             <div class="choices-container">
                                 <div class="choices-header">
-                                    <strong>Select the matching image:</strong>
+                                    <strong>🎯 Identify the target from these database matches:</strong>
                                 </div>
                                 <div class="image-choices">
                                     @for (int i = 0; i < playerView.ChoiceImages.Count; i++)
@@ -293,15 +293,15 @@
             {
                 <div class="round-result-panel @(playerView.RoundResult.Contains("Correct") ? "success" : "incorrect")">
                     <div class="result-header">
-                        <h4>Round @gameState.CurrentRound Result</h4>
+                        <h4>Target @gameState.CurrentRound Status</h4>
                     </div>
                     <div class="result-content">
                         <div class="result-message">@playerView.RoundResult</div>
                         @if (lastRoundResult != null)
                         {
                             <div class="result-details">
-                                <div class="points-earned">Points: +@lastRoundResult.PointsEarned</div>
-                                <div class="communication-note">Great voice communication!</div>
+                                <div class="points-earned">Target Status: @(lastRoundResult.IsCorrect ? "IDENTIFIED" : "MISIDENTIFIED")</div>
+                                <div class="communication-note">@(lastRoundResult.IsCorrect ? "One less person in danger!" : "Warning: Wrong target marked!")</div>
                             </div>
                         }
                         @if (!gameState.IsCompleted)
@@ -319,11 +319,11 @@
             {
                 <div class="completion-panel">
                     <div class="complete-animation">🎉</div>
-                    <h3>Challenge Complete!</h3>
+                    <h3>Database Search Complete!</h3>
                     <div class="final-score">
-                        <strong>Final Score: @gameState.Score/@(gameState.TotalRounds * 10)</strong>
+                        <strong>Targets Identified: @gameState.Score/@(gameState.TotalRounds * 10)</strong>
                         <div class="score-percentage">
-                            (@(Math.Round((double)gameState.Score / (gameState.TotalRounds * 10) * 100, 1))% Accuracy)
+                            (@(Math.Round((double)gameState.Score / (gameState.TotalRounds * 10) * 100, 1))% Success Rate)
                         </div>
                     </div>
                     <div class="completion-actions">
@@ -719,6 +719,30 @@
     color: #ffffff;
     font-family: 'Orbitron', 'Rajdhani', sans-serif;
     padding: 20px;
+    position: relative;
+}
+
+.picture-explanation-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 0, 0, 0.03) 2px,
+        rgba(255, 0, 0, 0.03) 4px
+    );
+    pointer-events: none;
+    animation: scan-lines 8s linear infinite;
+}
+
+@@keyframes scan-lines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(10px); }
 }
 
 /* Header styling */
@@ -1118,6 +1142,12 @@
     color: #ffffff;
     border: 2px solid #ff6b6b;
     box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    animation: urgent-pulse 2s infinite;
+}
+
+@@keyframes urgent-pulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
+    50% { box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6); }
 }
 
 .arcane-btn-warning:hover:not(:disabled) {
@@ -1293,6 +1323,20 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.piltover-interface::before {
+    content: 'ENFORCER ACCESS GRANTED';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: rgba(200, 155, 60, 0.3);
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    transform: rotate(3deg);
 }
 
 .archive-panel {
@@ -1326,6 +1370,13 @@
     border-radius: 8px;
     border: 3px solid #c89b3c;
     box-shadow: 0 0 20px rgba(200, 155, 60, 0.3);
+    filter: contrast(1.1) saturate(0.9);
+    position: relative;
+}
+
+.main-image:hover {
+    filter: contrast(1.2) saturate(1);
+    box-shadow: 0 0 30px rgba(200, 155, 60, 0.5);
 }
 
 .image-overlay {
@@ -1350,10 +1401,17 @@
 }
 
 .image-label {
-    color: #c8aa6e;
-    font-weight: 600;
+    color: #ff4444;
+    font-weight: 800;
     font-size: 0.9rem;
     text-transform: uppercase;
+    animation: pulse-danger 1.5s infinite;
+    letter-spacing: 1px;
+}
+
+@@keyframes pulse-danger {
+    0%, 100% { opacity: 0.8; text-shadow: 0 0 5px rgba(255, 68, 68, 0.5); }
+    50% { opacity: 1; text-shadow: 0 0 15px rgba(255, 68, 68, 0.8); }
 }
 
 .voice-description-panel {
@@ -1413,6 +1471,20 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.zaunite-interface::before {
+    content: 'UNDERGROUND NETWORK';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: rgba(0, 200, 200, 0.3);
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    transform: rotate(3deg);
 }
 
 .intelligence-panel {
@@ -1511,6 +1583,13 @@
     border-radius: 6px;
     margin-bottom: 0.5rem;
     border: 1px solid rgba(0, 200, 200, 0.3);
+    filter: brightness(0.9) contrast(1.1);
+    transition: all 0.3s ease;
+}
+
+.choice-item:hover .choice-image {
+    filter: brightness(1) contrast(1.2);
+    border-color: #00c8c8;
 }
 
 .choice-label {

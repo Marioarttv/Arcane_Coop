@@ -31,14 +31,16 @@ namespace Arcane_Coop.Models
         public bool ImageVisible { get; set; } = false; // Controls if Piltover player can see the image
     }
 
-    // Picture data structure
+    // Picture data structure - Now for character identification
     public class PictureData
     {
         public string ImageUrl { get; set; } = "";
+        public string CharacterName { get; set; } = ""; // Vi, Caitlyn, Jayce, Viktor
         public string Title { get; set; } = "";
-        public string Category { get; set; } = "";
+        public string Category { get; set; } = ""; // Zaun, Piltover, Scientist, Enforcer
         public List<string> DistractorImages { get; set; } = new();
-        public string Description { get; set; } = ""; // For debugging/hints
+        public string Description { get; set; } = ""; // Character description for the mission
+        public string StoryContext { get; set; } = ""; // Story relevance for this character
     }
 
     // Round result data

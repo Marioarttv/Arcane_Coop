@@ -84,7 +84,8 @@ public List<string> StoryProgression = new()
 { 
     "emergency_briefing",           // Scene 1 & 2 (Visual Novel)
     "picture_explanation_transition", // Puzzle transition
-    "database_revelation"           // Scene 3 (Visual Novel) 
+    "database_revelation",          // Scene 3 (Visual Novel)
+    "signal_decoder_transition"     // Puzzle - Signal Decoder (Complete Integration 2025)
 };
 ```
 
@@ -1051,40 +1052,91 @@ To ensure predictable behavior in multiplayer and the visual editor:
 
 ### Story-Puzzle Transition Debugging (2025)
 
-#### Common Transition Issues and Solutions
+#### Common Transition Issues and Solutions (2025 Fixes)
 
-**"Squad Synchronization" Loop:**
+**"Squad Synchronization" Loop:** ✅ FIXED
 ```
 Problem: Players stuck waiting after puzzle completion
 Cause: Missing or incorrect roomId parameter in transition URL
-Solution: Ensure both roomId and squad parameters in puzzle-to-scene transitions
+Solution: Enhanced parameter validation and debug logging added
+Implementation: Both roomId and squad parameters now properly passed in all transitions
 ```
 
-**Scene Index Not Working:**
+**Scene Index Not Working:** ✅ FIXED
 ```
 Problem: Players start at wrong scene after puzzle
 Cause: Scene index parameter ignored for second player
-Solution: Update JoinAct1GameAtScene to handle startAtSceneIndex for all players
+Solution: JoinAct1GameAtScene now handles startAtSceneIndex for all players
+Implementation: Scene index handling updated for both first and second players joining
 ```
 
-**Role Assignment Problems:**
+**Role Assignment Problems:** ✅ IMPROVED
 ```  
 Problem: Player roles switch between puzzle and scene
 Cause: Relying on join order instead of explicit role preservation
-Solution: Always pass role parameter in transition URLs
+Solution: Signal Decoder now uses JoinSignalDecoderGameWithRole() and AddPlayerWithRole()
+Implementation: All story-mode puzzles now have dedicated hub methods for role preservation
+```
+
+**Scene 3 Wrong Transition:** ✅ FIXED
+```
+Problem: Scene 3 (Database Revelation) incorrectly transitioned to Picture Explanation
+Cause: Hardcoded fallback URL always redirected to Picture Explanation regardless of story position
+Solution: Dynamic fallback URL generation based on current story progression
+Implementation: GetFallbackTransitionUrl() method with story progression awareness
+```
+
+**Signal Decoder "Game is Full" Errors:** ✅ FIXED
+```
+Problem: Signal Decoder showing "Game is Full" when joining from story mode
+Cause: Missing hub methods for story mode integration and role preservation
+Solution: Complete Signal Decoder story integration with JoinSignalDecoderGameWithRole() hub method
+Implementation: Added AddPlayerWithRole() game logic for proper story mode support
+```
+
+**Fallback Mechanism Improvements:** ✅ ENHANCED
+```
+Problem: Scene index lost during transition state, causing incorrect fallback behavior
+Cause: Transition state clearing current scene index before fallback mechanism could use it
+Solution: Scene index storage with transitionFromSceneIndex variable
+Implementation: Store scene index when transition starts, use stored value for dynamic URL generation
 ```
 
 #### Debug Logging Strategy
-The system provides comprehensive logging for transition debugging:
+The system provides comprehensive logging for transition debugging and the new testing features:
 
+**Story Progression and Scene Navigation:**
+```
+[Act1StoryEngine] Scene progression tracking: currentSceneIndex=2, nextPhase=signal_decoder_transition
+[Act1Multiplayer] Fallback triggered - stored scene index: 2, next phase: signal_decoder_transition
+[Act1Multiplayer] Dynamic fallback URL generated: /signal-decoder?role=zaun&story=true&...
+```
+
+**Scene Selection Testing:**
+```
+[CharacterLobby] Scene selection testing - Starting from scene 2 (Database Revelation)
+[GameHub] RedirectPlayersToAct1WithScene: roomId=squad_alpha, sceneIndex=2
+[GameHub] Generated shared test room: squad_alpha_test_2_143052
+[CharacterLobby] Both players transported to testing room: squad_alpha_test_2_143052
+```
+
+**Signal Decoder Story Integration:**
+```
+[GameHub] JoinSignalDecoderGameWithRole: player joining with role=piltover, story=true
+[SignalDecoder] AddPlayerWithRole: player added with preserved role from story mode
+[SignalDecoder] Story mode active: isFromStory=true, Continue Story button enabled
+```
+
+**Transition State Management:**
 ```
 [Act1Multiplayer] Parsed URL params - RoomId: 'test', SceneIndex: 2
 [GameHub] Redirecting player {connectionId} to: /act1-multiplayer?role=zaun&roomId=test&squad=test&sceneIndex=2  
 [Act1Multiplayer] Joining Act1 game at scene 2 - Room: test, Player: Alex, Role: zaun
 [GameHub] Act1 game started with 2 players at scene index 2 (database_revelation)
+[Act1Multiplayer] Scene index setup tracking: transitionFromSceneIndex stored as 2
 ```
 
-This logging helps identify parameter parsing issues, URL construction problems, and scene initialization failures.
+This logging helps identify parameter parsing issues, URL construction problems, scene initialization failures, testing workflow issues, and Signal Decoder integration problems.
 
 ### Modular Architecture
 - Service-based design
@@ -1135,6 +1187,21 @@ This logging helps identify parameter parsing issues, URL construction problems,
 - **Scene 3 Implementation**: Database Revelation scene with 29 dialogue lines and character expressions
 - **Debug Infrastructure**: Comprehensive logging for transition troubleshooting
 - **Parameter Consistency**: Proper `roomId`/`squad` parameter handling for multiplayer sync
+
+### 🔄 2025 Update: Complete Signal Decoder Integration
+- **Fixed Scene 3 to Signal Decoder Transition**: Scene 3 (Database Revelation) now correctly transitions to Signal Decoder instead of Picture Explanation
+- **Dynamic Fallback System**: Enhanced fallback mechanism with scene index storage and dynamic URL generation based on story progression
+- **Complete Hub Integration**: New `JoinSignalDecoderGameWithRole()` hub method eliminates "Game is Full" errors during story transitions
+- **Role Preservation**: Signal Decoder now uses `AddPlayerWithRole()` to maintain Piltover/Zaun assignments from story mode
+- **Enhanced Debug Logging**: Comprehensive logging throughout progression and fallback systems for transition troubleshooting
+
+### 🧪 2025 Update: Scene Selection Testing System
+- **Developer Testing Interface**: Added comprehensive scene selection testing in Character Lobby
+- **Two-Step Testing Process**: "Continue Where You Left Off" button reveals full scene selection grid
+- **Synchronized Player Transport**: Both players transported to same testing room simultaneously via SignalR
+- **Scene & Puzzle Options**: Direct access to visual novel scenes (Emergency Briefing, Database Revelation) or puzzle transitions (Picture Explanation, Signal Decoder)
+- **Role Preservation in Testing**: Maintains Piltover/Zaun assignments throughout testing workflow
+- **Rapid Development Workflow**: Jump directly to any story content without playing through prerequisites (saves ~10+ minutes per test cycle)
 
 ### ✨ 2024 Update: Enhanced Expression System
 - **Dynamic Character Expressions**: Added 10 different character expressions with per-dialogue line control
