@@ -1541,7 +1541,7 @@ public class GameHub : Hub
             // Initialize game scene if first player
             if (game.Players.Count == 1)
             {
-                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
+                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
                 game.GameState = new VisualNovelState 
                 { 
                     CurrentSceneId = game.CurrentScene.Id,
@@ -1552,7 +1552,7 @@ public class GameHub : Hub
             // Ensure scene is always set even for second player
             else if (game.CurrentScene == null)
             {
-                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
+                game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
                 game.GameState = new VisualNovelState 
                 { 
                     CurrentSceneId = game.CurrentScene.Id,
@@ -1807,7 +1807,7 @@ public class GameHub : Hub
             var originalSquadName = game.Players.FirstOrDefault()?.OriginalSquadName ?? "";
             game.Status = Act1GameStatus.InProgress;
             game.CurrentSceneIndex = 0;
-            game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName);
+            game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
             game.GameState.CurrentDialogueIndex = 0;
             game.GameState.IsTextFullyDisplayed = false;
             game.IsTextAnimating = true;

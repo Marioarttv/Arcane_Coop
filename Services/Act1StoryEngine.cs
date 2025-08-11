@@ -6,7 +6,7 @@ namespace Arcane_Coop.Services
     public interface IAct1StoryEngine
     {
         // Content builders
-        VisualNovelScene CreateEmergencyBriefingScene(string squadName);
+        VisualNovelScene CreateEmergencyBriefingScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -25,14 +25,21 @@ namespace Arcane_Coop.Services
 
     public class Act1StoryEngine : IAct1StoryEngine
     {
-        public VisualNovelScene CreateEmergencyBriefingScene(string squadName)
+        public VisualNovelScene CreateEmergencyBriefingScene(string squadName, Act1MultiplayerGame game)
         {
+            // Get player names for dynamic character naming
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Enforcer Recruit";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Vi's Old Friend";
+            
             var scene = new VisualNovelScene
             {
-                Id = "emergency_briefing",
-                Name = "Emergency Briefing - Tech Theft Crisis",
+                Id = "council_antechamber",
+                Name = "Council Chamber Antechamber - After the Meeting",
                 Layout = SceneLayout.DualCharacters,
-                Theme = NovelTheme.Zaun
+                Theme = NovelTheme.Piltover
             };
 
             // Characters
@@ -44,7 +51,7 @@ namespace Arcane_Coop.Services
                     Name = "Vi",
                     DisplayName = "Vi",
                     ImagePath = "/images/vi.jpeg",
-                    Position = CharacterPosition.Right,
+                    Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -60,9 +67,9 @@ namespace Arcane_Coop.Services
                 {
                     Id = "caitlyn",
                     Name = "Caitlyn",
-                    DisplayName = "Officer Caitlyn",
+                    DisplayName = "Caitlyn",
                     ImagePath = "/images/cait.jpeg",
-                    Position = CharacterPosition.Left,
+                    Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -72,72 +79,47 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Surprised, "/images/cait.jpeg" },
                         { CharacterExpression.Determined, "/images/cait.jpeg" }
                     }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerA",
+                    Name = piltoverPlayerName,
+                    DisplayName = piltoverPlayerName,
+                    ImagePath = "/images/enforcer.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/enforcer.png" },
+                        { CharacterExpression.Worried, "/images/enforcer.png" },
+                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerB",
+                    Name = zaunPlayerName,
+                    DisplayName = zaunPlayerName,
+                    ImagePath = "/images/zaun_friend.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/zaun_friend.png" },
+                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
+                        { CharacterExpression.Serious, "/images/zaun_friend.png" }
+                    }
                 }
             });
 
             // Dialogue
             scene.DialogueLines.AddRange(new[]
             {
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = $"Squad {squadName}, thank you for responding. We have a crisis that threatens both cities.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
+                // Scene: Council Chamber Antechamber - Moments after the meeting
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "You two are the only ones we can trust with this. One from each side, working together.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Three hextech prototypes were stolen from the Academy vault last night. Security footage was corrupted.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "And before your Piltover operative gets any ideas - Renni's chemtech warehouse was hit too. Same night.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "The thefts happened within minutes of each other. Someone's playing both sides.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Who's crazy enough to steal from both the Academy AND the chembarons? That's painting a target on your back.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "The Council is already blaming Zaun. The chembarons are pointing fingers at Piltover. You see the problem.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Yeah - we're one angry mob away from all-out war. That's why we need you two.",
+                    Text = "A blockade. A bloody BLOCKADE! While Silco sits comfortable and Jinx... Powder is out there with him.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Angry
@@ -145,7 +127,40 @@ namespace Arcane_Coop.Services
                 new DialogueLine
                 {
                     CharacterId = "caitlyn",
-                    Text = "We have leads. I intercepted encrypted messages from a relay station near the border.",
+                    Text = "Vi, the Council needs time to—",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Time? How much more time do they need? Every second we waste, she slips further away!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                // Enforcer Recruit (Player A) enters
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Caitlyn! Thank the gears I found you. I know you're not supposed to be on active cases, but... this couldn't wait.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "What is it? If Marcus finds out you're—",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "It's about the blue-haired girl. Someone down in Zaun claims they saw her. Recently. Like, yesterday recently.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
@@ -153,89 +168,218 @@ namespace Arcane_Coop.Services
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "And I found chemical residue at the warehouse. Not shimmer, not standard chemtech. Something new.",
+                    Text = "Who? Who saw her?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = $"That's the thing... they'll only talk to someone they trust. Said they knew you from before, Vi. Goes by the name {zaunPlayerName}.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                // Player B enters from shadows
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Still grabbing people when you're excited, eh Vi?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Default
                 },
-                // Player choice - Piltover player decides investigation approach
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "No way... is that really you? I thought you were—",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Dead? Locked up? Nah, just keeping my head down since... since that night. But when I saw what I saw, I knew I had to find you.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "How did you two even connect?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Pure chance. I was following up on witness reports near the docks when they approached ME. Said they had information but would only share it with Vi present.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Default
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = $"And I wasn't about to trust some random enforcer with this. But when {piltoverPlayerName} mentioned working with you, Caitlyn, and that Vi was actually alive and out of Stillwater... I took the risk.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "You really saw her? Powder?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Not here. Too many ears. But yeah, Vi. I saw her. And there's more - something about files with red marks, people being hunted. It's all connected to that night at the warehouse.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Do you trust them?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "They knew things... details about Vi that checked out. And they seemed genuinely scared about what they'd seen.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Forget the Council and their blockade. This is our lead.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "We do this together. All four of us.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "We'll need to be careful. If Marcus finds out we're investigating without authorization...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "Then we better not let him find out. Come on, there was a break-in last night. That's where this all starts. Someone dropped something that'll interest you.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Then what are we waiting for?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                // Player choice - what approach to take
                 new DialogueLine
                 {
                     Id = "investigation_choice",
                     CharacterId = "caitlyn",
-                    Text = "Your Piltover operative has tactical training. What's your assessment of where to start?",
+                    Text = "Before we go - we need a plan. How should we approach this?",
                     IsPlayerChoice = true,
                     ChoiceOwnerRole = "piltover",
                     Choices = new List<DialogueChoice>
                     {
                         new DialogueChoice
                         {
-                            Id = "investigate_messages",
-                            Text = "Those encrypted messages are our best lead. We should decode them immediately.",
-                            NextDialogueId = "messages_response",
-                            ResultExpression = CharacterExpression.Determined,
-                            Consequences = new Dictionary<string, object> { { "initial_lead", "messages" } }
-                        },
-                        new DialogueChoice
-                        {
-                            Id = "investigate_theft_sites",
-                            Text = "The theft sites might have physical evidence. We should examine them first.",
-                            NextDialogueId = "sites_response",
+                            Id = "investigate_stealthy",
+                            Text = "We go in quiet. No one can know we're working together - it would cause panic.",
+                            NextDialogueId = "stealthy_response",
                             ResultExpression = CharacterExpression.Serious,
-                            Consequences = new Dictionary<string, object> { { "initial_lead", "sites" } }
+                            Consequences = new Dictionary<string, object> { { "approach", "stealthy" } }
                         },
                         new DialogueChoice
                         {
-                            Id = "investigate_both",
-                            Text = "We should split up - cover both leads simultaneously. Time is critical.",
+                            Id = "investigate_official",
+                            Text = "We make this semi-official. Use my enforcer credentials to access what we need.",
+                            NextDialogueId = "official_response",
+                            ResultExpression = CharacterExpression.Determined,
+                            Consequences = new Dictionary<string, object> { { "approach", "official" } }
+                        },
+                        new DialogueChoice
+                        {
+                            Id = "investigate_split",
+                            Text = "Split up - Piltover team takes topside, Zaun team handles the underground.",
                             NextDialogueId = "split_response",
                             ResultExpression = CharacterExpression.Determined,
-                            Consequences = new Dictionary<string, object> { { "initial_lead", "split" } }
+                            Consequences = new Dictionary<string, object> { { "approach", "split" } }
                         }
                     }
                 },
-                // === SECOND CHOICE ===
+                // === SECOND CHOICE - Zaun player ===
                 new DialogueLine
                 {
-                    Id = "priority_choice",
-                    CharacterId = "vi",
-                    Text = "Your Zaun operative knows the streets. What's your gut telling you about priorities?",
+                    Id = "trust_choice",
+                    CharacterId = "playerB",
+                    Text = "One more thing - who do we trust with what we find?",
                     IsPlayerChoice = true,
                     ChoiceOwnerRole = "zaun",
                     Choices = new List<DialogueChoice>
                     {
                         new DialogueChoice
                         {
-                            Id = "save_people",
-                            Text = "The people come first. If this goes bad, we evacuate civilians before anything else.",
-                            NextDialogueId = "people_priority",
+                            Id = "trust_nobody",
+                            Text = "No one. We keep this between us four until we have proof.",
+                            NextDialogueId = "trust_nobody_response",
+                            ResultExpression = CharacterExpression.Serious,
+                            Consequences = new Dictionary<string, object> { { "trust", "nobody" } }
+                        },
+                        new DialogueChoice
+                        {
+                            Id = "trust_vi_cait",
+                            Text = "Vi and Caitlyn have proven themselves. We follow their lead.",
+                            NextDialogueId = "trust_heroes_response",
+                            ResultExpression = CharacterExpression.Default,
+                            Consequences = new Dictionary<string, object> { { "trust", "heroes" } }
+                        },
+                        new DialogueChoice
+                        {
+                            Id = "trust_network",
+                            Text = "I have contacts in the underground. They can help us move unseen.",
+                            NextDialogueId = "trust_network_response",
                             ResultExpression = CharacterExpression.Determined,
-                            Consequences = new Dictionary<string, object> { { "priority", "people" } }
-                        },
-                        new DialogueChoice
-                        {
-                            Id = "stop_war",
-                            Text = "We can't let them start a war. That's exactly what the thief wants.",
-                            NextDialogueId = "war_priority",
-                            ResultExpression = CharacterExpression.Worried,
-                            Consequences = new Dictionary<string, object> { { "priority", "peace" } }
-                        },
-                        new DialogueChoice
-                        {
-                            Id = "catch_thief",
-                            Text = "Find who's behind this. They're playing us like puppets - time to cut the strings.",
-                            NextDialogueId = "thief_priority",
-                            ResultExpression = CharacterExpression.Angry,
-                            Consequences = new Dictionary<string, object> { { "priority", "justice" } }
+                            Consequences = new Dictionary<string, object> { { "trust", "network" } }
                         }
                     }
                 },
-                // === FINAL MISSION BRIEFING (common ending) ===
+                // === FINAL SCENE - Ready to investigate ===
                 new DialogueLine
                 {
-                    Id = "mission_briefing",
+                    Id = "final_brief",
                     CharacterId = "vi",
-                    Text = $"Alright, Squad {squadName}. You're our best shot at stopping this war.",
+                    Text = "Alright, we have our team. Let's move before someone notices we're all together.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
@@ -243,134 +387,112 @@ namespace Arcane_Coop.Services
                 new DialogueLine
                 {
                     CharacterId = "caitlyn",
-                    Text = "Your first task - analyze corrupted surveillance footage from both theft sites.",
+                    Text = "Remember - we're looking for anything that connects to Jinx or these warehouse break-ins.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
                 },
                 new DialogueLine
                 {
-                    CharacterId = "vi",
-                    Text = "The images are fragmented. One of you will need to describe what you see, the other identifies it.",
+                    CharacterId = "playerB",
+                    Text = "The break-in site has surveillance footage, but it's corrupted. You'll need to work together to piece it together.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "One of us can describe what we see in the fragments, the other can help identify the locations and people.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
                 },
                 new DialogueLine
                 {
-                    CharacterId = "caitlyn",
-                    Text = "Work together. Trust each other. The fate of both cities depends on what you find.",
+                    CharacterId = "vi",
+                    Text = "This is it. Whatever you find could be the key to everything. To finding Powder.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Worried
                 },
                 new DialogueLine
                 {
-                    CharacterId = "vi",
-                    Text = "No pressure, rookies. Just the difference between peace and all-out war. You got this.",
+                    CharacterId = "caitlyn",
+                    Text = "Let's go. And be careful - we don't know who else might be watching.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
                 },
                 
                 // === ALL BRANCH DIALOGUES AT THE END ===
-                // First choice branches
+                // First choice branches (Piltover player)
                 new DialogueLine
                 {
-                    Id = "messages_response",
+                    Id = "stealthy_response",
                     CharacterId = "vi",
-                    Text = "Smart call. Those codes use both Piltovan and Zaunite encryption. You'll need to work together.",
+                    Text = "Smart. We stay under the radar. No uniforms, no badges.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "messages_continue"
+                    NextDialogueId = "trust_choice"
                 },
                 new DialogueLine
                 {
-                    Id = "messages_continue",
+                    Id = "official_response",
                     CharacterId = "caitlyn",
-                    Text = "One of you identifies the patterns, the other provides context. Communication is key.",
+                    Text = "That could work. My suspension isn't public knowledge yet. We can use that.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious,
-                    NextDialogueId = "priority_choice"
-                },
-                new DialogueLine
-                {
-                    Id = "sites_response",
-                    CharacterId = "vi",
-                    Text = "Good instincts. That residue is unlike anything I've seen. You'll need to analyze it carefully.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "sites_continue"
-                },
-                new DialogueLine
-                {
-                    Id = "sites_continue",
-                    CharacterId = "caitlyn",
-                    Text = "If someone's mixing hextech and chemtech, you need to identify what they're building. Fast.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "priority_choice"
+                    NextDialogueId = "trust_choice"
                 },
                 new DialogueLine
                 {
                     Id = "split_response",
-                    CharacterId = "vi",
-                    Text = "Ambitious. Alright, you two split the leads. But stay in contact - this could get dangerous.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "split_continue"
-                },
-                new DialogueLine
-                {
-                    Id = "split_continue",
-                    CharacterId = "caitlyn",
-                    Text = "Share everything through our secure channels. No secrets between partners.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "priority_choice"
-                },
-                // Second choice branches
-                new DialogueLine
-                {
-                    Id = "people_priority",
-                    CharacterId = "caitlyn",
-                    Text = "Good. That's exactly the mindset we need. I'll coordinate evacuation routes with the Enforcers.",
+                    CharacterId = "playerB",
+                    Text = "Cover more ground that way. But we share everything we find. Agreed?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious,
-                    NextDialogueId = "mission_briefing"
+                    NextDialogueId = "trust_choice"
                 },
+                // Second choice branches (Zaun player)
                 new DialogueLine
                 {
-                    Id = "war_priority",
-                    CharacterId = "caitlyn",
-                    Text = "Exactly right. The thief wants chaos - we give them cooperation instead.",
+                    Id = "trust_nobody_response",
+                    CharacterId = "vi",
+                    Text = "Paranoid but smart. Until we know who's behind this, trust is a luxury we can't afford.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried,
-                    NextDialogueId = "mission_briefing"
+                    SpeakerExpression = CharacterExpression.Serious,
+                    NextDialogueId = "final_brief"
                 },
                 new DialogueLine
                 {
-                    Id = "thief_priority",
+                    Id = "trust_heroes_response",
                     CharacterId = "caitlyn",
-                    Text = "Agreed. But remember - we need evidence both sides will accept. Do this right.",
+                    Text = "We won't let you down. We've come too far to fail now.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined,
-                    NextDialogueId = "mission_briefing"
+                    NextDialogueId = "final_brief"
+                },
+                new DialogueLine
+                {
+                    Id = "trust_network_response",
+                    CharacterId = "vi",
+                    Text = "Your contacts could be useful. But be careful who you bring in - one leak and we're all done.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried,
+                    NextDialogueId = "final_brief"
                 }
             });
 
             // Mark the end of main content (before branch dialogues)
-            // The last main dialogue is at index 16 ("No pressure, rookies...")
-            scene.MainContentEndIndex = 16;
+            // The last main dialogue is "Let's go. And be careful..." which should be at index 31
+            scene.MainContentEndIndex = 31;
 
             // Debug: Log all dialogue IDs and their indices
             Console.WriteLine($"[Act1StoryEngine] Scene created with {scene.DialogueLines.Count} dialogues:");
