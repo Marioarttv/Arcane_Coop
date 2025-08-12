@@ -1550,18 +1550,22 @@
 
 .image-choices {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1rem;
 }
 
 .choice-item {
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(0, 200, 200, 0.3);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.75rem;
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .choice-item:hover {
@@ -1578,13 +1582,16 @@
 
 .choice-image {
     width: 100%;
-    height: 150px;
-    object-fit: cover;
+    max-width: 200px;
+    height: 250px;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     border: 1px solid rgba(0, 200, 200, 0.3);
     filter: brightness(0.9) contrast(1.1);
     transition: all 0.3s ease;
+    padding: 4px;
 }
 
 .choice-item:hover .choice-image {
@@ -1773,6 +1780,18 @@
 }
 
 /* Responsive Design */
+@@media (max-width: 1200px) {
+    .image-choices {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+    }
+    
+    .choice-image {
+        height: 220px;
+        max-width: 180px;
+    }
+}
+
 @@media (max-width: 768px) {
     .role-preview {
         grid-template-columns: 1fr;
@@ -1803,7 +1822,13 @@
     }
     
     .image-choices {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .choice-image {
+        height: 200px;
+        max-width: 150px;
     }
     
     .main-image {
@@ -1825,11 +1850,13 @@
     }
     
     .image-choices {
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
     }
     
     .choice-image {
-        height: 100px;
+        height: 180px;
+        max-width: 120px;
     }
 }
 </style>
