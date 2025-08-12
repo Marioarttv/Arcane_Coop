@@ -122,15 +122,78 @@ Work together under time pressure to decode emergency transmissions by filling i
 - Real-time communication skills development
 - Technical vocabulary acquisition
 
+## Story Integration
+
+### Act 1 Visual Novel → Signal Decoder Transition (2025 Complete Integration)
+
+**Scene 3 to Signal Decoder Transition:**
+- Server sends `Act1RedirectToNextGame` to each connection with individualized URL parameters
+- Parameters include: `role`, `avatar`, `name`, `squad`, `story=true`, and `transition`
+- Example URL: `/signal-decoder?role=zaun&squad=SquadAlpha_FromPicturePuzzle&transition=FromScene3&story=true`
+
+**Role Preservation:**
+- `SignalDecoder.razor` reads `role` from URL and calls `JoinSignalDecoderGameWithRole`
+- Uses `AddPlayerWithRole()` game logic to maintain Piltover/Zaun assignments from story mode
+- Prevents "Game is Full" errors that previously occurred during story transitions
+
+**Story Mode Features:**
+- When `story=true`, the UI immediately sets `inGame = true` to skip lobby setup
+- Shows "Continue Story" button instead of "Play Again" after puzzle completion
+- Seamless integration with visual novel narrative flow
+
+### Transition Parameter System (2025 Update)
+
+**Unique Room ID Generation:**
+The Signal Decoder puzzle implements a sophisticated transition parameter system that prevents room name conflicts during story transitions.
+
+**URL Parameter Processing:**
+```csharp
+// Example transition URL from Scene 3:
+/signal-decoder?role=zaun&squad=SquadAlpha_FromPicturePuzzle&transition=FromScene3&story=true
+
+// Transition parameter parsing
+string transitionParam = HttpUtility.ParseQueryString(uri.Query)["transition"];
+string uniqueRoomId = !string.IsNullOrEmpty(transitionParam) ? 
+    $"{squadName}_{transitionParam}" : squadName;
+
+// Result: SquadAlpha_FromPicturePuzzle_FromScene3
+```
+
+**Squad Name Extraction for Return Transition:**
+```csharp
+// When transitioning back to next visual novel scene
+string originalSquadName = roomId.Contains("_") ? 
+    roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+string nextPhaseRoomId = $"{originalSquadName}_FromSignalDecoder";
+
+// From: SquadAlpha_FromPicturePuzzle_FromScene3
+// Extract: SquadAlpha
+// Create: SquadAlpha_FromSignalDecoder
+```
+
+**Critical Benefits:**
+- **Eliminates "Game is Full" Errors**: Each story transition uses a unique room identifier
+- **Preserves Squad Identity**: Original squad name maintained throughout the story flow
+- **Complete Story Integration**: Fixed Scene 3 to Signal Decoder transition that previously went to Picture Explanation
+- **Synchronized Navigation**: Both players join the same unique puzzle room
+- **Role Continuity**: Player roles (Piltover/Zaun) preserved across story-puzzle boundaries
+
 ## Technical Notes
 
 ### SignalR Methods
 - `JoinRoom`: Connects player to game session
-- `JoinGame`: Assigns Interceptor/Analyst roles
+- `JoinGame`: Assigns Interceptor/Analyst roles (legacy method)
+- `JoinSignalDecoderGameWithRole(roomId, playerName, requestedRole)`: New story mode method with role preservation
 - `PlayAudio`: Triggers audio transmission for Analyst
 - `SubmitDecoding`: Processes Interceptor's word guesses
 - `RequestReplay`: Allows audio replay with limitations
 - `UpdateSignalStrength`: Handles signal decay over time
+
+**Transition Parameter Integration:**
+- Room ID creation uses transition parameter: `{squadName}_{transitionParam}`
+- `AddPlayerWithRole()` handles story mode player assignment with role preservation
+- Squad name extraction for story continuation: `roomId.Substring(0, roomId.IndexOf("_"))`
+- Unique room IDs prevent conflicts during story-puzzle transitions
 
 ### Audio Requirements
 - Browser audio permissions for full experience

@@ -516,6 +516,50 @@ Console.WriteLine($"[Act1Multiplayer] Joining Act1 game at scene {startAtSceneIn
 - **Solution**: Added `JoinSignalDecoderGameWithRole()` hub method and `AddPlayerWithRole()` game logic
 - **Implementation**: Complete Signal Decoder story integration with role preservation
 
+### Transition Parameter System (2025 Update)
+
+The project implements a sophisticated transition parameter system that creates unique lobby names for each transition between scenes and puzzles. This prevents room name conflicts and eliminates "party is already full" errors during story-puzzle transitions.
+
+#### Key Implementation Details
+
+**URL Parameter Addition:**
+- All scene-to-puzzle transitions now include a `transition` parameter
+- Example: `&transition=FromScene1and2` or `&transition=FromScene3`
+
+**Unique Room ID Generation:**
+- Puzzle pages parse the transition parameter
+- Create unique room IDs by combining squad name with transition source
+- Format: `{squadName}_{transitionSource}`
+- Example: `SquadAlpha_FromScene1and2`
+
+**Squad Name Extraction:**
+- When transitioning back from puzzles, extract original squad name from room ID
+- Remove transition suffix using: `roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId`
+- Create new unique room ID for next phase
+
+**Transition Flow:**
+```
+Scene 1&2 → Picture Explanation: SquadAlpha → SquadAlpha_FromScene1and2
+Picture Explanation → Scene 3: SquadAlpha_FromScene1and2 → SquadAlpha_FromPicturePuzzle
+Scene 3 → Signal Decoder: SquadAlpha_FromPicturePuzzle → SquadAlpha_FromScene3
+Signal Decoder → Next Scene: SquadAlpha_FromScene3 → SquadAlpha_FromSignalDecoder
+```
+
+**Synchronized Redirects:**
+- Both players receive redirect messages simultaneously using `Task.WhenAll`
+- Small client-side delay ensures coordinated navigation
+- Prevents race conditions where one player creates room before other joins
+
+**Why This Solves the Problem:**
+Previously, both players would try to join the same room name that was already in use from a previous phase, causing "party is already full" errors. Now each transition creates a new, unique lobby while preserving the original squad name for display purposes.
+
+**Critical Files Modified:**
+- `Act1StoryEngine.cs`: Added transition parameters to puzzle redirect URLs
+- `PictureExplanation.razor`: Parse transition parameter, create unique room IDs
+- `SignalDecoder.razor`: Parse transition parameter, create unique room IDs  
+- `GameHub.cs`: Extract original squad names, create unique room IDs for transitions
+- `Act1Multiplayer.razor`: Updated fallback URLs with transition parameters
+
 This comprehensive transition system enables seamless story-driven gameplay where puzzles feel integrated into the narrative rather than separate mini-games.
 
 ## Scene Selection Testing System (2025)

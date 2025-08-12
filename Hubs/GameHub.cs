@@ -1031,8 +1031,10 @@ public class GameHub : Hub
 
     public async Task JoinPictureExplanationGameWithRole(string roomId, string playerName, string requestedRole)
     {
+        Console.WriteLine($"[GameHub] JoinPictureExplanationGameWithRole - Room: {roomId}, Player: {playerName}, RequestedRole: {requestedRole}");
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         var game = _pictureExplanationGames.GetOrAdd(roomId, _ => new PictureExplanationGame());
+        Console.WriteLine($"[GameHub] PictureExplanation game state - Room: {roomId}, Current players: {game.GetConnectedPlayers().Count}");
         try
         {
             var role = game.AddPlayer(Context.ConnectionId, playerName, requestedRole);
@@ -1049,11 +1051,13 @@ public class GameHub : Hub
             }
             else
             {
+                Console.WriteLine($"[GameHub] PictureExplanation game full - Room: {roomId}, Player: {playerName} could not join");
                 await Clients.Caller.SendAsync("PictureExplanationGameFull");
             }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[GameHub] PictureExplanation join error - Room: {roomId}, Player: {playerName}, Error: {ex.Message}");
             await Clients.Caller.SendAsync("PictureExplanationInvalidAction", ex.Message);
         }
     }
@@ -1656,6 +1660,7 @@ public class GameHub : Hub
             // Check if room is full (max 2 players)
             if (game.Players.Count >= 2)
             {
+                Console.WriteLine($"[GameHub] Act1 room full - Room: {roomId}, Players in room: {string.Join(", ", game.Players.Select(p => p.PlayerName))}, Attempting to join: {playerName}");
                 await Clients.Caller.SendAsync("Act1GameFull");
                 return;
             }
@@ -2386,6 +2391,12 @@ public class GameHub : Hub
                 return;
             }
             
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromPicturePuzzle";
+            
+            Console.WriteLine($"[GameHub] ContinueStoryToScene3 - Original room: {roomId}, Original squad: {originalSquadName}, New unique room: {uniqueRoomId}");
+            
             // Build redirect URLs for Act1 Scene 3 (database_revelation)
             var redirectUrls = new Dictionary<string, string>();
             foreach (var connectionId in connectedPlayers)
@@ -2394,19 +2405,24 @@ public class GameHub : Hub
                 var roleName = playerView.Role.ToLower();
                 var playerName = playerView.DisplayName;
                 
-                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(roomId)}&squad={Uri.EscapeDataString(roomId)}&sceneIndex=2";
+                // Use the SAME uniqueRoomId for both players
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=2&transition=FromPicturePuzzle";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
 
-            // Send redirect to all players
+            // Send redirect to all players simultaneously
+            var redirectTasks = new List<Task>();
             foreach (var connectionId in connectedPlayers)
             {
                 if (redirectUrls.TryGetValue(connectionId, out var url))
                 {
                     Console.WriteLine($"[GameHub] Redirecting player {connectionId} to: {url}");
-                    await Clients.Client(connectionId).SendAsync("RedirectToStoryScene3", url);
+                    redirectTasks.Add(Clients.Client(connectionId).SendAsync("RedirectToStoryScene3", url));
                 }
             }
+            
+            // Wait for all redirects to be sent
+            await Task.WhenAll(redirectTasks);
 
             Console.WriteLine($"[GameHub] Continuing story to Scene 3 for room {roomId} with {connectedPlayers.Count} players");
         }
@@ -2435,14 +2451,34 @@ public class GameHub : Hub
                 return;
             }
 
-            // TODO: Implement the next scene in the story progression
-            // For now, send a placeholder message indicating where the next scene would go
+            // Build redirect URLs for the next story scene (would be Scene 4 after Signal Decoder)
+            var redirectUrls = new Dictionary<string, string>();
             foreach (var connectionId in connectedPlayers)
             {
-                await Clients.Client(connectionId).SendAsync("RedirectToNextStoryScene", "/");
+                var playerView = game.GetPlayerView(connectionId);
+                var roleName = playerView.Role.ToLower();
+                var playerName = playerView.DisplayName;
+                
+                // Extract original squad name from room ID (remove transition suffix if present)
+                var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+                var uniqueRoomId = $"{originalSquadName}_FromSignalDecoder";
+                
+                // For now, redirect to Act1 with scene index 4 (or back to menu if story ends here)
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=4&transition=FromSignalDecoder";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
 
-            Console.WriteLine($"[GameHub] Signal Decoder completed - story continuation ready for room {roomId} with {connectedPlayers.Count} players");
+            // Send redirect to all players
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    Console.WriteLine($"[GameHub] Redirecting player {connectionId} from Signal Decoder to: {url}");
+                    await Clients.Client(connectionId).SendAsync("RedirectToNextStoryScene", url);
+                }
+            }
+
+            Console.WriteLine($"[GameHub] Signal Decoder completed - continuing story for room {roomId} with {connectedPlayers.Count} players");
             Console.WriteLine($"[GameHub] TODO: Implement next scene after Signal Decoder in story progression");
         }
         catch (Exception ex)

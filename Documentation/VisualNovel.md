@@ -89,6 +89,43 @@ public List<string> StoryProgression = new()
 };
 ```
 
+**Transition Parameter Implementation:**
+```csharp
+// Scene-to-Puzzle URL Construction with Transition Parameter
+var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition={transitionSource}";
+var url = $"/picture-explanation?{parameters}";
+
+// Puzzle Room ID Generation
+string transitionParam = HttpUtility.ParseQueryString(uri.Query)["transition"];
+string uniqueRoomId = !string.IsNullOrEmpty(transitionParam) ? 
+    $"{squadName}_{transitionParam}" : squadName;
+
+// Squad Name Extraction for Next Phase
+string originalSquadName = roomId.Contains("_") ? 
+    roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+string nextPhaseRoomId = $"{originalSquadName}_FromPicturePuzzle";
+```
+
+**Transition Flow with Unique Room IDs:**
+```
+Scene 1&2 → Picture Explanation:
+  URL: /picture-explanation?squad=SquadAlpha&transition=FromScene1and2&story=true
+  Room ID: SquadAlpha_FromScene1and2
+
+Picture Explanation → Scene 3:
+  Extract: SquadAlpha (from SquadAlpha_FromScene1and2)
+  New Room ID: SquadAlpha_FromPicturePuzzle
+  URL: /act1-multiplayer?roomId=SquadAlpha_FromPicturePuzzle&sceneIndex=2
+
+Scene 3 → Signal Decoder:
+  URL: /signal-decoder?squad=SquadAlpha_FromPicturePuzzle&transition=FromScene3&story=true
+  Room ID: SquadAlpha_FromPicturePuzzle_FromScene3
+
+Signal Decoder → Next Scene:
+  Extract: SquadAlpha (from SquadAlpha_FromPicturePuzzle_FromScene3)
+  New Room ID: SquadAlpha_FromSignalDecoder
+```
+
 **Critical Implementation Details:**
 - `MainContentEndIndex` properly set to prevent premature scene transitions
 - Scene index handling for both first and second players joining
@@ -1194,6 +1231,14 @@ This logging helps identify parameter parsing issues, URL construction problems,
 - **Complete Hub Integration**: New `JoinSignalDecoderGameWithRole()` hub method eliminates "Game is Full" errors during story transitions
 - **Role Preservation**: Signal Decoder now uses `AddPlayerWithRole()` to maintain Piltover/Zaun assignments from story mode
 - **Enhanced Debug Logging**: Comprehensive logging throughout progression and fallback systems for transition troubleshooting
+
+### 🔄 2025 Update: Transition Parameter System
+- **Unique Lobby Name Generation**: Sophisticated transition parameter system creates unique lobby names for each transition between scenes and puzzles
+- **Room Conflict Prevention**: Eliminates "party is already full" errors by ensuring each transition uses unique room identifiers
+- **Squad Name Preservation**: Original squad name maintained for display purposes while using unique internal room IDs
+- **Synchronized Navigation**: Both players receive redirect messages simultaneously with coordinated room creation/joining
+- **Parameter Implementation**: All scene-to-puzzle transitions include transition parameters (e.g., `&transition=FromScene1and2`)
+- **Unique Room ID Format**: `{squadName}_{transitionSource}` pattern creates distinct lobbies for each story phase
 
 ### 🧪 2025 Update: Scene Selection Testing System
 - **Developer Testing Interface**: Added comprehensive scene selection testing in Character Lobby

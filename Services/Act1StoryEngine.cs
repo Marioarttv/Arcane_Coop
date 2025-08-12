@@ -1191,7 +1191,7 @@ namespace Arcane_Coop.Services
                         foreach (var p in game.Players)
                         {
                             var parameters =
-                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromScene3";
                             signalDecoderUrls[p.PlayerId] = $"/signal-decoder?{parameters}";
                         }
                         result.RedirectUrlsByPlayerId = signalDecoderUrls;
@@ -1212,7 +1212,7 @@ namespace Arcane_Coop.Services
                         foreach (var p in game.Players)
                         {
                             var parameters =
-                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true";
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromScene1and2";
                             pictureUrls[p.PlayerId] = $"/picture-explanation?{parameters}";
                         }
                         result.RedirectUrlsByPlayerId = pictureUrls;

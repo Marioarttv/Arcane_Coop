@@ -378,6 +378,7 @@
     private string playerAvatar = "";
     private string squadName = "";
     private bool isFromStory = false;
+    private string transitionSource = "";
     
     // UI feedback
     private string statusMessage = "";
@@ -413,19 +414,36 @@
             var name = query["name"];
             var squad = query["squad"];
             isFromStory = query["story"] == "true";
+            transitionSource = query["transition"] ?? "";
             
             if (!string.IsNullOrEmpty(name))
                 playerName = Uri.UnescapeDataString(name);
             
             if (!string.IsNullOrEmpty(squad))
-                roomId = Uri.UnescapeDataString(squad);
+            {
+                squadName = Uri.UnescapeDataString(squad);
+                // Create unique room ID by combining squad name with transition source
+                if (!string.IsNullOrEmpty(transitionSource))
+                {
+                    roomId = $"{squadName}_{transitionSource}";
+                }
+                else
+                {
+                    roomId = squadName;
+                }
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[PictureExplanation] Error parsing URL parameters: {ex.Message}");
         }
         
-        Console.WriteLine($"[PictureExplanation] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, Story: {isFromStory}");
+        Console.WriteLine($"[PictureExplanation] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, RoomId: {roomId}, Story: {isFromStory}, Transition: {transitionSource}");
+        
+        if (!string.IsNullOrEmpty(transitionSource))
+        {
+            Console.WriteLine($"[PictureExplanation] Using unique room ID with transition: {roomId}");
+        }
     }
 
     private async Task InitializeConnection()
@@ -512,10 +530,15 @@
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string>("RedirectToStoryScene3", (url) =>
+        hubConnection.On<string>("RedirectToStoryScene3", async (url) =>
         {
-            Console.WriteLine($"[PictureExplanation] Redirecting to Scene 3: {url}");
+            Console.WriteLine($"[PictureExplanation] Received redirect to Scene 3: {url}");
             ShowStatus("Continuing story - Loading Scene 3...", "info");
+            await InvokeAsync(StateHasChanged);
+            
+            // Small delay to ensure both players navigate together
+            await Task.Delay(500);
+            Console.WriteLine($"[PictureExplanation] Now navigating to: {url}");
             Navigation.NavigateTo(url, forceLoad: true);
         });
 

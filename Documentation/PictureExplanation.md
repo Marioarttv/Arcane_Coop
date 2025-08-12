@@ -149,12 +149,50 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 
 - Per-player redirect
   - Server sends `Act1RedirectToNextGame` to each connection with individualized URL parameters
-  - Parameters include: `role`, `avatar`, `name`, `squad`, and `story=true`
+  - Parameters include: `role`, `avatar`, `name`, `squad`, `story=true`, and `transition`
 - Role preservation
   - `PictureExplanation.razor` reads `role` from URL and calls `JoinPictureExplanationGameWithRole`
   - If both request the same role, the second is assigned the remaining role automatically
 - Lobby bypass for story
   - When `story=true`, the UI immediately sets `inGame = true` upon join to skip the lobby panel for both Piltover and Zaun
+
+### Transition Parameter System (2025 Update)
+
+**Unique Room ID Generation:**
+The Picture Explanation puzzle now implements a sophisticated transition parameter system that prevents "party is already full" errors during story transitions.
+
+**URL Parameter Processing:**
+```csharp
+// Example transition URL from Scene 1&2:
+/picture-explanation?role=piltover&squad=SquadAlpha&transition=FromScene1and2&story=true
+
+// Transition parameter parsing
+string transitionParam = HttpUtility.ParseQueryString(uri.Query)["transition"];
+string uniqueRoomId = !string.IsNullOrEmpty(transitionParam) ? 
+    $"{squadName}_{transitionParam}" : squadName;
+
+// Result: SquadAlpha_FromScene1and2
+```
+
+**Squad Name Extraction for Return Transition:**
+```csharp
+// When transitioning back to visual novel
+string originalSquadName = roomId.Contains("_") ? 
+    roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+string nextPhaseRoomId = $"{originalSquadName}_FromPicturePuzzle";
+
+// From: SquadAlpha_FromScene1and2
+// Extract: SquadAlpha  
+// Create: SquadAlpha_FromPicturePuzzle
+```
+
+**Critical Benefits:**
+- **Eliminates Room Conflicts**: Each story transition uses a unique room identifier
+- **Preserves Squad Identity**: Original squad name maintained for display purposes
+- **Synchronized Navigation**: Both players join the same unique puzzle room
+- **Seamless Story Flow**: No interruption from "Game is Full" errors during transitions
+
+### Thematic Elements
 - **Surveillance Technology**: Fits Piltover's technological aesthetic
 - **Underground Intelligence**: Matches Zaun's information networks
 - **Cooperative Mission**: Emphasizes cross-faction collaboration
@@ -166,10 +204,16 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 - `JoinRoom(roomId, playerName)`: Connects players to challenge session
 - `JoinPictureExplanationGame(roomId, playerName)`: Assigns Describer/Guesser roles
 - `JoinPictureExplanationGameWithRole(roomId, playerName, requestedRole)`: Honors requested role from story URL while preventing duplicates
+- `ContinueStoryToScene3(roomId)`: Transitions both players back to visual novel Scene 3 after puzzle completion
 - `FinishDescribing(roomId)`: Describer triggers image hiding
 - `SubmitPictureChoice(roomId, choiceIndex)`: Processes Guesser's image selection
 - `NextPictureRound(roomId)`: Moves to next challenge round
 - `RestartPictureExplanationGame(roomId)`: Resets the challenge
+
+**Transition Parameter Integration:**
+- Room ID creation uses transition parameter: `{squadName}_{transitionParam}`
+- Squad name extraction for story continuation: `roomId.Substring(0, roomId.IndexOf("_"))`
+- Unique room IDs prevent conflicts during story-puzzle transitions
 
 ### Image Requirements
 - **Resolution**: High-quality images for detailed description

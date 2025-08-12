@@ -1603,6 +1603,7 @@
     private string playerAvatar = "";
     private string squadName = "";
     private bool isFromStory = false;
+    private string transitionSource = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -1912,14 +1913,23 @@
             var name = query["name"];
             var squad = query["squad"];
             isFromStory = query["story"] == "true";
+            transitionSource = query["transition"] ?? "";
             
             if (!string.IsNullOrEmpty(name))
                 playerName = Uri.UnescapeDataString(name);
             
             if (!string.IsNullOrEmpty(squad))
             {
-                roomId = Uri.UnescapeDataString(squad);
-                squadName = roomId;
+                squadName = Uri.UnescapeDataString(squad);
+                // Create unique room ID by combining squad name with transition source
+                if (!string.IsNullOrEmpty(transitionSource))
+                {
+                    roomId = $"{squadName}_{transitionSource}";
+                }
+                else
+                {
+                    roomId = squadName;
+                }
             }
         }
         catch (Exception ex)
@@ -1927,7 +1937,7 @@
             Console.WriteLine($"[SignalDecoder] Error parsing URL parameters: {ex.Message}");
         }
         
-        Console.WriteLine($"[SignalDecoder] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, Story: {isFromStory}");
+        Console.WriteLine($"[SignalDecoder] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, RoomId: {roomId}, Story: {isFromStory}, Transition: {transitionSource}");
     }
 
     private async Task ContinueStory()

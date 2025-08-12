@@ -467,8 +467,8 @@
         {
             await InvokeAsync(() =>
             {
-                statusMessage = "Story session is full! Please try again.";
-                Console.WriteLine("[Act1Multiplayer] Game full - unable to join");
+                statusMessage = $"Story session is full! Room: {currentRoomId}. Please try again.";
+                Console.WriteLine($"[Act1Multiplayer] Game full - unable to join room: {currentRoomId}, Player: {playerName}, Role: {playerRole}");
                 StateHasChanged();
             });
         });
@@ -774,9 +774,9 @@
             
             var url = nextPhase switch
             {
-                "picture_explanation_transition" => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true",
-                "signal_decoder_transition" => $"/signal-decoder?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true",
-                _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true" // Fallback to Picture Explanation as last resort
+                "picture_explanation_transition" => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2",
+                "signal_decoder_transition" => $"/signal-decoder?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene3",
+                _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2" // Fallback to Picture Explanation as last resort
             };
             
             Console.WriteLine($"[Act1Multiplayer] Generated fallback URL: {url}");
@@ -785,7 +785,7 @@
         
         // Ultimate fallback if progression data is unavailable
         Console.WriteLine($"[Act1Multiplayer] Using ultimate fallback - nextSceneIndex {nextSceneIndex} >= storyProgression.Length {storyProgression.Length}");
-        return $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true";
+        return $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2";
     }
     
     // Choice-related methods
