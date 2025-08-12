@@ -1115,10 +1115,8 @@ namespace Arcane_Coop.Services
                     {
                         { CharacterExpression.Default, "/images/vi.jpeg" },
                         { CharacterExpression.Serious, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" },
                         { CharacterExpression.Angry, "/images/vi.jpeg" },
                         { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
                         { CharacterExpression.Worried, "/images/vi.jpeg" },
                         { CharacterExpression.Surprised, "/images/vi.jpeg" }
                     }
@@ -1135,7 +1133,6 @@ namespace Arcane_Coop.Services
                     {
                         { CharacterExpression.Default, "/images/cait.jpeg" },
                         { CharacterExpression.Angry, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" },
                         { CharacterExpression.Determined, "/images/cait.jpeg" },
                         { CharacterExpression.Worried, "/images/cait.jpeg" },
                         { CharacterExpression.Serious, "/images/cait.jpeg" }
@@ -1154,7 +1151,6 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Default, "/images/enforcer.png" },
                         { CharacterExpression.Worried, "/images/enforcer.png" },
                         { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" },
                         { CharacterExpression.Determined, "/images/enforcer.png" }
                     }
                 },
@@ -1171,7 +1167,6 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Default, "/images/zaun_friend.png" },
                         { CharacterExpression.Surprised, "/images/zaun_friend.png" },
                         { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
                         { CharacterExpression.Determined, "/images/zaun_friend.png" }
                     }
                 },
