@@ -12,8 +12,8 @@
     <div class="header-section">
         @if (isFromStory)
         {
-            <h2 class="game-title">🔐 Message Decryption Analysis</h2>
-            <p class="game-subtitle">Emergency Protocol - Decrypt intercepted communications</p>
+            <h2 class="game-title">🔐 Decode Renni's Message</h2>
+            <p class="game-subtitle">Emergency Protocol - Decrypt Renni's hidden location</p>
             <div class="story-context">
                 <div class="story-badge @GetRoleThemeClass()">
                     <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
@@ -115,6 +115,19 @@
         </div>
     }
 
+    @if (isFromStory && inGame && playerView == null)
+    {
+        <div class="game-section">
+            <div class="loading-container" style="text-align: center; padding: 50px;">
+                <h3>🔐 Initializing Decryption System...</h3>
+                <p>Connecting to Renni's coded message...</p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    }
+    
     @if (inGame && playerView != null)
     {
         <div class="game-section">
@@ -130,7 +143,10 @@
                         <div class="game-progress">
                             <strong>Progress:</strong> @((gameState?.CurrentWordIndex ?? 0) + 1) / @(gameState?.TotalWords ?? 0)<br/>
                             <strong>Score:</strong> @gameState?.Score<br/>
-                            <strong>Hints Used:</strong> @gameState?.HintsUsed / 3
+                            @if (!isFromStory)
+                            {
+                                <text><strong>Hints Used:</strong> @gameState?.HintsUsed / 3</text>
+                            }
                         </div>
                     </div>
                 </div>
@@ -188,9 +204,12 @@
                 </div>
 
                 <div class="game-controls mt-3">
-                    <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
-                        Request Hint (@(3 - (gameState?.HintsUsed ?? 0)) left)
-                    </button>
+                    @if (!isFromStory)
+                    {
+                        <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
+                            Request Hint (@(3 - (gameState?.HintsUsed ?? 0)) left)
+                        </button>
+                    }
                     <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
                         Restart Game
                     </button>
@@ -202,7 +221,7 @@
                 <div class="alert @GetStatusClass() mt-3">@gameStatus</div>
             }
 
-            @if (!string.IsNullOrEmpty(latestHint))
+            @if (!isFromStory && !string.IsNullOrEmpty(latestHint))
             {
                 <div class="alert alert-info mt-2">
                     <strong>Hint:</strong> @latestHint
@@ -243,7 +262,7 @@
 
     @if (showSuccessAnimation)
     {
-        <div class="success-overlay" @onclick="() => showSuccessAnimation = false">
+        <div class="success-overlay" @onclick="HandleSuccessClick">
             <div class="success-content">
                 <div class="success-title">🎉 DECODED!</div>
                 <div class="success-message">@successMessage</div>
@@ -252,23 +271,6 @@
         </div>
     }
 
-    <div class="chat-section mt-4">
-        <h5>Team Communication</h5>
-        <div class="input-group mb-3">
-            <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
-                   class="form-control" placeholder="Coordinate with your partner..." />
-            <button class="btn btn-success" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
-                Send
-            </button>
-        </div>
-
-        <div class="messages-container">
-            @foreach (var message in messages)
-            {
-                <div class="message">@message</div>
-            }
-        </div>
-    </div>
 </div>
 
 <style>
@@ -1226,12 +1228,21 @@
 
     private void ParseUrlParameters()
     {
-        if (string.IsNullOrEmpty(Parameters)) return;
+        Console.WriteLine($"[CodeCracker] ParseUrlParameters called with URI: {Navigation.Uri}");
         
         try
         {
             var uri = new Uri(Navigation.Uri);
             var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            Console.WriteLine($"[CodeCracker] Query parameter count: {query.Count}");
+            
+            // Check if we have any query parameters
+            if (query.Count == 0 && string.IsNullOrEmpty(Parameters)) 
+            {
+                Console.WriteLine("[CodeCracker] No parameters found, returning");
+                return;
+            }
             
             var role = query["role"];
             var avatar = query["avatar"];
@@ -1255,7 +1266,13 @@
             }
             
             if (story == "true")
+            {
                 isFromStory = true;
+                inGame = true; // Immediately set inGame for story mode to skip lobby
+                Console.WriteLine($"[CodeCracker] Story mode detected: isFromStory = {isFromStory}, inGame set to true");
+            }
+            
+            Console.WriteLine($"[CodeCracker] URL Parameters - story: '{story}', isFromStory: {isFromStory}, inGame: {inGame}");
         }
         catch (Exception ex)
         {
@@ -1429,6 +1446,14 @@
             InvokeAsync(StateHasChanged);
         });
 
+        // Handle redirect to next story scene
+        hubConnection.On<string>("RedirectToNextScene", (url) =>
+        {
+            Console.WriteLine($"[CodeCracker] Redirecting to next scene: {url}");
+            gameStatus = "Story continuing - Loading next scene...";
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
+
         await hubConnection.StartAsync();
     }
 
@@ -1454,10 +1479,9 @@
                     await JoinGame();
                 }
                 
-                // If from story mode, automatically set inGame to true to skip lobby
+                // Set appropriate status message
                 if (isFromStory)
                 {
-                    inGame = true;
                     gameStatus = "Message decryption system initializing...";
                 }
                 else
@@ -1584,6 +1608,30 @@
             "piltover" => "piltover-theme",
             _ => ""
         };
+    }
+
+    private void HandleSuccessClick()
+    {
+        if (!isFromStory)
+        {
+            showSuccessAnimation = false;
+        }
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            Console.WriteLine($"[CodeCracker] Continuing story from Code Cracker puzzle, room: {roomId}");
+            try
+            {
+                await hubConnection.SendAsync("ContinueStoryAfterCodeCracker", roomId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CodeCracker] Error continuing story: {ex.Message}");
+            }
+        }
     }
     
     public async ValueTask DisposeAsync()

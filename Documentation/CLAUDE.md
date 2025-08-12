@@ -227,7 +227,12 @@ public List<string> StoryProgression { get; set; } = new()
     "emergency_briefing",           // Scene 1 & 2 - Visual Novel
     "picture_explanation_transition", // Puzzle - Picture Explanation
     "database_revelation",          // Scene 3 - Visual Novel  
-    "signal_decoder_transition"     // Puzzle - Signal Decoder (NEW: Complete integration)
+    "signal_decoder_transition",    // Puzzle - Signal Decoder
+    "radio_decoded",                // Scene 4 - Visual Novel
+    "renni_apartment",             // Scene 5 - Visual Novel
+    "code_cracker_transition",     // Puzzle - Code Cracker
+    "code_decoded",                // Scene 6 - Visual Novel (NEW)
+    "navigation_maze_transition"   // Puzzle - Navigation Maze
 };
 ```
 

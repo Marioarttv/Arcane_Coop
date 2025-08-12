@@ -1,3 +1,4 @@
+Act 1: Renni's Apartment Scene
 Scene 5: Arriving at Renni's Apartment
 Scene ID: renni_apartment
 Layout: Dual Characters
@@ -159,11 +160,3 @@ Kira (Worried):
 Caitlyn (Reassuring):
 
 "We will. I promise."
-
-
-Transition to Code Cracker Puzzle
-Puzzle Setup: Players work together to decode Renni's message
-
-Player B reads definitions/synonyms from the paper
-Player A fills in blanks on the graffiti wall
-Together they decode: "SHIMMER" "FACTORY" "LEVEL" "THREE"

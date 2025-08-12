@@ -9,6 +9,8 @@ namespace Arcane_Coop.Services
         VisualNovelScene CreateEmergencyBriefingScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateDatabaseRevelationScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateRadioDecodedScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateRenniApartmentScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateCodeDecodedScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -1383,6 +1385,884 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
+        public VisualNovelScene CreateRenniApartmentScene(string squadName, Act1MultiplayerGame game)
+        {
+            // Get player names for dynamic character naming
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
+            
+            var scene = new VisualNovelScene
+            {
+                Id = "renni_apartment",
+                Name = "Renni's Apartment - Finding the Clue",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            // Characters - reusing existing character definitions
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/vi.jpeg" },
+                        { CharacterExpression.Serious, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Determined, "/images/vi.jpeg" },
+                        { CharacterExpression.Worried, "/images/vi.jpeg" },
+                        { CharacterExpression.Surprised, "/images/vi.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Caitlyn",
+                    ImagePath = "/images/cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/cait.jpeg" },
+                        { CharacterExpression.Angry, "/images/cait.jpeg" },
+                        { CharacterExpression.Determined, "/images/cait.jpeg" },
+                        { CharacterExpression.Worried, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerA",
+                    Name = piltoverPlayerName,
+                    DisplayName = piltoverPlayerName,
+                    ImagePath = "/images/enforcer.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/enforcer.png" },
+                        { CharacterExpression.Worried, "/images/enforcer.png" },
+                        { CharacterExpression.Serious, "/images/enforcer.png" },
+                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerB",
+                    Name = zaunPlayerName,
+                    DisplayName = zaunPlayerName,
+                    ImagePath = "/images/zaun_friend.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/zaun_friend.png" },
+                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
+                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "kira",
+                    Name = "Kira",
+                    DisplayName = "Kira",
+                    ImagePath = "/images/kira.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/kira.png" },
+                        { CharacterExpression.Worried, "/images/kira.png" },
+                        { CharacterExpression.Determined, "/images/kira.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "narrator",
+                    Name = "Narrator",
+                    DisplayName = "Narrator",
+                    ImagePath = "", // No image for narrator
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#888888",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "" }
+                    }
+                }
+            });
+
+            // Full Scene 5 dialogue following documentation
+            scene.DialogueLines.AddRange(new[]
+            {
+                // Arrival
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "This is it. Kepler's Chem-Tech Repairs. Renni lives in the apartment above.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Place looks abandoned. Shop's been closed for days by the look of it.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "The lock's been forced. Recently. Someone's been here.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "You think it was Jinx?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Only one way to find out.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "They climb the stairs to the apartment. Vi knocks firmly",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Hello? Anyone home? We're looking for Renni Stiltner!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "Footsteps inside. A young woman opens the door - eyes red from crying",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+
+                // Meeting Kira
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Who are you? What do you want?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "I'm Caitlyn Kiramman. We're here about your sister.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "You're too late. She's gone. Left three days ago after someone torched her workshop.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Three days? Where did she go?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "If I knew that, would I be standing here? First Werner gets attacked, then the enforcers show up offering 'protection,' and Renni just... vanishes.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "You didn't trust the enforcers either.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Trust them? Deputy Stanton couldn't even look me in the eye. Kept talking about 'containing the situation.' Renni was right not to go with them.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+
+                // The Discovery
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "We're trying to help. We think your sister might be in danger.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "In danger? She's probably already dead! Just like Werner, just like the others!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Hey. Look at me. We're not with Stanton. We're trying to stop whoever's hunting them.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "You're from down here. I can tell. Why do you care?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Because the person doing this... she's my sister. And I need to stop her before she does something she can't take back.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Your sister? I... I'm sorry.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Kira, did Renni leave anything? Any clue about where she might go?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "She... wait. She was paranoid, but smart. Said if anything happened, she'd leave me a way to find her.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "Kira retrieves a crumpled paper from a drawer",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Found this under my door yesterday. Just looks like her old study notes - definitions, word games we used to play as kids. Made no sense to me.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+
+                // Discovering the Wall
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "These are... definitions? Synonyms? Like a vocabulary test?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "That's what I thought! But why would she—",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "Guys! You need to see this!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "They rush to Renni's bedroom",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "The wall... it's covered in graffiti.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Not graffiti. It's a message. Look - words with missing letters.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "The words on the wall have blanks...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "And this paper has definitions! She left us a code!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Classic Renni. Even her hiding spots have puzzles.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Smug
+                },
+
+                // Setting Up Code Cracker
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "You can solve it? You can find her?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = $"We'll figure it out. {zaunPlayerName}, you have the definitions. {piltoverPlayerName}, you can see the wall clearly.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "I'll read out the definitions and synonyms.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "And I'll match them to the words on the wall, fill in the blanks.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Work fast. If Renni went to all this trouble, it means she knew someone would come looking.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Please... just find her. She's all I have left.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "We will. I promise.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+
+                // Transition to Code Cracker
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "The team prepares to decode Renni's coded message using the vocabulary definitions and the wall puzzle...",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                }
+            });
+
+            // Mark the end of main content
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+
+            Console.WriteLine($"[Act1StoryEngine] Renni Apartment scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
+        public VisualNovelScene CreateCodeDecodedScene(string squadName, Act1MultiplayerGame game)
+        {
+            // Get player names for dynamic character naming
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
+            
+            var scene = new VisualNovelScene
+            {
+                Id = "code_decoded",
+                Name = "After Decoding the Message",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            // Characters - reusing existing character definitions
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/vi.jpeg" },
+                        { CharacterExpression.Serious, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Determined, "/images/vi.jpeg" },
+                        { CharacterExpression.Worried, "/images/vi.jpeg" },
+                        { CharacterExpression.Surprised, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Sad, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Caitlyn",
+                    ImagePath = "/images/cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" },
+                        { CharacterExpression.Worried, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" },
+                        { CharacterExpression.Determined, "/images/cait.jpeg" },
+                        { CharacterExpression.Worried, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerA",
+                    Name = piltoverPlayerName,
+                    DisplayName = piltoverPlayerName,
+                    ImagePath = "/images/enforcer.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/enforcer.png" },
+                        { CharacterExpression.Serious, "/images/enforcer.png" },
+                        { CharacterExpression.Worried, "/images/enforcer.png" },
+                        { CharacterExpression.Serious, "/images/enforcer.png" },
+                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerB",
+                    Name = zaunPlayerName,
+                    DisplayName = zaunPlayerName,
+                    ImagePath = "/images/zaun_friend.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/zaun_friend.png" },
+                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
+                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" },
+                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "kira",
+                    Name = "Kira",
+                    DisplayName = "Kira",
+                    ImagePath = "/images/kira.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/kira.png" },
+                        { CharacterExpression.Confused, "/images/kira.png" },
+                        { CharacterExpression.Surprised, "/images/kira.png" },
+                        { CharacterExpression.Sad, "/images/kira.png" },
+                        { CharacterExpression.Serious, "/images/kira.png" },
+                        { CharacterExpression.Worried, "/images/kira.png" },
+                        { CharacterExpression.Sad, "/images/kira.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "radio",
+                    Name = "Radio",
+                    DisplayName = "Radio",
+                    ImagePath = "",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#888888",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "narrator",
+                    Name = "Narrator",
+                    DisplayName = "Narrator",
+                    ImagePath = "", // No image for narrator
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#888888",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "" }
+                    }
+                }
+            });
+
+            // Dialogue following Scene 6 markdown content
+            scene.DialogueLines.AddRange(new[]
+            {
+                // Message Revealed
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "SHIMMER... FACTORY... LEVEL... THREE. That's the message!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "The old shimmer refinement facility? That place has been abandoned for years!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Why would she go there?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Confused
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "She wasn't leaving you a hideout location...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "She was telling you where she was going. She went to investigate.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Wait, that's... she wouldn't. That message wasn't FOR me to follow. It's where she was heading!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "You think she went to rescue the other scientists?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "She figured out where the others were taken and she... oh no, Renni, you brave fool.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "She went alone? When?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "The note appeared yesterday morning, so... she's been gone at least a day.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+
+                // The Explosion
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "A distant explosion rattles the windows. Orange glow on the horizon",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "What was that?!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Surprised
+                },
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "Player A's radio crackles to life",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                },
+                new DialogueLine
+                {
+                    CharacterId = "radio",
+                    Text = "Explosion at old Shimmer refinement facility, level three. Blue-haired suspect seen entering...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 35
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Jinx. She's there!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "If Renni's there too...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "We go. NOW!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Wait! Take me with you!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "No. It's too dangerous. Stay here, lock the doors.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "We'll find her. We'll bring her back.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "kira",
+                    Text = "Please... save her. Please.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+
+                // Racing to the Factory
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "The factory's not far! I know a shortcut through the old industrial district!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "Jinx is there. After all this time... she's right there.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "Vi, remember - she's not the Powder you knew. She's dangerous now.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "I know. But she's still my sister. I have to try.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Sad
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerA",
+                    Text = "What if the scientists are already...?",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "They're not. They can't be. Silco needs them alive for something.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Angry
+                },
+                new DialogueLine
+                {
+                    CharacterId = "playerB",
+                    Text = "There! The factory! I can see smoke!",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "We need to be smart about this. If Jinx set off explosions, the place could be unstable.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
+                },
+                new DialogueLine
+                {
+                    CharacterId = "vi",
+                    Text = "I don't care. Renni might be in there. The other scientists too. And Jinx...",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Worried
+                },
+
+                // Transition to Shimmer Factory
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "The team arrives at the abandoned shimmer factory. Next: Infiltrating the factory using Renni's map - Navigation Maze puzzle where Player A guides Player B through the factory.",
+                    AnimationType = TextAnimationType.FadeIn,
+                    TypewriterSpeed = 30
+                }
+            });
+
+            // Mark the end of main content
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+
+            Console.WriteLine($"[Act1StoryEngine] Code Decoded scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -1509,6 +2389,72 @@ namespace Arcane_Coop.Services
                         game.TextAnimationStartTime = DateTime.UtcNow;
                         game.RecordAction();
                         Console.WriteLine($"[Act1StoryEngine] Progressed to Radio Decoded scene");
+                        break;
+
+                    case "renni_apartment":
+                        // Move to Scene 5 (Renni's Apartment)
+                        game.CurrentScene = CreateRenniApartmentScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Renni Apartment scene");
+                        break;
+
+                    case "code_cracker_transition":
+                        // Transition to Code Cracker puzzle
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Code Cracker Analysis";
+
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Code Cracker
+                        var codeCrackerUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromRenniApartment";
+                            codeCrackerUrls[p.PlayerId] = $"/code-cracker?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = codeCrackerUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Code Cracker");
+                        break;
+
+                    case "code_decoded":
+                        // Move to Scene 6 (Code Decoded)
+                        game.CurrentScene = CreateCodeDecodedScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Code Decoded scene");
+                        break;
+
+                    case "navigation_maze_transition":
+                        // Transition to Navigation Maze puzzle
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Navigation Maze";
+
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Navigation Maze
+                        var navigationMazeUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromCodeDecoded";
+                            navigationMazeUrls[p.PlayerId] = $"/navigation-maze?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = navigationMazeUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Navigation Maze");
                         break;
 
                     case "picture_explanation_transition":

@@ -240,6 +240,16 @@
                                         <span class="scene-name">Radio Decoded</span>
                                         <span class="scene-desc">Scene 4 - After Signal Decoder</span>
                                     </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(5)">
+                                        <span class="scene-icon">🏠</span>
+                                        <span class="scene-name">Renni's Apartment</span>
+                                        <span class="scene-desc">Scene 5 - After Radio Decoded</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(7)">
+                                        <span class="scene-icon">💥</span>
+                                        <span class="scene-name">Code Decoded</span>
+                                        <span class="scene-desc">Scene 6 - After Code Cracker</span>
+                                    </button>
                                 </div>
                                 
                                 <div class="scene-group">
@@ -253,6 +263,11 @@
                                         <span class="scene-icon">📡</span>
                                         <span class="scene-name">Signal Decoder</span>
                                         <span class="scene-desc">After Database Revelation</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromCodeCracker">
+                                        <span class="scene-icon">🔓</span>
+                                        <span class="scene-name">Code Cracker</span>
+                                        <span class="scene-desc">After Renni's Apartment</span>
                                     </button>
                                 </div>
                             </div>
@@ -1542,6 +1557,27 @@
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
             NavigationManager.NavigateTo($"/signal-decoder?{parameters}");
+        }
+    }
+    
+    private async Task StartFromCodeCracker()
+    {
+        if (!squadVerified) return;
+        
+        // Generate a shared room name for testing (without timestamp)
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "code-cracker");
+        
+        // Use SignalR to redirect both players to Code Cracker puzzle
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "code-cracker");
+        }
+        else
+        {
+            // Fallback: direct navigation if SignalR not connected
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/code-cracker?{parameters}");
         }
     }
     

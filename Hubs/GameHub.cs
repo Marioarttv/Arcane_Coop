@@ -1690,6 +1690,14 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateRadioDecodedScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "renni_apartment")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateRenniApartmentScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "code_decoded")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1723,6 +1731,10 @@ public class GameHub : Hub
                 else if (currentPhase == "radio_decoded")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateRadioDecodedScene(originalSquadName, game);
+                }
+                else if (currentPhase == "renni_apartment")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateRenniApartmentScene(originalSquadName, game);
                 }
                 else
                 {
@@ -2429,6 +2441,64 @@ public class GameHub : Hub
         }
     }
 
+    public async Task ContinueStoryAfterCodeCracker(string roomId)
+    {
+        try
+        {
+            // Get players from Code Cracker game  
+            if (!_codeCrackerGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("CodeCrackerInvalidGuess", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("CodeCrackerInvalidGuess", "Both players needed for story continuation");
+                return;
+            }
+
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromCodeCracker";
+            
+            Console.WriteLine($"[GameHub] ContinueStoryAfterCodeCracker - Original room: {roomId}, Original squad: {originalSquadName}, New unique room: {uniqueRoomId}");
+
+            // Build redirect URLs for Act1 Scene 6 (code_decoded)
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var playerView = game.GetPlayerView(connectionId);
+                var roleName = playerView.Role.ToLower();
+                var playerName = playerView.DisplayName;
+                
+                // Use the SAME uniqueRoomId for both players
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=7&transition=FromCodeCracker";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            // Send redirect to all players simultaneously
+            var redirectTasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    redirectTasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                    Console.WriteLine($"[GameHub] Redirecting player {connectionId} to: {url}");
+                }
+            }
+
+            await Task.WhenAll(redirectTasks);
+            Console.WriteLine($"[GameHub] All players redirected to Scene 6 (code_decoded)");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryAfterCodeCracker: {ex.Message}");
+            await Clients.Caller.SendAsync("CodeCrackerInvalidGuess", $"Error continuing story: {ex.Message}");
+        }
+    }
+
     public async Task ContinueStoryAfterSignalDecoder(string roomId)
     {
         try
@@ -3046,16 +3116,17 @@ public class CodeCrackerGame
     
     private static readonly WordPuzzle[] WordBank = new[]
     {
-        new WordPuzzle("murmur", "a soft, low sound", "Flüstern", "whisper", "m_r_u_"),
-        new WordPuzzle("initiation", "the beginning of something", "Einweihung", "beginning", "in_t_at__n"),
-        new WordPuzzle("revelation", "a surprising disclosure", "Offenbarung", "discovery", "r_v_l_t__n"),
-        new WordPuzzle("sanctuary", "a place of safety", "Zufluchtsort", "refuge", "s_nc_u_ry"),
-        new WordPuzzle("ancient", "very old", "uralt", "old", "_nc__nt"),
-        new WordPuzzle("mysterious", "difficult to understand", "geheimnisvoll", "puzzling", "my_t_r__us"),
-        new WordPuzzle("adventure", "an exciting experience", "Abenteuer", "journey", "_dv_nt_re"),
-        new WordPuzzle("treasure", "valuable items", "Schatz", "riches", "tr__s_re"),
-        new WordPuzzle("discovery", "finding something new", "Entdeckung", "revelation", "d_sc_v_ry"),
-        new WordPuzzle("guardian", "a protector", "Wächter", "protector", "g_a_d__n")
+        // Story-themed words for Renni's hiding location puzzle
+        new WordPuzzle("shimmer", "to shine with a soft light", "schimmern", "glimmer", "sh_mm_r"),
+        new WordPuzzle("factory", "a building where things are made", "Fabrik", "plant", "f_ct_ry"),
+        new WordPuzzle("level", "a floor or story of a building", "Ebene", "floor", "l_v_l"),
+        new WordPuzzle("three", "the number after two", "drei", "3", "thr__"),
+        new WordPuzzle("hidden", "not easy to find", "versteckt", "concealed", "h_dd_n"),
+        new WordPuzzle("danger", "possibility of harm", "Gefahr", "risk", "d_ng_r"),
+        new WordPuzzle("escape", "to get away from", "entkommen", "flee", "_sc_pe"),
+        new WordPuzzle("purple", "a color mixing red and blue", "lila", "violet", "p_rpl_"),
+        new WordPuzzle("below", "under or lower than", "unten", "beneath", "b_l_w"),
+        new WordPuzzle("secret", "something kept hidden", "Geheimnis", "confidential", "s_cr_t")
     };
 
     public Dictionary<string, PlayerRole> Players { get; set; } = new();
@@ -3066,7 +3137,7 @@ public class CodeCrackerGame
     public int HintsUsed { get; set; } = 0;
     public List<string> AttemptHistory { get; set; } = new();
     
-    private WordPuzzle CurrentWord => WordBank[CurrentWordIndex];
+    private WordPuzzle CurrentWord => CurrentWordIndex < WordBank.Length ? WordBank[CurrentWordIndex] : WordBank[WordBank.Length - 1];
     
     public PlayerRole? AddPlayer(string connectionId, string playerName)
     {
@@ -3294,35 +3365,35 @@ public class SimpleSignalDecoderGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Story-based transmissions for Act 1 Scene 3
+    // Story-based transmissions for Act 1 Scene 3 - ESL-friendly version
     private static readonly SimpleSignalData[] SignalBank = new[]
     {
         new SimpleSignalData
         {
-            FullSentence = "Emergency dispatch explosion at Werner's workshop on Fifth Street blue-haired suspect fled the scene one casualty confirmed all units respond",
-            SentenceWithBlanks = "Emergency dispatch explosion at {0} workshop on {1} Street {2}-haired suspect fled the scene one {3} confirmed all units respond",
-            MissingWords = new[] { "Werner's", "Fifth", "blue", "casualty" },
+            FullSentence = "Emergency dispatch explosion at the small workshop on Main Street blue-haired suspect fled the scene one person injured all units respond",
+            SentenceWithBlanks = "Emergency dispatch explosion at the {0} workshop on {1} Street {2}-haired suspect fled the scene one {3} injured all units respond",
+            MissingWords = new[] { "small", "Main", "blue", "person" },
             AudioFile = "audio/signal-decoder/story/transmission1_full.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Alert Dr. Renni Stiltner failed to report for protective custody last known location chem-tech repair shop above Entresol Market consider subject in immediate danger",
-            SentenceWithBlanks = "Alert Dr. {0} Stiltner failed to report for {1} custody last known location {2}-tech repair shop above {3} Market consider subject in immediate {4}",
-            MissingWords = new[] { "Renni", "protective", "chem", "Entresol", "danger" },
+            FullSentence = "Alert the old woman failed to report for safe custody last known location repair shop above the big market consider subject in immediate danger",
+            SentenceWithBlanks = "Alert the {0} woman failed to report for {1} custody last known location {2} shop above the {3} market consider subject in immediate {4}",
+            MissingWords = new[] { "old", "safe", "repair", "big", "danger" },
             AudioFile = "audio/signal-decoder/story/transmission2_full.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Deputy Stanton directive avoid warehouse district tonight evidence disposal in progress Marcus's files require immediate sanitization no patrol units until further notice",
-            SentenceWithBlanks = "Deputy {0} directive avoid {1} district tonight evidence {2} in progress {3}'s files require immediate sanitization no patrol units until further {4}",
-            MissingWords = new[] { "Stanton", "warehouse", "disposal", "Marcus", "notice" },
+            FullSentence = "Police chief orders avoid the warehouse district tonight evidence removal in progress old files require immediate cleaning no patrol units until further notice",
+            SentenceWithBlanks = "Police {0} orders avoid the {1} district tonight evidence {2} in progress {3} files require immediate {4} no patrol units until further notice",
+            MissingWords = new[] { "chief", "warehouse", "removal", "old", "cleaning" },
             AudioFile = "audio/signal-decoder/story/transmission3_full.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Update on Project Safeguard personnel two scientists confirmed missing Ferros and Reveck locations unknown Hextech lab security compromised initiate lockdown protocols",
-            SentenceWithBlanks = "Update on Project {0} personnel two scientists confirmed {1} Ferros and {2} locations unknown {3} lab security compromised initiate {4} protocols",
-            MissingWords = new[] { "Safeguard", "missing", "Reveck", "Hextech", "lockdown" },
+            FullSentence = "Update on secret project team two workers confirmed missing first and second locations unknown science lab security broken start emergency procedures",
+            SentenceWithBlanks = "Update on {0} project team two {1} confirmed missing {2} and {3} locations unknown {4} lab security broken start emergency procedures",
+            MissingWords = new[] { "secret", "workers", "first", "second", "science" },
             AudioFile = "audio/signal-decoder/story/transmission4_full.mp3"
         }
     };

@@ -764,8 +764,8 @@
         
         Console.WriteLine($"[Act1Multiplayer] GetFallbackTransitionUrl called - Using stored scene index: {currentSceneIndex}");
         
-        // Default story progression - should match Act1MultiplayerGame.StoryProgression
-        var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition" };
+        // Updated story progression - matches Act1MultiplayerGame.StoryProgression
+        var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition", "radio_decoded", "renni_apartment", "code_cracker_transition", "code_decoded", "navigation_maze_transition" };
         
         if (nextSceneIndex < storyProgression.Length)
         {
@@ -776,6 +776,8 @@
             {
                 "picture_explanation_transition" => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2",
                 "signal_decoder_transition" => $"/signal-decoder?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene3",
+                "code_cracker_transition" => $"/code-cracker?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene5",
+                "navigation_maze_transition" => $"/navigation-maze?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene6",
                 _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2" // Fallback to Picture Explanation as last resort
             };
             

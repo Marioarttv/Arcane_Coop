@@ -3,6 +3,8 @@
 ## Overview
 SignalDecoder is a cooperative listening comprehension puzzle where players must work together to decode fragmented emergency transmissions. One player (Piltover/Caitlyn) sees incomplete text while the other (Zaunite/Vi) receives audio and signal data to help complete the message.
 
+**ESL-Friendly Version**: The story mode transmissions have been updated to use common, widely-known words instead of proper names and technical jargon, making the puzzle more accessible to ESL students while maintaining the same story context and gameplay mechanics.
+
 ## Game Mechanics
 
 ### Player Roles
@@ -125,49 +127,51 @@ Work together under time pressure to decode emergency transmissions by filling i
 ## Story-Specific Transmissions (Act 1 Scene 3 → Signal Decoder)
 
 ### Context
-After identifying the four scientists in the Enforcer Database, players discover radio chatter about Werner's attack and need to decode fragmented enforcer transmissions to locate Dr. Renni Stiltner before Jinx finds her.
+After identifying the four scientists in the Enforcer Database, players discover radio chatter about an attack and need to decode fragmented enforcer transmissions to locate the remaining scientists before Jinx finds them.
+
+**Note**: The transmissions below use ESL-friendly vocabulary, replacing proper names and technical terms with common words to improve accessibility for ESL students.
 
 ### Required Voice Lines / Audio Transmissions
 
-#### Transmission 1: Werner's Workshop Attack
-**Full Audio (Vi hears):** "Emergency dispatch - explosion at Werner's workshop on Fifth Street. Blue-haired suspect fled the scene. One casualty confirmed. All units respond."
+#### Transmission 1: Workshop Attack
+**Full Audio (Vi hears):** "Emergency dispatch - explosion at small workshop on Main Street. Blue-haired suspect fled the scene. One person confirmed. All units respond."
 
 **Fragmented Text (Caitlyn sees):** "Emergency dispatch - explosion at *** workshop on *** Street. ***-haired suspect fled the scene. One *** confirmed. All units respond."
 
-**Missing Words:** Werner's, Fifth, Blue, casualty
+**Missing Words:** small, Main, blue, person
 
 **Voice Line Files Needed:**
 - `transmission1_full.mp3` - Complete emergency dispatch
 - Background: Radio static, enforcer sirens
 
-#### Transmission 2: Renni's Protective Custody Failure
-**Full Audio (Vi hears):** "Alert - Dr. Renni Stiltner failed to report for protective custody. Last known location: chem-tech repair shop above Entresol Market. Consider subject in immediate danger."
+#### Transmission 2: Doctor's Protective Custody Failure
+**Full Audio (Vi hears):** "Alert - Dr. old Stiltner failed to report for safe custody. Last known location: repair-tech repair shop above big Market. Consider subject in immediate danger."
 
 **Fragmented Text (Caitlyn sees):** "Alert - Dr. *** Stiltner failed to report for *** custody. Last known location: ***-tech repair shop above *** Market. Consider subject in immediate ***."
 
-**Missing Words:** Renni, protective, chem, Entresol, danger
+**Missing Words:** old, safe, repair, big, danger
 
 **Voice Line Files Needed:**
 - `transmission2_full.mp3` - Protective custody alert
 - Background: Typing sounds, dispatch center ambiance
 
-#### Transmission 3: Stanton's Cover-up Orders
-**Full Audio (Vi hears):** "Deputy Stanton directive - avoid warehouse district tonight. Evidence disposal in progress. Marcus's files require immediate sanitization. No patrol units until further notice."
+#### Transmission 3: Deputy's Cover-up Orders
+**Full Audio (Vi hears):** "Deputy chief directive - avoid warehouse district tonight. Evidence removal in progress. old's files require immediate cleaning. No patrol units until further notice."
 
-**Fragmented Text (Caitlyn sees):** "Deputy *** directive - avoid *** district tonight. Evidence *** in progress. ***'s files require immediate sanitization. No patrol units until further ***."
+**Fragmented Text (Caitlyn sees):** "Deputy *** directive - avoid *** district tonight. Evidence *** in progress. ***'s files require immediate ***. No patrol units until further notice."
 
-**Missing Words:** Stanton, warehouse, disposal, Marcus, notice
+**Missing Words:** chief, warehouse, removal, old, cleaning
 
 **Voice Line Files Needed:**
 - `transmission3_full.mp3` - Stanton's directive
 - Background: Muffled conversation, paper shredding
 
-#### Transmission 4: Project Safeguard Reference
-**Full Audio (Vi hears):** "Update on Project Safeguard personnel - two scientists confirmed missing. Ferros and Reveck locations unknown. Hextech lab security compromised. Initiate lockdown protocols."
+#### Transmission 4: Project Reference
+**Full Audio (Vi hears):** "Update on Project secret personnel - two workers confirmed missing. first and second locations unknown. science lab security compromised. Initiate lockdown protocols."
 
-**Fragmented Text (Caitlyn sees):** "Update on Project *** personnel - two scientists confirmed ***. Ferros and *** locations unknown. *** lab security compromised. Initiate *** protocols."
+**Fragmented Text (Caitlyn sees):** "Update on Project *** personnel - two *** confirmed missing. *** and *** locations unknown. *** lab security compromised. Initiate lockdown protocols."
 
-**Missing Words:** Safeguard, missing, Reveck, Hextech, lockdown
+**Missing Words:** secret, workers, first, second, science
 
 **Voice Line Files Needed:**
 - `transmission4_full.mp3` - Project Safeguard update
@@ -268,10 +272,10 @@ After successfully decoding all transmissions, the story continues with:
 **Vi:** "I can hear the audio clearly. Tell me what you're seeing on the transcript."
 
 #### Success Feedback
-**Transmission 1 Success:** "Werner's workshop... an explosion. We're too late for him."
-**Transmission 2 Success:** "Renni didn't report for custody. Smart woman - she doesn't trust Stanton."
-**Transmission 3 Success:** "Evidence disposal? Stanton's covering up Marcus's corruption!"
-**Transmission 4 Success:** "Project Safeguard... all these scientists are being hunted."
+**Transmission 1 Success:** "Small workshop... an explosion. We're too late for them."
+**Transmission 2 Success:** "The old doctor didn't report for custody. Smart person - they don't trust the deputy."
+**Transmission 3 Success:** "Evidence removal? The chief's covering up the old files!"
+**Transmission 4 Success:** "Project secret... all these workers are being hunted."
 
 #### Completion
 **Both Players:** "We have to find Renni before Jinx does. Her apartment in Zaun - let's go!"
