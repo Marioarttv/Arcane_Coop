@@ -10,8 +10,22 @@
 
 <div class="navigation-maze-container">
     <div class="header-section">
-        <h2 class="game-title">🗺️ Navigation Maze</h2>
-        <p class="game-subtitle">Caitlyn vs Vi - Navigate the Underground Escape Route</p>
+        @if (isFromStory)
+        {
+            <h2 class="game-title">🗺️ Navigation Maze</h2>
+            <p class="game-subtitle">Underground Escape - Navigate to safety through dangerous terrain</p>
+            <div class="story-context">
+                <div class="story-badge @GetRoleThemeClass()">
+                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
+                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h2 class="game-title">🗺️ Navigation Maze</h2>
+            <p class="game-subtitle">Caitlyn vs Vi - Navigate the Underground Escape Route</p>
+        }
     </div>
     
     <div class="connection-status mb-3">
@@ -21,7 +35,7 @@
         </span>
     </div>
 
-    @if (!inGame)
+    @if (!inGame && !isFromStory)
     {
         <div class="instructions-panel">
             <div class="instruction-header">
@@ -76,7 +90,7 @@
         </div>
     }
 
-    @if (!inGame)
+    @if (!isFromStory)
     {
         <div class="game-setup mb-4">
         <div class="row">
@@ -122,7 +136,7 @@
         }
     </div>
 
-    @if (inRoom && !inGame)
+    @if (inRoom && !inGame && !isFromStory)
     {
         <div class="players-section">
             <div class="players-header">
@@ -289,9 +303,18 @@
                                 </div>
                             }
                             
-                            <button class="btn restart" @onclick="RestartGame">
-                                🔄 New Mission
-                            </button>
+                            @if (isFromStory)
+                            {
+                                <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+                                    ➡️ Continue Story
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn restart" @onclick="RestartGame">
+                                    🔄 New Mission
+                                </button>
+                            }
                         </div>
                     }
                 </div>
@@ -376,9 +399,18 @@
                                 <div class="victory-art">
                                     <div class="success-icon">✨</div>
                                 </div>
-                                <button class="btn restart" @onclick="RestartGame">
-                                    🔄 New Adventure
-                                </button>
+                                @if (isFromStory)
+                                {
+                                    <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+                                        ➡️ Continue Story
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn restart" @onclick="RestartGame">
+                                        🔄 New Adventure
+                                    </button>
+                                }
                             </div>
                         </div>
                     }
@@ -418,8 +450,18 @@
     // Player tracking
     private List<string> connectedPlayers = new List<string>();
     
+    // URL parameters for story integration
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
+    private string transitionSource = "";
+    
     protected override async Task OnInitializedAsync()
     {
+        // Parse URL parameters for story integration
+        ParseUrlParameters();
+        
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
@@ -504,7 +546,25 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string>("RedirectToNextStoryScene", async (url) =>
+        {
+            Console.WriteLine($"[NavigationMaze] Received redirect to next scene: {url}");
+            ShowStatus("Continuing story - Loading next scene...", "info");
+            await InvokeAsync(StateHasChanged);
+            
+            // Small delay to ensure both players navigate together
+            await Task.Delay(500);
+            Console.WriteLine($"[NavigationMaze] Now navigating to: {url}");
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
+
         await hubConnection.StartAsync();
+        
+        // Auto-connect if parameters are provided
+        if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
     }
 
 
@@ -540,7 +600,31 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
-            await hubConnection.SendAsync("JoinNavigationMazeGame", roomId, playerName);
+            try
+            {
+                // Prefer sending requested role if coming from story
+                if (!string.IsNullOrEmpty(playerRole))
+                {
+                    Console.WriteLine($"[NavigationMaze] Joining with role: {playerRole}, room: {roomId}, name: {playerName}");
+                    await hubConnection.SendAsync("JoinNavigationMazeGameWithRole", roomId, playerName, playerRole);
+                }
+                else
+                {
+                    Console.WriteLine($"[NavigationMaze] Joining without role: room: {roomId}, name: {playerName}");
+                    await hubConnection.SendAsync("JoinNavigationMazeGame", roomId, playerName);
+                }
+
+                // If coming from the story, immediately hide the lobby and show game UI while waiting for server view
+                if (isFromStory)
+                {
+                    inGame = true;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error joining game: {ex.Message}", "danger");
+            }
         }
     }
 
@@ -638,6 +722,104 @@
         };
     }
 
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            playerRole = query["role"] ?? "";
+            playerAvatar = query["avatar"] ?? "";
+            var name = query["name"];
+            var squad = query["squad"];
+            isFromStory = query["story"] == "true";
+            transitionSource = query["transition"] ?? "";
+            
+            if (!string.IsNullOrEmpty(name))
+                playerName = Uri.UnescapeDataString(name);
+            
+            if (!string.IsNullOrEmpty(squad))
+            {
+                squadName = Uri.UnescapeDataString(squad);
+                // Create unique room ID by combining squad name with transition source
+                if (!string.IsNullOrEmpty(transitionSource))
+                {
+                    roomId = $"{squadName}_{transitionSource}";
+                }
+                else
+                {
+                    roomId = squadName;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[NavigationMaze] Error parsing URL parameters: {ex.Message}");
+        }
+        
+        Console.WriteLine($"[NavigationMaze] Parsed parameters - Role: {playerRole}, Name: {playerName}, Squad: {squadName}, RoomId: {roomId}, Story: {isFromStory}, Transition: {transitionSource}");
+        
+        if (!string.IsNullOrEmpty(transitionSource))
+        {
+            Console.WriteLine($"[NavigationMaze] Using unique room ID with transition: {roomId}");
+        }
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            // Small delay to ensure connection is established
+            await Task.Delay(500);
+            
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(200); // Brief delay between operations
+                await JoinGame();
+                
+                if (isFromStory)
+                {
+                    ShowStatus("Continuing story campaign - Navigation Mission initiated", "info");
+                    inGame = true; // Skip lobby for story mode
+                }
+                else
+                {
+                    ShowStatus("Auto-connecting to your squad...", "info");
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-connect failed: {ex.Message}");
+            ShowStatus("Auto-connection failed, please join manually", "warning");
+        }
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                ShowStatus("Continuing story - preparing next mission...", "info");
+                StateHasChanged();
+                await hubConnection.SendAsync("ContinueStoryAfterNavigationMaze", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error continuing story: {ex.Message}", "danger");
+                StateHasChanged();
+            }
+        }
+    }
+
+    private string GetRoleThemeClass()
+    {
+        return playerRole == "zaun" ? "story-badge-zaun" : "story-badge-piltover";
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -677,6 +859,39 @@
     font-size: 1.2rem;
     color: #c8aa6e;
     margin-bottom: 0;
+}
+
+/* Story Context Styling */
+.story-context {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.story-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+    border-radius: 25px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.story-badge-zaun {
+    border: 2px solid #00d4aa;
+    color: #00d4aa;
+    box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+}
+
+.story-badge-piltover {
+    border: 2px solid #c8aa6e;
+    color: #c8aa6e;
+    box-shadow: 0 0 20px rgba(200, 170, 110, 0.3);
 }
 
 .connection-status {

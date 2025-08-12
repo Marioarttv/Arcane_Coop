@@ -598,6 +598,46 @@ public class GameHub : Hub
         }
     }
 
+    public async Task JoinNavigationMazeGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        Console.WriteLine($"[GameHub] JoinNavigationMazeGameWithRole - Room: {roomId}, Player: {playerName}, RequestedRole: {requestedRole}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _navigationMazeGames.GetOrAdd(roomId, _ => new NavigationMazeGame());
+        Console.WriteLine($"[GameHub] NavigationMaze game state - Room: {roomId}, Current players: {game.GetConnectedPlayers().Count}");
+        
+        try
+        {
+            var assignedRole = game.AddPlayerWithRole(Context.ConnectionId, playerName, requestedRole);
+            if (assignedRole != null)
+            {
+                await Clients.Caller.SendAsync("NavigationMazeGameJoined", assignedRole.ToString(), game.GetPlayerView(Context.ConnectionId));
+                await Clients.Group(roomId).SendAsync("NavigationMazeGameStateUpdated", game.GetGameState());
+                
+                Console.WriteLine($"[GameHub] NavigationMaze player joined successfully - AssignedRole: {assignedRole}");
+                
+                // Start game if both players are connected
+                if (game.PlayerCount == 2)
+                {
+                    foreach (var player in game.GetConnectedPlayers())
+                    {
+                        await Clients.Client(player).SendAsync("NavigationMazePlayerViewUpdated", game.GetPlayerView(player));
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[GameHub] NavigationMaze game full - Room: {roomId}");
+                await Clients.Caller.SendAsync("NavigationMazeGameFull");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error joining NavigationMaze game: {ex.Message}");
+            await Clients.Caller.SendAsync("NavigationMazeInvalidChoice", ex.Message);
+        }
+    }
+
     public async Task MakeNavigationChoice(string roomId, string choice)
     {
         if (_navigationMazeGames.TryGetValue(roomId, out var game))
@@ -3715,6 +3755,46 @@ public class NavigationMazeGame
         Players[connectionId] = role;
         PlayerNames[connectionId] = playerName;
         return role;
+    }
+    
+    public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+        
+        if (Players.Count >= 2) return null;
+        
+        // Check if requested role is available
+        var requestedEnum = requestedRole.ToLower() switch
+        {
+            "piltover" => PlayerRole.Piltover,
+            "zaun" => PlayerRole.Zaunite,
+            "zaunite" => PlayerRole.Zaunite,
+            _ => Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
+        };
+        
+        // If requested role is available, assign it; otherwise assign the available role
+        var availableRoles = Enum.GetValues<PlayerRole>().Where(role => !Players.Values.Contains(role)).ToList();
+        
+        PlayerRole assignedRole;
+        if (availableRoles.Contains(requestedEnum))
+        {
+            assignedRole = requestedEnum;
+        }
+        else if (availableRoles.Any())
+        {
+            assignedRole = availableRoles.First();
+        }
+        else
+        {
+            return null; // No roles available
+        }
+        
+        Players[connectionId] = assignedRole;
+        PlayerNames[connectionId] = playerName;
+        return assignedRole;
     }
     
     public bool RemovePlayer(string connectionId)

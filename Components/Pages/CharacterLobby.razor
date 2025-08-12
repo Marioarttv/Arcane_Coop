@@ -269,6 +269,11 @@
                                         <span class="scene-name">Code Cracker</span>
                                         <span class="scene-desc">After Renni's Apartment</span>
                                     </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromNavigationMaze">
+                                        <span class="scene-icon">🗺️</span>
+                                        <span class="scene-name">Navigation Maze</span>
+                                        <span class="scene-desc">After Code Decoded</span>
+                                    </button>
                                 </div>
                             </div>
                             <div class="testing-buttons">
@@ -1578,6 +1583,27 @@
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
             NavigationManager.NavigateTo($"/code-cracker?{parameters}");
+        }
+    }
+    
+    private async Task StartFromNavigationMaze()
+    {
+        if (!squadVerified) return;
+        
+        // Generate a shared room name for testing (without timestamp)
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "navigation-maze");
+        
+        // Use SignalR to redirect both players to Navigation Maze puzzle
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "navigation-maze");
+        }
+        else
+        {
+            // Fallback: direct navigation if SignalR not connected
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/navigation-maze?{parameters}");
         }
     }
     
