@@ -35,7 +35,7 @@
         </span>
     </div>
 
-    @if (!inGame)
+    @if (!inGame && !isFromStory)
     {
         <div class="instructions-panel">
             <div class="instruction-header">
@@ -87,30 +87,33 @@
         </div>
     }
 
-    <div class="game-setup mb-4">
-        <div class="row">
-            <div class="col-md-6">
-                <label for="roomInput" class="form-label">Room ID:</label>
-                <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+    @if (!isFromStory)
+    {
+        <div class="game-setup mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="roomInput" class="form-label">Room ID:</label>
+                    <input @bind="roomId" id="roomInput" class="form-control" placeholder="Enter room code" />
+                </div>
+                <div class="col-md-6">
+                    <label for="nameInput" class="form-label">Player Name:</label>
+                    <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
+                </div>
             </div>
-            <div class="col-md-6">
-                <label for="nameInput" class="form-label">Player Name:</label>
-                <input @bind="playerName" id="nameInput" class="form-control" placeholder="Enter your name" />
-            </div>
-        </div>
 
-        <div class="setup-buttons mt-3">
-            <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
-                Join Room
-            </button>
-            <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
-                Leave Room
-            </button>
-            <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
-                Join Game
-            </button>
+            <div class="setup-buttons mt-3">
+                <button class="btn btn-primary" @onclick="JoinRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    Join Room
+                </button>
+                <button class="btn btn-secondary ms-2" @onclick="LeaveRoom" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId))">
+                    Leave Room
+                </button>
+                <button class="btn btn-success ms-2" @onclick="JoinGame" disabled="@(!IsConnected || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(playerName))">
+                    Join Game
+                </button>
+            </div>
         </div>
-    </div>
+    }
 
     @if (inGame && playerView != null)
     {
@@ -281,23 +284,6 @@
         </div>
     }
 
-    <div class="chat-section mt-4">
-        <h5>🔗 Secure Communication Channel</h5>
-        <div class="input-group mb-3">
-            <input @bind="messageInput" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SendMessage(); })" 
-                   class="form-control" placeholder="Coordinate with your partner..." />
-            <button class="btn btn-success" @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrEmpty(messageInput))">
-                Send
-            </button>
-        </div>
-
-        <div class="messages-container">
-            @foreach (var message in messages)
-            {
-                <div class="message">@message</div>
-            }
-        </div>
-    </div>
 </div>
 
 <style>
@@ -1580,10 +1566,8 @@
 
 @code {
     private HubConnection? hubConnection;
-    private List<string> messages = new();
     private string roomId = "";
     private string playerName = "";
-    private string messageInput = "";
     private string currentGuess = "";
     private string gameStatus = "";
     private string latestHint = "";
@@ -1617,22 +1601,13 @@
         // Room management events
         hubConnection.On<string, string>("PlayerJoined", (name, connectionId) =>
         {
-            var message = $"{DateTime.Now:HH:mm:ss} - {name} joined the room";
-            messages.Add(message);
+            Console.WriteLine($"[SignalDecoder] {name} joined the room");
             InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On<string, string>("PlayerLeft", (name, connectionId) =>
         {
-            var message = $"{DateTime.Now:HH:mm:ss} - {name} left the room";
-            messages.Add(message);
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<string, string>("ReceiveMessage", (name, message) =>
-        {
-            var formattedMessage = $"{DateTime.Now:HH:mm:ss} - {name}: {message}";
-            messages.Add(formattedMessage);
+            Console.WriteLine($"[SignalDecoder] {name} left the room");
             InvokeAsync(StateHasChanged);
         });
 
@@ -1658,14 +1633,12 @@
             
             inGame = true;
             gameStatus = $"Joined mission as {role}. Waiting for partner...";
-            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined as {role}");
             InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On("SignalDecoderGameFull", () =>
         {
             gameStatus = "Mission is full! Cannot join.";
-            messages.Add($"{DateTime.Now:HH:mm:ss} - Mission is full");
             InvokeAsync(StateHasChanged);
         });
 
@@ -1719,7 +1692,6 @@
         hubConnection.On<string, int, int>("SignalDecoderGameCompleted", (message, score, transmissionsDecoded) =>
         {
             gameStatus = $"🎉 {message}";
-            messages.Add($"{DateTime.Now:HH:mm:ss} - Signal decoded! Final score: {score}");
             InvokeAsync(StateHasChanged);
         });
 
@@ -1764,7 +1736,6 @@
         hubConnection.On<string>("SignalDecoderHintReceived", (hint) =>
         {
             latestHint = hint;
-            messages.Add($"{DateTime.Now:HH:mm:ss} - Signal boost: {hint}");
             InvokeAsync(StateHasChanged);
         });
 
@@ -1814,7 +1785,6 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
             await hubConnection.SendAsync("JoinRoom", roomId, playerName);
-            messages.Add($"{DateTime.Now:HH:mm:ss} - You joined room: {roomId}");
         }
     }
 
@@ -1823,7 +1793,6 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
             await hubConnection.SendAsync("LeaveRoom", roomId, playerName);
-            messages.Add($"{DateTime.Now:HH:mm:ss} - You left room: {roomId}");
             inGame = false;
             playerView = null;
             gameState = null;
@@ -1877,14 +1846,6 @@
         }
     }
 
-    private async Task SendMessage()
-    {
-        if (hubConnection is not null && !string.IsNullOrEmpty(messageInput) && !string.IsNullOrEmpty(roomId))
-        {
-            await hubConnection.SendAsync("SendMessageToRoom", roomId, playerName, messageInput);
-            messageInput = "";
-        }
-    }
 
     private string GetRoleClass()
     {

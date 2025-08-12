@@ -3297,29 +3297,36 @@ public class SimpleSignalDecoderGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Multiple simple sentences for progression
+    // Story-based transmissions for Act 1 Scene 3
     private static readonly SimpleSignalData[] SignalBank = new[]
     {
         new SimpleSignalData
         {
-            FullSentence = "Help! Fire spreading fast!",
-            SentenceWithBlanks = "Help! {0} spreading {1}!",
-            MissingWords = new[] { "fire", "fast" },
-            AudioFile = "audio/signals/critical_01.mp3"
+            FullSentence = "Emergency dispatch explosion at Werner's workshop on Fifth Street blue-haired suspect fled the scene one casualty confirmed all units respond",
+            SentenceWithBlanks = "Emergency dispatch explosion at {0} workshop on {1} Street {2}-haired suspect fled the scene one {3} confirmed all units respond",
+            MissingWords = new[] { "Werner's", "Fifth", "blue", "casualty" },
+            AudioFile = "audio/signal-decoder/story/transmission1_full.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Evacuate building now!",
-            SentenceWithBlanks = "{0} {1} {2}!",
-            MissingWords = new[] { "evacuate", "building", "now" },
-            AudioFile = "audio/signals/critical_02.mp3"
+            FullSentence = "Alert Dr. Renni Stiltner failed to report for protective custody last known location chem-tech repair shop above Entresol Market consider subject in immediate danger",
+            SentenceWithBlanks = "Alert Dr. {0} Stiltner failed to report for {1} custody last known location {2}-tech repair shop above {3} Market consider subject in immediate {4}",
+            MissingWords = new[] { "Renni", "protective", "chem", "Entresol", "danger" },
+            AudioFile = "audio/signal-decoder/story/transmission2_full.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Medical emergency!",
-            SentenceWithBlanks = "{0} {1}!",
-            MissingWords = new[] { "medical", "emergency" },
-            AudioFile = "audio/signals/critical_03.mp3"
+            FullSentence = "Deputy Stanton directive avoid warehouse district tonight evidence disposal in progress Marcus's files require immediate sanitization no patrol units until further notice",
+            SentenceWithBlanks = "Deputy {0} directive avoid {1} district tonight evidence {2} in progress {3}'s files require immediate sanitization no patrol units until further {4}",
+            MissingWords = new[] { "Stanton", "warehouse", "disposal", "Marcus", "notice" },
+            AudioFile = "audio/signal-decoder/story/transmission3_full.mp3"
+        },
+        new SimpleSignalData
+        {
+            FullSentence = "Update on Project Safeguard personnel two scientists confirmed missing Ferros and Reveck locations unknown Hextech lab security compromised initiate lockdown protocols",
+            SentenceWithBlanks = "Update on Project {0} personnel two scientists confirmed {1} Ferros and {2} locations unknown {3} lab security compromised initiate {4} protocols",
+            MissingWords = new[] { "Safeguard", "missing", "Reveck", "Hextech", "lockdown" },
+            AudioFile = "audio/signal-decoder/story/transmission4_full.mp3"
         }
     };
 

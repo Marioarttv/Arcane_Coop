@@ -122,6 +122,160 @@ Work together under time pressure to decode emergency transmissions by filling i
 - Real-time communication skills development
 - Technical vocabulary acquisition
 
+## Story-Specific Transmissions (Act 1 Scene 3 → Signal Decoder)
+
+### Context
+After identifying the four scientists in the Enforcer Database, players discover radio chatter about Werner's attack and need to decode fragmented enforcer transmissions to locate Dr. Renni Stiltner before Jinx finds her.
+
+### Required Voice Lines / Audio Transmissions
+
+#### Transmission 1: Werner's Workshop Attack
+**Full Audio (Vi hears):** "Emergency dispatch - explosion at Werner's workshop on Fifth Street. Blue-haired suspect fled the scene. One casualty confirmed. All units respond."
+
+**Fragmented Text (Caitlyn sees):** "Emergency dispatch - explosion at *** workshop on *** Street. ***-haired suspect fled the scene. One *** confirmed. All units respond."
+
+**Missing Words:** Werner's, Fifth, Blue, casualty
+
+**Voice Line Files Needed:**
+- `transmission1_full.mp3` - Complete emergency dispatch
+- Background: Radio static, enforcer sirens
+
+#### Transmission 2: Renni's Protective Custody Failure
+**Full Audio (Vi hears):** "Alert - Dr. Renni Stiltner failed to report for protective custody. Last known location: chem-tech repair shop above Entresol Market. Consider subject in immediate danger."
+
+**Fragmented Text (Caitlyn sees):** "Alert - Dr. *** Stiltner failed to report for *** custody. Last known location: ***-tech repair shop above *** Market. Consider subject in immediate ***."
+
+**Missing Words:** Renni, protective, chem, Entresol, danger
+
+**Voice Line Files Needed:**
+- `transmission2_full.mp3` - Protective custody alert
+- Background: Typing sounds, dispatch center ambiance
+
+#### Transmission 3: Stanton's Cover-up Orders
+**Full Audio (Vi hears):** "Deputy Stanton directive - avoid warehouse district tonight. Evidence disposal in progress. Marcus's files require immediate sanitization. No patrol units until further notice."
+
+**Fragmented Text (Caitlyn sees):** "Deputy *** directive - avoid *** district tonight. Evidence *** in progress. ***'s files require immediate sanitization. No patrol units until further ***."
+
+**Missing Words:** Stanton, warehouse, disposal, Marcus, notice
+
+**Voice Line Files Needed:**
+- `transmission3_full.mp3` - Stanton's directive
+- Background: Muffled conversation, paper shredding
+
+#### Transmission 4: Project Safeguard Reference
+**Full Audio (Vi hears):** "Update on Project Safeguard personnel - two scientists confirmed missing. Ferros and Reveck locations unknown. Hextech lab security compromised. Initiate lockdown protocols."
+
+**Fragmented Text (Caitlyn sees):** "Update on Project *** personnel - two scientists confirmed ***. Ferros and *** locations unknown. *** lab security compromised. Initiate *** protocols."
+
+**Missing Words:** Safeguard, missing, Reveck, Hextech, lockdown
+
+**Voice Line Files Needed:**
+- `transmission4_full.mp3` - Project Safeguard update
+- Background: Alarm sounds, security alerts
+
+### Voice Acting Direction
+
+#### General Guidelines
+- **Tone:** Professional enforcer dispatch voice, urgent but controlled
+- **Clarity:** Clear pronunciation despite radio effects
+- **Pacing:** Moderate speed with emphasis on critical information
+- **Effects:** Radio compression, slight static, authentic emergency dispatch feel
+
+#### Character-Specific Notes
+- **Dispatcher (Transmissions 1-2):** Female voice, professional, concerned but maintaining protocol
+- **Enforcer Officer (Transmission 3):** Male voice, slightly nervous about Stanton's orders
+- **Security Chief (Transmission 4):** Male voice, authoritative, experienced
+
+### Audio File Structure and Naming Convention
+```
+/wwwroot/audio/signal-decoder/
+├── story/
+│   ├── intro_caitlyn.mp3         # "The radio's picking up enforcer chatter!"
+│   ├── intro_vi.mp3              # "I can hear the audio clearly..."
+│   ├── transmission1_full.mp3    # Werner's workshop attack
+│   ├── transmission1_ambient.mp3 # Sirens and radio static
+│   ├── transmission1_success.mp3 # "Werner's workshop... too late"
+│   ├── transmission2_full.mp3    # Renni's custody failure
+│   ├── transmission2_ambient.mp3 # Dispatch center sounds
+│   ├── transmission2_success.mp3 # "Renni didn't report..."
+│   ├── transmission3_full.mp3    # Stanton's directive
+│   ├── transmission3_ambient.mp3 # Paper shredding
+│   ├── transmission3_success.mp3 # "Evidence disposal..."
+│   ├── transmission4_full.mp3    # Project Safeguard update
+│   ├── transmission4_ambient.mp3 # Alarm sounds
+│   ├── transmission4_success.mp3 # "Project Safeguard..."
+│   └── completion_both.mp3       # "We have to find Renni..."
+└── generic/                       # Non-story emergency scenarios
+    └── [existing files]
+```
+
+### Recording Checklist for Voice Actors
+
+#### Session 1: Main Transmissions (Dispatcher Voice - Female)
+- [ ] transmission1_full.mp3 - 10-12 seconds
+- [ ] transmission2_full.mp3 - 12-15 seconds
+- [ ] Backup takes with varying urgency levels
+
+#### Session 2: Authority Figure (Male Voice)
+- [ ] transmission3_full.mp3 - 10-12 seconds
+- [ ] transmission4_full.mp3 - 10-12 seconds
+- [ ] Additional enforcer background chatter
+
+#### Session 3: Character Reactions (Caitlyn & Vi)
+- [ ] intro_caitlyn.mp3 - 3-5 seconds
+- [ ] intro_vi.mp3 - 3-5 seconds
+- [ ] All success feedback lines - 3-5 seconds each
+- [ ] completion_both.mp3 - 5-7 seconds
+
+#### Audio Processing Requirements
+- Apply radio filter/compression to all transmission files
+- Keep character voices clean with minimal processing
+- Ambient tracks should loop seamlessly
+- Normalize all files to -3dB peak
+- Export as MP3 192kbps for web optimization
+
+### Implementation Notes for Story Mode
+- Transmissions should play in sequence when in story mode
+- Each transmission increases in urgency and complexity
+- Success on all four transmissions triggers story continuation
+- Failure allows retry but maintains story context
+
+### Dialogue Context Integration
+
+#### Pre-Puzzle Setup (From Scene 3)
+The puzzle begins after the following story beats:
+- Players have identified four scientists through the Picture Explanation puzzle
+- They discovered these scientists worked on "Project Safeguard"
+- An enforcer radio starts crackling with emergency transmissions
+- Caitlyn and Vi realize they need to decode these transmissions to find the scientists
+
+#### Key Character Motivations
+- **Caitlyn:** Needs to understand Deputy Stanton's cover-up and save the scientists
+- **Vi:** Desperate to find out what Silco told Jinx about the warehouse incident
+- **Players:** Must decode transmissions quickly to locate Dr. Renni before Jinx does
+
+#### Post-Puzzle Transition (To Scene 4)
+After successfully decoding all transmissions, the story continues with:
+- Confirmation that Werner has been attacked
+- Discovery that Renni didn't trust protective custody
+- Revelation about Stanton's evidence disposal
+- Team decides to find Renni at her apartment in Zaun
+
+### Additional Voice Lines for Story Context
+
+#### Introduction (When joining from story)
+**Caitlyn:** "The radio's picking up enforcer chatter! Quick, we need to decode this."
+**Vi:** "I can hear the audio clearly. Tell me what you're seeing on the transcript."
+
+#### Success Feedback
+**Transmission 1 Success:** "Werner's workshop... an explosion. We're too late for him."
+**Transmission 2 Success:** "Renni didn't report for custody. Smart woman - she doesn't trust Stanton."
+**Transmission 3 Success:** "Evidence disposal? Stanton's covering up Marcus's corruption!"
+**Transmission 4 Success:** "Project Safeguard... all these scientists are being hunted."
+
+#### Completion
+**Both Players:** "We have to find Renni before Jinx does. Her apartment in Zaun - let's go!"
+
 ## Story Integration
 
 ### Act 1 Visual Novel → Signal Decoder Transition (2025 Complete Integration)
