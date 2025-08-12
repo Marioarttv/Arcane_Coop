@@ -980,3 +980,115 @@ Extending to more Acts:
 - Group management: Standard SignalR patterns throughout
 
 This centralized architecture allows for consistent multiplayer experiences across all puzzle types while maintaining clear separation of concerns for each game system.
+
+## Recent Bug Fixes and Improvements (August 2025)
+
+### 🐛 Scene 6 Skip Bug - FIXED
+
+**Issue**: When using the Character Lobby testing interface to skip to Scene 6 ("Code Decoded"), the visual novel engine displayed Scene 1 dialogue ("Council Chamber Antechamber - Moments after the meeting") instead of the correct Scene 6 content, but then correctly transitioned to the NavigationMaze puzzle.
+
+**Root Cause**: In `GameHub.cs:1738`, the second player join logic was missing the `else if (currentPhase == "code_decoded")` case in the `JoinAct1GameAtScene` method. When a second player joined at Scene 6, the logic fell through to the default `else` clause which created the Emergency Briefing Scene (Scene 1) instead of the Code Decoded Scene.
+
+**Solution**: Added the missing scene handling case for the second player logic:
+```csharp
+// Added to GameHub.cs:1739-1742
+else if (currentPhase == "code_decoded")
+{
+    game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
+}
+```
+
+**Files Modified**: 
+- `Hubs/GameHub.cs:1739-1742`
+
+**Impact**: Scene 6 skip now correctly displays the "Code Decoded" content for both players before transitioning to NavigationMaze.
+
+### 🐛 Dictionary Duplicate Key Errors - FIXED
+
+**Issue**: When joining Scene 6 (Code Decoded), the application crashed with the error: "An item with the same key has already been added. Key: [ExpressionName]". This occurred due to duplicate character expression keys in multiple character definitions.
+
+**Root Cause**: The `CreateCodeDecodedScene` method in `Act1StoryEngine.cs` contained multiple duplicate keys in the `ExpressionPaths` dictionaries for all character definitions. C# dictionaries cannot contain duplicate keys, causing runtime exceptions.
+
+**Duplicate Keys Found**:
+
+1. **Vi Character** (`Act1StoryEngine.cs:1891-1898`):
+   - `CharacterExpression.Angry` appeared 3 times
+   - `CharacterExpression.Worried` appeared 2 times
+
+2. **Caitlyn Character** (`Act1StoryEngine.cs:1912-1917`):
+   - `CharacterExpression.Serious` appeared 3 times
+   - `CharacterExpression.Worried` appeared 2 times
+
+3. **PlayerA Character** (`Act1StoryEngine.cs:1931-1934`):
+   - `CharacterExpression.Serious` appeared 2 times
+
+4. **PlayerB Character** (`Act1StoryEngine.cs:1948-1953`):
+   - `CharacterExpression.Surprised` appeared 2 times
+   - `CharacterExpression.Determined` appeared 3 times
+
+5. **Kira Character** (`Act1StoryEngine.cs:1969-1972`):
+   - `CharacterExpression.Sad` appeared 2 times
+
+**Solution**: Replaced all duplicate expression keys with unique character expressions while maintaining the same number of expression entries:
+
+**Vi Character Fixed**:
+```csharp
+ExpressionPaths = new Dictionary<CharacterExpression, string>
+{
+    { CharacterExpression.Default, "/images/vi.jpeg" },
+    { CharacterExpression.Serious, "/images/vi.jpeg" },
+    { CharacterExpression.Angry, "/images/vi.jpeg" },
+    { CharacterExpression.Determined, "/images/vi.jpeg" },
+    { CharacterExpression.Worried, "/images/vi.jpeg" },
+    { CharacterExpression.Surprised, "/images/vi.jpeg" },
+    { CharacterExpression.Sad, "/images/vi.jpeg" },           // Was duplicate Angry
+    { CharacterExpression.Happy, "/images/vi.jpeg" },         // Was duplicate Angry  
+    { CharacterExpression.Confused, "/images/vi.jpeg" },      // Was duplicate Angry
+    { CharacterExpression.Smug, "/images/vi.jpeg" }           // Was duplicate Worried
+}
+```
+
+**Caitlyn Character Fixed**:
+```csharp
+ExpressionPaths = new Dictionary<CharacterExpression, string>
+{
+    { CharacterExpression.Default, "/images/cait.jpeg" },
+    { CharacterExpression.Serious, "/images/cait.jpeg" },
+    { CharacterExpression.Worried, "/images/cait.jpeg" },
+    { CharacterExpression.Determined, "/images/cait.jpeg" },
+    { CharacterExpression.Happy, "/images/cait.jpeg" },       // Was duplicate Serious
+    { CharacterExpression.Surprised, "/images/cait.jpeg" },   // Was duplicate Worried
+    { CharacterExpression.Angry, "/images/cait.jpeg" }        // Was duplicate Serious
+}
+```
+
+**PlayerA, PlayerB, and Kira** received similar fixes with unique expression keys.
+
+**Files Modified**: 
+- `Services/Act1StoryEngine.cs:1891-1972` (Character expression dictionaries)
+
+**Impact**: Scene 6 now loads successfully without dictionary key conflicts, allowing proper scene testing and story progression.
+
+### 🔧 Technical Debt Addressed
+
+**Pattern Recognition**: These bugs highlight the importance of:
+
+1. **Consistent Scene Handling**: All scene creation logic should have matching patterns between first and second player join scenarios
+2. **Dictionary Validation**: Expression dictionaries should be validated for unique keys during development
+3. **Testing Coverage**: Scene skip functionality should be regularly tested for all available scenes
+4. **Code Review**: Character definition patterns should be reviewed for copy-paste errors
+
+**Prevention Measures**:
+- Added comprehensive logging to scene creation methods for easier debugging
+- Established pattern consistency between first and second player join logic
+- Documented the StoryProgression array mapping for easier scene index debugging
+
+### 🧪 Testing Improvements
+
+The Character Lobby testing interface continues to provide:
+- **Scene Selection Grid**: Direct access to Scene 6 ("Code Decoded") and other story scenes
+- **Puzzle Transitions**: Direct testing of puzzle entry points with story mode enabled
+- **Role Preservation**: Maintains Piltover/Zaun assignments throughout testing workflow
+- **Synchronized Transport**: Both players transported to same testing room simultaneously
+
+**Usage**: After verifying squad in Character Lobby, click "Continue Where You Left Off" → Select "Code Decoded" from the Visual Novel Scenes section to test Scene 6 functionality.

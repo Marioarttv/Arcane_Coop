@@ -1892,10 +1892,10 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Determined, "/images/vi.jpeg" },
                         { CharacterExpression.Worried, "/images/vi.jpeg" },
                         { CharacterExpression.Surprised, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
                         { CharacterExpression.Sad, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                        { CharacterExpression.Happy, "/images/vi.jpeg" },
+                        { CharacterExpression.Confused, "/images/vi.jpeg" },
+                        { CharacterExpression.Smug, "/images/vi.jpeg" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1911,10 +1911,10 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Default, "/images/cait.jpeg" },
                         { CharacterExpression.Serious, "/images/cait.jpeg" },
                         { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
                         { CharacterExpression.Determined, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" }
+                        { CharacterExpression.Happy, "/images/cait.jpeg" },
+                        { CharacterExpression.Surprised, "/images/cait.jpeg" },
+                        { CharacterExpression.Angry, "/images/cait.jpeg" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1930,8 +1930,8 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Default, "/images/enforcer.png" },
                         { CharacterExpression.Serious, "/images/enforcer.png" },
                         { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Determined, "/images/enforcer.png" },
+                        { CharacterExpression.Happy, "/images/enforcer.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1946,11 +1946,11 @@ namespace Arcane_Coop.Services
                     {
                         { CharacterExpression.Default, "/images/zaun_friend.png" },
                         { CharacterExpression.Surprised, "/images/zaun_friend.png" },
-                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" },
                         { CharacterExpression.Determined, "/images/zaun_friend.png" },
                         { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Happy, "/images/zaun_friend.png" },
+                        { CharacterExpression.Serious, "/images/zaun_friend.png" },
+                        { CharacterExpression.Angry, "/images/zaun_friend.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1969,7 +1969,7 @@ namespace Arcane_Coop.Services
                         { CharacterExpression.Sad, "/images/kira.png" },
                         { CharacterExpression.Serious, "/images/kira.png" },
                         { CharacterExpression.Worried, "/images/kira.png" },
-                        { CharacterExpression.Sad, "/images/kira.png" }
+                        { CharacterExpression.Determined, "/images/kira.png" }
                     }
                 },
                 new VisualNovelCharacter

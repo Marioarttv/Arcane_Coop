@@ -1736,6 +1736,10 @@ public class GameHub : Hub
                 {
                     game.CurrentScene = _act1StoryEngine.CreateRenniApartmentScene(originalSquadName, game);
                 }
+                else if (currentPhase == "code_decoded")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
+                }
                 else
                 {
                     game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
