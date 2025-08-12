@@ -554,18 +554,6 @@ public class GameHub : Hub
         }
     }
 
-    public async Task RequestSignalDecoderHint(string roomId)
-    {
-        if (_signalDecoderGames.TryGetValue(roomId, out var game))
-        {
-            var hint = game.GetHint(Context.ConnectionId);
-            if (hint != null)
-            {
-                await Clients.Caller.SendAsync("SignalDecoderHintReceived", hint);
-                await Clients.Group(roomId).SendAsync("SignalDecoderGameStateUpdated", game.GetGameState());
-            }
-        }
-    }
 
     public async Task RestartSignalDecoderGame(string roomId)
     {
@@ -1698,6 +1686,10 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "radio_decoded")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateRadioDecodedScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1727,6 +1719,10 @@ public class GameHub : Hub
                 if (currentPhase == "database_revelation")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
+                }
+                else if (currentPhase == "radio_decoded")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateRadioDecodedScene(originalSquadName, game);
                 }
                 else
                 {
@@ -2463,9 +2459,10 @@ public class GameHub : Hub
                 var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
                 var uniqueRoomId = $"{originalSquadName}_FromSignalDecoder";
                 
-                // For now, redirect to Act1 with scene index 4 (or back to menu if story ends here)
+                // Redirect to Act1 with scene index 4 (radio_decoded scene)
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=4&transition=FromSignalDecoder";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+                Console.WriteLine($"[GameHub] Signal Decoder redirect URL for {playerName}: {parameters}");
             }
 
             // Send redirect to all players
@@ -3336,7 +3333,6 @@ public class SimpleSignalDecoderGame
     public List<string> AttemptHistory { get; set; } = new();
     public bool IsCompleted { get; set; } = false;
     public int Score { get; set; } = 0;
-    public int HintsUsed { get; set; } = 0;
     public int CurrentSignalIndex { get; set; } = 0;
     public int SignalsCompleted { get; set; } = 0;
     
@@ -3419,8 +3415,8 @@ public class SimpleSignalDecoderGame
             GuessedWords.Add(matchingWord);
             AttemptHistory.Add($"{PlayerNames[connectionId]}: {guess} ✓");
             
-            // Simple scoring
-            Score += Math.Max(1, 10 - HintsUsed);
+            // Simple scoring - 10 points per word
+            Score += 10;
             
             if (GuessedWords.Count >= CurrentSignal.MissingWords.Length)
             {
@@ -3438,7 +3434,6 @@ public class SimpleSignalDecoderGame
                     // Move to next signal
                     CurrentSignalIndex++;
                     GuessedWords.Clear();
-                    HintsUsed = 0;
                     return (true, $"📡 Signal {SignalsCompleted} completed! New signal incoming...");
                 }
             }
@@ -3459,27 +3454,6 @@ public class SimpleSignalDecoderGame
         }
     }
 
-    public string? GetHint(string connectionId)
-    {
-        if (!Players.ContainsKey(connectionId) || HintsUsed >= 3)
-            return null;
-
-        HintsUsed++;
-        
-        var unguessedWords = CurrentSignal.MissingWords
-            .Where(w => !GuessedWords.Contains(w.ToLower())).ToList();
-        if (!unguessedWords.Any()) return null;
-        
-        var targetWord = unguessedWords.First();
-        
-        return HintsUsed switch
-        {
-            1 => "🔍 Emergency signal - listen for action words",
-            2 => $"📏 One word has {targetWord.Length} letters: {targetWord[0]}***",
-            3 => $"🎯 Final hint: Think about what spreads in emergencies",
-            _ => null
-        };
-    }
 
     public SimplePlayerView GetPlayerView(string connectionId)
     {
@@ -3543,7 +3517,6 @@ public class SimpleSignalDecoderGame
         return new SimpleGameState
         {
             Score = Score,
-            HintsUsed = HintsUsed,
             PlayerCount = Players.Count,
             PlayersNeeded = 2 - Players.Count,
             IsCompleted = IsCompleted,
@@ -3560,7 +3533,6 @@ public class SimpleSignalDecoderGame
         AttemptHistory.Clear();
         IsCompleted = false;
         Score = 0;
-        HintsUsed = 0;
         CurrentSignalIndex = 0;
         SignalsCompleted = 0;
     }

@@ -25,7 +25,6 @@ public class SimplePlayerView
 public class SimpleGameState
 {
     public int Score { get; set; }
-    public int HintsUsed { get; set; }
     public int PlayerCount { get; set; }
     public int PlayersNeeded { get; set; }
     public bool IsCompleted { get; set; }

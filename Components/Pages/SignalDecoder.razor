@@ -130,8 +130,7 @@
                         <div class="game-progress">
                             <strong>Signal:</strong> @gameState?.CurrentSignal / @gameState?.TotalSignals<br/>
                             <strong>Score:</strong> @gameState?.Score<br/>
-                            <strong>Remaining Words:</strong> @gameState?.RemainingWords<br/>
-                            <strong>Hints Used:</strong> @gameState?.HintsUsed / 3
+                            <strong>Remaining Words:</strong> @gameState?.RemainingWords
                         </div>
                     </div>
                 </div>
@@ -214,10 +213,7 @@
                 </div>
 
                 <div class="game-controls mt-3">
-                    <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
-                        Signal Boost (@(3 - (gameState?.HintsUsed ?? 0)) left)
-                    </button>
-                    <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
+                    <button class="btn btn-warning" @onclick="RestartGame" disabled="@(!IsConnected)">
                         Restart Mission
                     </button>
                     @if (isFromStory && gameState?.IsCompleted == true)
@@ -232,13 +228,6 @@
             @if (!string.IsNullOrEmpty(gameStatus))
             {
                 <div class="alert @GetStatusClass() mt-3">@gameStatus</div>
-            }
-
-            @if (!string.IsNullOrEmpty(latestHint))
-            {
-                <div class="alert alert-info mt-2">
-                    <strong>Signal Boost:</strong> @latestHint
-                </div>
             }
 
             @if (playerView?.AttemptHistory?.Any() == true)
@@ -1570,7 +1559,6 @@
     private string playerName = "";
     private string currentGuess = "";
     private string gameStatus = "";
-    private string latestHint = "";
     
     // Game state - SIMPLIFIED
     private bool inGame = false;
@@ -1647,7 +1635,6 @@
             gameState = new SimpleGameStateClient
             {
                 Score = state.Score,
-                HintsUsed = state.HintsUsed,
                 PlayerCount = state.PlayerCount,
                 PlayersNeeded = state.PlayersNeeded,
                 IsCompleted = state.IsCompleted,
@@ -1733,11 +1720,6 @@
             }
         });
 
-        hubConnection.On<string>("SignalDecoderHintReceived", (hint) =>
-        {
-            latestHint = hint;
-            InvokeAsync(StateHasChanged);
-        });
 
         await hubConnection.StartAsync();
         
@@ -1797,7 +1779,6 @@
             playerView = null;
             gameState = null;
             gameStatus = "";
-            latestHint = "";
         }
     }
 
@@ -1824,17 +1805,9 @@
         {
             await hubConnection.SendAsync("SubmitSignalDecoderGuess", roomId, currentGuess);
             currentGuess = "";
-            latestHint = "";
         }
     }
 
-    private async Task RequestHint()
-    {
-        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
-        {
-            await hubConnection.SendAsync("RequestSignalDecoderHint", roomId);
-        }
-    }
 
     private async Task RestartGame()
     {
@@ -1842,7 +1815,6 @@
         {
             await hubConnection.SendAsync("RestartSignalDecoderGame", roomId);
             gameStatus = "Mission restarted!";
-            latestHint = "";
         }
     }
 
@@ -1950,7 +1922,6 @@
     public class SimpleGameStateClient
     {
         public int Score { get; set; }
-        public int HintsUsed { get; set; }
         public int PlayerCount { get; set; }
         public int PlayersNeeded { get; set; }
         public bool IsCompleted { get; set; }
