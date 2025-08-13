@@ -7,7 +7,7 @@ Location: Above a chem-tech repair shop, Zaun
 Arrival
 [Player B Name] (Worried):
 
-"This is it. Kepler's Chem-Tech Repairs. Renni lives in the apartment above."
+"This is it. Kepler's Chem-Tech Repairs. Renni lives in the apartment above."	
 
 Vi (Looking around):
 

@@ -2028,6 +2028,10 @@ public class GameHub : Hub
             await Clients.Group(roomId).SendAsync("Act1GameCompleted");
             await BroadcastAct1GameState(roomId);
         }
+        else
+        {
+            await BroadcastAct1GameState(roomId);
+        }
     }
 
     public async Task RestartAct1(string roomId)
