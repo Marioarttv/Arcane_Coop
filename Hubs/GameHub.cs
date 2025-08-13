@@ -1738,6 +1738,10 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "shimmer_factory_entrance")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateShimmerFactoryEntranceScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1779,6 +1783,10 @@ public class GameHub : Hub
                 else if (currentPhase == "code_decoded")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
+                }
+                else if (currentPhase == "shimmer_factory_entrance")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateShimmerFactoryEntranceScene(originalSquadName, game);
                 }
                 else
                 {

@@ -11,6 +11,7 @@ namespace Arcane_Coop.Services
         VisualNovelScene CreateRadioDecodedScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateRenniApartmentScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateCodeDecodedScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateShimmerFactoryEntranceScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -2263,6 +2264,138 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
+        public VisualNovelScene CreateShimmerFactoryEntranceScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "shimmer_factory_entrance",
+                Name = "The Shimmer Factory",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter
+                {
+                    Id = "vi",
+                    Name = "Vi",
+                    DisplayName = "Vi",
+                    ImagePath = "/images/vi.jpeg",
+                    Position = CharacterPosition.Left,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/vi.jpeg" },
+                        { CharacterExpression.Serious, "/images/vi.jpeg" },
+                        { CharacterExpression.Angry, "/images/vi.jpeg" },
+                        { CharacterExpression.Determined, "/images/vi.jpeg" },
+                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "caitlyn",
+                    Name = "Caitlyn",
+                    DisplayName = "Caitlyn",
+                    ImagePath = "/images/cait.jpeg",
+                    Position = CharacterPosition.Right,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/cait.jpeg" },
+                        { CharacterExpression.Serious, "/images/cait.jpeg" },
+                        { CharacterExpression.Worried, "/images/cait.jpeg" },
+                        { CharacterExpression.Determined, "/images/cait.jpeg" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerA",
+                    Name = piltoverPlayerName,
+                    DisplayName = piltoverPlayerName,
+                    ImagePath = "/images/enforcer.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#c8aa6e",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/enforcer.png" },
+                        { CharacterExpression.Worried, "/images/enforcer.png" },
+                        { CharacterExpression.Serious, "/images/enforcer.png" },
+                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "playerB",
+                    Name = zaunPlayerName,
+                    DisplayName = zaunPlayerName,
+                    ImagePath = "/images/zaun_friend.png",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#00d4aa",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "/images/zaun_friend.png" },
+                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
+                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                    }
+                },
+                new VisualNovelCharacter
+                {
+                    Id = "narrator",
+                    Name = "Narrator",
+                    DisplayName = "Narrator",
+                    ImagePath = "",
+                    Position = CharacterPosition.Center,
+                    ThemeColor = "#888888",
+                    ExpressionPaths = new Dictionary<CharacterExpression, string>
+                    {
+                        { CharacterExpression.Default, "" }
+                    }
+                }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Act 2: The Shimmer Factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Arriving at the Factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "The explosion came from the upper levels. But the structure's still standing.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "caitlyn", Text = "For now. This whole place could come down.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "playerB", Text = "Purple smoke everywhere. That's shimmer residue. We shouldn't breathe too much of it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "playerA", Text = "Look! Over there by the entrance!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "narrator", Text = "They rush over to find a hand-drawn map weighted down by a rock", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "It's hand-drawn. Recently too - the ink's still fresh in places.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "vi", Text = "This is Renni's handwriting. She mapped the place out.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "playerB", Text = "She marked locations... 'Main processing,' 'Storage tanks,' and... 'Holding cells - Level 3.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "playerA", Text = "Holding cells. That's where she thought the scientists were.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "narrator", Text = "Planning the Approach", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Then that's where we go.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Wait. We can't all go barging in. The place is probably full of Silco's goons.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "playerA", Text = "According to this, there are multiple routes through the factory. Maintenance tunnels, catwalks...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "playerB", Text = "I could scout ahead, but I don't know the layout.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "vi", Text = $"{zaunPlayerName}, you go in first. You're quicker, quieter. {piltoverPlayerName}, you guide them using Renni's map.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Vi and I will create a distraction if needed. Draw any guards away.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "narrator", Text = "Setting Up Navigation", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "Okay, I've got the map. There's an entrance through a maintenance hatch about twenty meters to your left.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "playerB", Text = "I see it. Looks clear.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "vi", Text = "Be careful in there. And if you see Jinx...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "playerB", Text = "I'll signal you. I won't engage alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Guide them carefully. One wrong turn in there and they could walk right into a patrol.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "playerA", Text = "According to the map, once you're inside, there should be a corridor straight ahead.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
+                new DialogueLine { CharacterId = "playerB", Text = "I'm in. It's dark. Pipes everywhere. Which way?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Shimmer Factory Entrance scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -2434,6 +2567,18 @@ namespace Arcane_Coop.Services
                         game.TextAnimationStartTime = DateTime.UtcNow;
                         game.RecordAction();
                         Console.WriteLine($"[Act1StoryEngine] Progressed to Code Decoded scene");
+                        break;
+
+                    case "shimmer_factory_entrance":
+                        // Move to Scene 7 (Shimmer Factory Entrance)
+                        game.CurrentScene = CreateShimmerFactoryEntranceScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Shimmer Factory Entrance scene");
                         break;
 
                     case "navigation_maze_transition":
