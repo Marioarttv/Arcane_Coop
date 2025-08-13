@@ -4463,49 +4463,81 @@ public class PictureExplanationGame
     public enum PlayerRole { Piltover, Zaunite }
     
     // Picture bank with character images for demo
-    private static readonly List<PictureData> PictureBank = new()
+    private static readonly List<PictureData> PictureBank = InitializePictureBank();
+    
+    // Initialize the picture bank with character data
+    private static List<PictureData> InitializePictureBank()
     {
-        new PictureData
+        return new List<PictureData>
         {
-            ImageUrl = "/images/Viktor.jpeg",
-            CharacterName = "Viktor",
-            Title = "Viktor - The Machine Herald",
-            Category = "Scientist",
-            DistractorImages = new() { "/images/Jayce.jpeg", "/images/Vi.jpeg", "/images/Cait.jpeg" },
-            Description = "Pale scientist with mechanical augmentations, amber eyes, and dark hair",
-            StoryContext = "Former Hextech partner, now pursuing dangerous evolution research"
-        },
-        new PictureData
+            new PictureData
+            {
+                ImageUrl = "/images/PictureDescriptionImages/CorrectCharacters/Matthew.png",
+                CharacterName = "Matthew",
+                Title = "Matthew - Resistance Contact",
+                Category = "Male",
+                DistractorImages = GetRandomMaleDistractors(3),
+                Description = "Male resistance member with determined expression",
+                StoryContext = "Key contact in the underground network"
+            },
+            new PictureData
+            {
+                ImageUrl = "/images/PictureDescriptionImages/CorrectCharacters/Mordecai.png",
+                CharacterName = "Mordecai",
+                Title = "Mordecai - Intelligence Analyst",
+                Category = "Male",
+                DistractorImages = GetRandomMaleDistractors(3),
+                Description = "Male analyst with sharp features and calculating gaze",
+                StoryContext = "Expert in decoding encrypted messages"
+            },
+            new PictureData
+            {
+                ImageUrl = "/images/PictureDescriptionImages/CorrectCharacters/Victoria.png",
+                CharacterName = "Victoria",
+                Title = "Victoria - Field Operative",
+                Category = "Female",
+                DistractorImages = GetRandomFemaleDistractors(3),
+                Description = "Female operative with confident stance and tactical gear",
+                StoryContext = "Experienced field agent with numerous successful missions"
+            },
+            new PictureData
+            {
+                ImageUrl = "/images/PictureDescriptionImages/CorrectCharacters/Renni.png",
+                CharacterName = "Renni",
+                Title = "Renni - Tech Specialist",
+                Category = "Female",
+                DistractorImages = GetRandomFemaleDistractors(3),
+                Description = "Female tech expert with focused expression and advanced equipment",
+                StoryContext = "Specialist in advanced surveillance and communication systems"
+            }
+        };
+    }
+    
+    // Helper method to get random male distractor images
+    private static List<string> GetRandomMaleDistractors(int count)
+    {
+        var maleImages = new List<string>();
+        for (int i = 1; i <= 15; i++)
         {
-            ImageUrl = "/images/Jayce.jpeg",
-            CharacterName = "Jayce",
-            Title = "Jayce Talis",
-            Category = "Scientist",
-            DistractorImages = new() { "/images/Viktor.jpeg", "/images/Vi.jpeg", "/images/Cait.jpeg" },
-            Description = "Tall inventor with strong build, dark hair, and confident demeanor",
-            StoryContext = "Hextech inventor and Piltover councilor, defender of progress"
-        },
-        new PictureData
-        {
-            ImageUrl = "/images/Vi.jpeg",
-            CharacterName = "Vi",
-            Title = "Vi - The Enforcer",
-            Category = "Enforcer",
-            DistractorImages = new() { "/images/Cait.jpeg", "/images/Jayce.jpeg", "/images/Viktor.jpeg" },
-            Description = "Pink-haired fighter with tattoos, gauntlets, and fierce expression",
-            StoryContext = "Former Zaun undercity resident, now working with Piltover enforcers"
-        },
-        new PictureData
-        {
-            ImageUrl = "/images/Cait.jpeg",
-            CharacterName = "Caitlyn",
-            Title = "Caitlyn Kiramman",
-            Category = "Enforcer",
-            DistractorImages = new() { "/images/Vi.jpeg", "/images/Jayce.jpeg", "/images/Viktor.jpeg" },
-            Description = "Blue-haired sharpshooter with aristocratic bearing and rifle",
-            StoryContext = "Elite enforcer from noble family, partner to Vi"
+            maleImages.Add($"/images/PictureDescriptionImages/Male/male{i}.png");
         }
-    };
+        
+        var random = new Random();
+        return maleImages.OrderBy(x => random.Next()).Take(count).ToList();
+    }
+    
+    // Helper method to get random female distractor images
+    private static List<string> GetRandomFemaleDistractors(int count)
+    {
+        var femaleImages = new List<string>();
+        for (int i = 1; i <= 15; i++)
+        {
+            femaleImages.Add($"/images/PictureDescriptionImages/Female/female{i}.png");
+        }
+        
+        var random = new Random();
+        return femaleImages.OrderBy(x => random.Next()).Take(count).ToList();
+    }
 
     private readonly Dictionary<string, PlayerRole> Players = new();
     private readonly Dictionary<string, string> PlayerNames = new();
@@ -4616,9 +4648,20 @@ public class PictureExplanationGame
         // For demo: cycle through the 4 characters in order
         CurrentPicture = PictureBank[(CurrentRound - 1) % PictureBank.Count];
         
+        // Generate fresh distractors based on the character's gender
+        List<string> freshDistractors;
+        if (CurrentPicture.Category == "Male")
+        {
+            freshDistractors = GetRandomMaleDistractors(3);
+        }
+        else // Female
+        {
+            freshDistractors = GetRandomFemaleDistractors(3);
+        }
+        
         // Create shuffled choices (correct + 3 distractors)
         CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
-        CurrentChoices.AddRange(CurrentPicture.DistractorImages);
+        CurrentChoices.AddRange(freshDistractors);
         
         // Shuffle the choices
         var random = new Random();
