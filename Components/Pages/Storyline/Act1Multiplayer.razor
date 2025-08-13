@@ -295,7 +295,7 @@
         ParseUrlParameters();
         
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:7104/gamehub")
+            .WithUrl(NavigationManager.ToAbsoluteUri("/gamehub"))
             .Build();
 
         SetupSignalRHandlers();

@@ -1,8 +1,6 @@
 using Arcane_Coop.Components;
 using Arcane_Coop.Hubs;
-using Arcane_Coop.Data;
 using Arcane_Coop.Services;
-using Microsoft.EntityFrameworkCore;
 using Plk.Blazor.DragDrop;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,15 +15,10 @@ builder.Services.AddSignalR();
 // Add Blazor DragDrop
 builder.Services.AddBlazorDragDrop();
 
-// Add Entity Framework
-builder.Services.AddDbContext<GameDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-                     "Data Source=arcane_coop.db"));
-
 // Add Visual Novel Service
 builder.Services.AddScoped<IVisualNovelService, VisualNovelService>();
 // Add Act 1 Story Engine
-builder.Services.AddSingleton<Arcane_Coop.Services.IAct1StoryEngine, Arcane_Coop.Services.Act1StoryEngine>();
+builder.Services.AddSingleton<IAct1StoryEngine, Act1StoryEngine>();
 
 var app = builder.Build();
 

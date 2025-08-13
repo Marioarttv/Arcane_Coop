@@ -3,6 +3,7 @@
 @using Arcane_Coop.Models
 @using Microsoft.AspNetCore.SignalR.Client
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -203,7 +204,7 @@
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:7104/gamehub")
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
 
         SetupSignalRHandlers();
