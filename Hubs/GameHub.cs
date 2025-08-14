@@ -1016,6 +1016,55 @@ public class GameHub : Hub
         }
     }
 
+    public async Task JoinRuneProtocolGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        Console.WriteLine($"[DEBUG] JoinRuneProtocolGameWithRole - RoomId: {roomId}, PlayerName: {playerName}, RequestedRole: {requestedRole}, ConnectionId: {Context.ConnectionId}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        var game = _runeProtocolGames.GetOrAdd(roomId, _ => new RuneProtocolGame());
+        Console.WriteLine($"[DEBUG] Game retrieved/created for room {roomId}. Current players: {game.PlayerCount}");
+
+        var normalized = (requestedRole ?? "").ToLower();
+        // Map story roles to game roles
+        var roleToRequest = normalized switch { "zaun" => RuneProtocolGame.PlayerRole.Zaunite, "piltover" => RuneProtocolGame.PlayerRole.Piltover, _ => (RuneProtocolGame.PlayerRole?)null };
+
+        RuneProtocolGame.PlayerRole? playerRole;
+        if (roleToRequest.HasValue)
+        {
+            // Prefer requested role if available
+            playerRole = game.AddPlayer(Context.ConnectionId, playerName, roleToRequest.Value);
+            if (playerRole == null)
+            {
+                // Fallback to any available role
+                playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+            }
+        }
+        else
+        {
+            playerRole = game.AddPlayer(Context.ConnectionId, playerName);
+        }
+
+        Console.WriteLine($"[DEBUG] AddPlayer result - Role: {playerRole}, Total players now: {game.PlayerCount}");
+
+        if (playerRole != null)
+        {
+            var playerView = game.GetPlayerView(Context.ConnectionId);
+            await Clients.Caller.SendAsync("RuneProtocolGameJoined", playerRole.ToString(), playerView);
+            await Clients.Group(roomId).SendAsync("RuneProtocolGameStateUpdated", game.GetGameState());
+
+            if (game.PlayerCount == 2)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("RuneProtocolPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("RuneProtocolGameFull");
+        }
+    }
+
     public async Task ToggleRune(string roomId, int runeIndex)
     {
         Console.WriteLine($"[DEBUG] ToggleRune called - RoomId: {roomId}, RuneIndex: {runeIndex}, ConnectionId: {Context.ConnectionId}");
@@ -4264,6 +4313,38 @@ public class RuneProtocolGame
         Players[connectionId] = role;
         PlayerNames[connectionId] = playerName;
         return role;
+    }
+
+    // Overload that tries to honor a requested role if available
+    public PlayerRole? AddPlayer(string connectionId, string playerName, PlayerRole requested)
+    {
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole;
+        }
+
+        if (Players.Count >= 2) return null;
+
+        // Determine if requested role is already taken
+        bool piltoverTaken = Players.Values.Contains(PlayerRole.Piltover);
+        bool zaunTaken = Players.Values.Contains(PlayerRole.Zaunite);
+
+        PlayerRole assigned;
+        if (requested == PlayerRole.Piltover)
+        {
+            assigned = piltoverTaken ? (zaunTaken ? (PlayerRole?)null : PlayerRole.Zaunite) ?? (PlayerRole)PlayerRole.Zaunite : PlayerRole.Piltover;
+        }
+        else // requested Zaunite
+        {
+            assigned = zaunTaken ? (piltoverTaken ? (PlayerRole?)null : PlayerRole.Piltover) ?? (PlayerRole)PlayerRole.Piltover : PlayerRole.Zaunite;
+        }
+
+        // If both roles taken, cannot join
+        if (Players.Count >= 2) return null;
+
+        Players[connectionId] = assigned;
+        PlayerNames[connectionId] = playerName;
+        return assigned;
     }
 
     public bool RemovePlayer(string connectionId)

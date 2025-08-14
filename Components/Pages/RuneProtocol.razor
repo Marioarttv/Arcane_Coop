@@ -493,9 +493,9 @@
             await Task.Delay(200);
             if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
             {
-                await JoinRoom();
-                await Task.Delay(150);
-                await JoinGame();
+            await JoinRoom();
+            await Task.Delay(150);
+            await JoinGame();
                 inGame = true;
                 StateHasChanged();
             }
@@ -539,8 +539,17 @@
         {
             try
             {
-                Console.WriteLine("[CLIENT DEBUG] Sending JoinRuneProtocolGame...");
-                await hubConnection.SendAsync("JoinRuneProtocolGame", roomId, playerName);
+                if (!string.IsNullOrEmpty(playerRole))
+                {
+                    var requestedRole = playerRole.ToLower() == "zaun" ? "Zaun" : playerRole;
+                    Console.WriteLine($"[CLIENT DEBUG] Sending JoinRuneProtocolGameWithRole role={requestedRole}...");
+                    await hubConnection.SendAsync("JoinRuneProtocolGameWithRole", roomId, playerName, requestedRole);
+                }
+                else
+                {
+                    Console.WriteLine("[CLIENT DEBUG] Sending JoinRuneProtocolGame...");
+                    await hubConnection.SendAsync("JoinRuneProtocolGame", roomId, playerName);
+                }
                 Console.WriteLine("[CLIENT DEBUG] JoinRuneProtocolGame sent successfully");
             }
             catch (Exception ex)
