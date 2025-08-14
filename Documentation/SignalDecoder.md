@@ -1,18 +1,18 @@
 # SignalDecoder - Communication Under Pressure
 
 ## Overview
-SignalDecoder is a cooperative listening comprehension puzzle where players must work together to decode fragmented emergency transmissions. One player (Piltover/Caitlyn) sees incomplete text while the other (Zaunite/Vi) receives audio and signal data to help complete the message.
+SignalDecoder is a cooperative listening comprehension puzzle where players intercept and decode fragmented enforcer radio transmissions about the ongoing hunt for Project Safeguard scientists. Following the identification of the four targeted scientists, players discover radio chatter revealing attacks in progress and cover-ups by corrupt enforcers. One player (Piltover/Caitlyn) sees corrupted text transcripts while the other (Zaunite/Vi) receives clear audio transmissions to help complete the urgent intelligence.
 
 **ESL-Friendly Version**: The story mode transmissions have been updated to use common, widely-known words instead of proper names and technical jargon, making the puzzle more accessible to ESL students while maintaining the same story context and gameplay mechanics.
 
 ## Game Mechanics
 
 ### Player Roles
-- **Piltover (Caitlyn - Signal Interceptor)**: Sees corrupted transmissions with missing words (e.g., "Emergency: Code *** in sector *")
-- **Zaunite (Vi - Signal Analyst)**: Receives full audio transmission, frequency data, and technical signals like Morse code
+- **Piltover (Caitlyn - Signal Interceptor)**: Sees corrupted enforcer transmissions with missing words (e.g., "Emergency: *** workshop on *** Street")
+- **Zaunite (Vi - Signal Analyst)**: Receives full audio transmissions revealing the attacks on Project Safeguard scientists and Deputy Stanton's cover-up orders
 
 ### Objective
-Work together under time pressure to decode emergency transmissions by filling in the missing words before the signal degrades completely.
+Work together under time pressure to decode the urgent enforcer transmissions revealing which scientists have been attacked, where the survivors might be hiding, and what Deputy Stanton is covering up before more lives are lost.
 
 ### Gameplay Flow
 1. Both players join the same room using a shared room ID
@@ -127,7 +127,7 @@ Work together under time pressure to decode emergency transmissions by filling i
 ## Story-Specific Transmissions (Act 1 Scene 3 → Signal Decoder)
 
 ### Context
-After identifying the four scientists in the Enforcer Database, players discover radio chatter about an attack and need to decode fragmented enforcer transmissions to locate the remaining scientists before Jinx finds them.
+After identifying the four Project Safeguard scientists through the Picture Explanation puzzle, the team's confiscated enforcer radio begins crackling with urgent transmissions. Players discover that Jinx has already begun her hunt - Werner's workshop has been attacked, Dr. Renni has gone into hiding, and Deputy Stanton is actively covering up evidence. Players must decode these fragmented transmissions to understand the scope of the threat and locate the remaining scientists before it's too late.
 
 **Note**: The transmissions below use ESL-friendly vocabulary, replacing proper names and technical terms with common words to improve accessibility for ESL students.
 
@@ -258,12 +258,15 @@ The puzzle begins after the following story beats:
 - **Vi:** Desperate to find out what Silco told Jinx about the warehouse incident
 - **Players:** Must decode transmissions quickly to locate Dr. Renni before Jinx does
 
-#### Post-Puzzle Transition (To Scene 4)
-After successfully decoding all transmissions, the story continues with:
-- Confirmation that Werner has been attacked
-- Discovery that Renni didn't trust protective custody
-- Revelation about Stanton's evidence disposal
-- Team decides to find Renni at her apartment in Zaun
+#### Post-Puzzle Transition (To Scene 4 - Radio Decoded)
+After successfully decoding all transmissions, players have uncovered crucial intelligence:
+- **Werner Confirmed Dead**: The explosion at his workshop was fatal
+- **Renni Still Alive**: She wisely refused protective custody and went into hiding
+- **Stanton's Corruption Exposed**: Evidence disposal and cover-up operations revealed
+- **Urgent Mission**: Team must immediately head to Renni's apartment in Zaun before Jinx tracks her down
+- **Time Pressure**: Every minute wasted increases the danger to the remaining scientists
+
+The decoded transmissions reveal the full scope of Jinx's hunt and Stanton's complicity, driving the team to take immediate action to save Dr. Renni Stiltner.
 
 ### Additional Voice Lines for Story Context
 

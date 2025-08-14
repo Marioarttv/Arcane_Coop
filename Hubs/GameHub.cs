@@ -705,6 +705,57 @@ public class GameHub : Hub
         }
     }
 
+    public async Task ContinueStoryAfterNavigationMaze(string roomId)
+    {
+        try
+        {
+            if (!_navigationMazeGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("NavigationMazeInvalidAction", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("NavigationMazeInvalidAction", "Both players needed for story continuation");
+                return;
+            }
+
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromNavigationMaze";
+
+            // Build redirect URLs for Act1 Scene 8 (empty_cells)
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var playerView = game.GetPlayerView(connectionId);
+                var roleName = playerView.Role.ToLower();
+                var playerName = playerView.DisplayName;
+
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=10&transition=FromNavigationMaze";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            // Send redirects
+            var tasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    tasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryAfterNavigationMaze: {ex.Message}");
+            await Clients.Caller.SendAsync("NavigationMazeInvalidAction", $"Error continuing story: {ex.Message}");
+        }
+    }
+
     // Alchemy Lab specific methods
     public async Task JoinAlchemyGame(string roomId, string playerName)
     {
@@ -841,6 +892,8 @@ public class GameHub : Hub
                     {
                         await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
                     }
+                    // Show success state; clients will offer a Continue Story button that triggers
+                    // ContinueStoryAfterAlchemyLab(roomId) to navigate back to the visual novel
                 }
                 else
                 {
@@ -858,6 +911,55 @@ public class GameHub : Hub
             {
                 await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
             }
+        }
+    }
+
+    public async Task ContinueStoryAfterAlchemyLab(string roomId)
+    {
+        try
+        {
+            if (!_alchemyGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", "Both players needed for story continuation");
+                return;
+            }
+
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromAlchemyLab";
+
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var view = game.GetPlayerView(connectionId);
+                var roleName = view.Role.ToLower();
+                var playerName = view.DisplayName;
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=12&transition=FromAlchemyLab";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            // Send redirects to both players
+            var tasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    tasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryAfterAlchemyLab: {ex.Message}");
+            await Clients.Caller.SendAsync("AlchemyInvalidAction", $"Error continuing story: {ex.Message}");
         }
     }
 
@@ -1742,6 +1844,18 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateShimmerFactoryEntranceScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "empty_cells")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmptyCellsScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "tracer_complete")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateTracerCompleteScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "following_jinx_trail")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateFollowingJinxTrailScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1787,6 +1901,18 @@ public class GameHub : Hub
                 else if (currentPhase == "shimmer_factory_entrance")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateShimmerFactoryEntranceScene(originalSquadName, game);
+                }
+                else if (currentPhase == "empty_cells")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateEmptyCellsScene(originalSquadName, game);
+                }
+                else if (currentPhase == "tracer_complete")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateTracerCompleteScene(originalSquadName, game);
+                }
+                else if (currentPhase == "following_jinx_trail")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateFollowingJinxTrailScene(originalSquadName, game);
                 }
                 else
                 {
@@ -2670,28 +2796,28 @@ public class AlchemyGame
             Id = "shimmer_crystal",
             Name = "Shimmer Crystal",
             Description = "A crystalline fragment that glows with inner light",
-            ImagePath = "images/alchemy/shimmer_crystal_raw.png"
+            ImagePath = "images/Alchemy/shimmer_crystal_raw.png"
         },
         new AlchemyIngredient
         {
             Id = "hex_berries",
             Name = "Hex Berries",
             Description = "Magical berries from Piltover's hextech gardens",
-            ImagePath = "images/alchemy/hex_berries_raw.png"
+            ImagePath = "images/Alchemy/hex_berries_raw.png"
         },
         new AlchemyIngredient
         {
             Id = "zaun_grey",
             Name = "Zaun Grey Mushroom",
             Description = "A hardy mushroom that grows in the undercity's toxic soil",
-            ImagePath = "images/alchemy/zaun_grey_raw.png"
+            ImagePath = "images/Alchemy/zaun_grey_raw.png"
         },
         new AlchemyIngredient
         {
             Id = "vial_of_tears",
             Name = "Vial of Tears",
             Description = "Precious tears collected from the Grey - adds emotional potency",
-            ImagePath = "images/alchemy/vial_of_tears_raw.png"
+            ImagePath = "images/Alchemy/vial_of_tears_raw.png"
         },
         // Combined ingredients (created by mixing station)
         new AlchemyIngredient
@@ -2699,7 +2825,7 @@ public class AlchemyGame
             Id = "shimmer_essence",
             Name = "Shimmer Essence",
             Description = "A volatile combination of crystal and berries - requires further processing",
-            ImagePath = "images/alchemy/shimmer_essence_raw.png"
+            ImagePath = "images/Alchemy/shimmer_essence_raw.png"
         }
     };
     
@@ -2877,6 +3003,12 @@ public class AlchemyGame
         if (ingredient == null || ingredient.IsUsed)
             return (false, "Ingredient not available");
             
+        // Validation: Only allow Vial of Tears in raw state; enforce processed requirements later on submit
+        if (ingredient.Id != "vial_of_tears" && ingredient.State == IngredientState.Raw)
+        {
+            return (false, $"{ingredient.Name} must be processed before adding to the cauldron");
+        }
+
         // Add to cauldron
         ingredient.IsUsed = true;
         
@@ -2917,45 +3049,57 @@ public class AlchemyGame
     
     private List<string> ValidatePotion()
     {
-        var mistakes = new List<string>();
-        var recipe = HealingPotionRecipe;
-        
-        // Expected cauldron contents: Heated Shimmer Essence, Chopped Zaun Grey, Raw Vial of Tears
-        var expectedCauldronIngredients = new[]
-        {
-            new { Id = "shimmer_essence", State = IngredientState.Heated },  // Step 2 result
-            new { Id = "zaun_grey", State = IngredientState.Chopped },        // Step 3 result  
-            new { Id = "vial_of_tears", State = IngredientState.Raw }          // Step 4 (raw catalyst)
-        };
-        
-        // Check if correct number of ingredients are present
-        if (CauldronContents.Count != expectedCauldronIngredients.Length)
-        {
-            mistakes.Add($"Wrong number of ingredients (expected {expectedCauldronIngredients.Length}, got {CauldronContents.Count})");
-            return mistakes; // Can't validate further without correct count
-        }
-        
-        // Check order and processing
-        for (int i = 0; i < expectedCauldronIngredients.Length; i++)
-        {
-            var expected = expectedCauldronIngredients[i];
-            var cauldronIngredient = CauldronContents[i];
-            
-            // Check correct ingredient
-            if (cauldronIngredient.Id != expected.Id)
-            {
-                var expectedName = IngredientBank.First(ing => ing.Id == expected.Id).Name;
-                mistakes.Add($"Position {i + 1}: Expected {expectedName}, but got {cauldronIngredient.Name}");
-            }
-            
-            // Check correct processing state
-            if (cauldronIngredient.State != expected.State)
-            {
-                mistakes.Add($"Position {i + 1}: {cauldronIngredient.Name} should be {expected.State}, but was {cauldronIngredient.State}");
-            }
-        }
-        
-        return mistakes;
+		var mistakes = new List<string>();
+		var recipe = HealingPotionRecipe;
+		
+		// Expected ingredients (order-independent):
+		// - Heated Shimmer Essence
+		// - Chopped Zaun Grey
+		// - Raw Vial of Tears
+		var expected = new Dictionary<string, IngredientState>
+		{
+			{"shimmer_essence", IngredientState.Heated},
+			{"zaun_grey", IngredientState.Chopped},
+			{"vial_of_tears", IngredientState.Raw}
+		};
+		
+		// Enforce correct count first
+		if (CauldronContents.Count != expected.Count)
+		{
+			mistakes.Add($"Wrong number of ingredients (expected {expected.Count}, got {CauldronContents.Count})");
+			// continue to produce helpful messages about extras/missing as well
+		}
+		
+		// Work on a mutable copy to track matches
+		var remaining = new Dictionary<string, IngredientState>(expected);
+		
+		foreach (var ing in CauldronContents)
+		{
+			if (!remaining.ContainsKey(ing.Id))
+			{
+				// Not expected or duplicate of an already matched ingredient
+				mistakes.Add($"Unexpected ingredient: {ing.Name}");
+				continue;
+			}
+			
+			var neededState = remaining[ing.Id];
+			if (ing.State != neededState)
+			{
+				mistakes.Add($"{ing.Name} should be {neededState}, but was {ing.State}");
+			}
+			
+			// Mark as satisfied
+			remaining.Remove(ing.Id);
+		}
+		
+		// Any remaining expected ingredients are missing
+		foreach (var kvp in remaining)
+		{
+			var expectedName = IngredientBank.First(ing => ing.Id == kvp.Key).Name;
+			mistakes.Add($"Missing required ingredient: {expectedName} ({kvp.Value})");
+		}
+		
+		return mistakes;
     }
     
     public List<string> GetMistakes()
@@ -2979,7 +3123,7 @@ public class AlchemyGame
     private string GetProcessedImagePath(string ingredientId, IngredientState state)
     {
         var stateSuffix = state.ToString().ToLower();
-        return $"images/alchemy/{ingredientId}_{stateSuffix}.png";
+        return $"images/Alchemy/{ingredientId}_{stateSuffix}.png";
     }
     
     public AlchemyPlayerView GetPlayerView(string connectionId)

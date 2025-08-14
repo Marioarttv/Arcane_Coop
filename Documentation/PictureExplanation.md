@@ -1,30 +1,30 @@
 # PictureExplanation - Visual Communication Challenge
 
 ## Overview
-PictureExplanation is a cooperative visual communication puzzle designed specifically for voice chat environments. One player (Piltover/Caitlyn) sees and describes images while the other (Zaunite/Vi) listens and selects the correct image from four options. This puzzle emphasizes descriptive language, active listening, and real-time communication skills.
+PictureExplanation is a cooperative visual communication puzzle where players must identify scientists from corrupted surveillance files. Following the discovery of Jinx's break-in at the records storage facility, players work together to identify four scientists from damaged photos marked with red X's. One player (Piltover/Caitlyn) sees the evidence photos clearly while the other (Zaunite/Vi) must identify them from multiple damaged options based on verbal descriptions.
 
 ## Game Mechanics
 
 ### Player Roles
-- **Piltover (Caitlyn - Archive Analyst)**: Views detailed archive images and describes them over voice chat
-- **Zaunite (Vi - Intelligence Agent)**: Listens to descriptions and chooses the correct image from 4 options
+- **Piltover (Caitlyn - Archive Analyst)**: Views clear surveillance photos and evidence files from Marcus's private collection
+- **Zaunite (Vi - Intelligence Agent)**: Has access to corrupted database files and must identify the correct scientist from 4 damaged photos
 
 ### Objective
-Work together through 5 rounds of visual communication challenges, with the Describer accurately conveying image details and the Guesser correctly identifying images based purely on verbal descriptions.
+Work together to identify all four scientists from Project Safeguard files before Jinx finds them. The Analyst must accurately describe evidence photos while the Agent correctly identifies scientists from corrupted surveillance images based purely on verbal descriptions.
 
 ### Gameplay Flow
 1. Both players join the same room using a shared room ID
-2. First player becomes Caitlyn (Describer), second becomes Vi (Guesser)
-3. Describer views an image and describes it over voice chat (Discord/external voice)
-4. After description is complete, Describer hides the image
-5. Guesser selects from 4 similar options based on the description
-6. Process repeats for 5 rounds with increasing complexity
+2. First player becomes Caitlyn (Archive Analyst), second becomes Vi (Intelligence Agent)
+3. Analyst views a clear evidence photo and describes the scientist over voice chat (Discord/external voice)
+4. After description is complete, Analyst hides the evidence file
+5. Agent selects the correct scientist from 4 corrupted surveillance photos based on the description
+6. Process repeats for 4 rounds - one for each Project Safeguard scientist
 
 ### Scoring System
-- **Direct Match**: Full points for correct image selection
-- **Communication Bonus**: Extra points for clear, effective descriptions
-- **Speed Bonus**: Time-based rewards for efficient rounds
-- **Perfect Round**: Bonus points when description leads to immediate correct choice
+- **Correct Identification**: Points for accurately identifying each scientist
+- **Investigation Speed**: Time-based rewards for efficient evidence analysis
+- **Perfect Intelligence**: Bonus points when description leads to immediate correct identification
+- **Team Success**: Cooperative success - both players advance the investigation together
 
 ## Educational Value
 
@@ -106,21 +106,30 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 - **Guesser Tips**: Ask clarifying questions, take notes mentally, focus on unique details
 - **Time Management**: Efficient but thorough descriptions work best
 
-## Image Challenge Design
+## Story-Specific Image Challenges
 
-### Image Categories
-1. **Objects**: Single items with distinctive features
-2. **Scenes**: Multiple elements requiring spatial description
-3. **Characters**: People with specific attributes and positioning
-4. **Environments**: Complex backgrounds with detailed elements
-5. **Abstract**: Artistic or conceptual images requiring creative description
+### The Four Scientists of Project Safeguard
+Based on the story dialogue, these are the specific scientists that need to be identified:
 
-### Difficulty Progression
-- **Level 1**: Obvious differences between options (color, shape, size)
-- **Level 2**: Subtle differences requiring detailed observation
-- **Level 3**: Similar compositions with small distinctive elements
-- **Level 4**: Complex scenes with multiple potential focal points
-- **Level 5**: Nearly identical images with minute differences
+1. **Dr. Werner Steinberg**: Elderly scientist with distinctive wire-rimmed glasses and formal academy attire
+2. **Dr. Renni Stiltner**: Middle-aged woman with practical lab clothing and tool belt, known for mechanical expertise
+3. **Professor Albus Ferros**: Distinguished professor with white beard and academy medallion, formal robes
+4. **Dr. Corin Reveck**: Younger scientist with dark hair and experimental equipment, known for theoretical work
+
+### Evidence Photo Categories
+1. **Personnel Files**: Individual scientist identification photos with academy credentials
+2. **Laboratory Settings**: Scientists working with early Hextech prototypes
+3. **Project Documentation**: Group photos from Project Safeguard meetings
+4. **Surveillance Images**: Recent photos showing scientists being marked by unknown assailant
+
+### Investigation Difficulty Progression
+- **Round 1 - Dr. Werner**: Clear identification photos with obvious differences (age, glasses, attire)
+- **Round 2 - Dr. Renni**: Laboratory photos requiring attention to tools and equipment details
+- **Round 3 - Professor Albus**: Group photos where specific facial features and medallions distinguish him
+- **Round 4 - Dr. Corin**: Surveillance photos with corrupted image quality requiring precise description of subtle features
+
+### Red X Marking Mechanic
+Each correct scientist identification reveals a red X marking on their photo, showing they've been targeted by Jinx for elimination. This creates urgency as players realize these scientists are in immediate danger.
 
 ## Educational Applications
 
@@ -138,11 +147,19 @@ Work together through 5 rounds of visual communication challenges, with the Desc
 
 ## Story Integration
 
-### Arcane Narrative Context
-- **Archive Analysis**: Players are analyzing corrupted Piltover surveillance footage
-- **Intelligence Operations**: Emergency briefing scenario adds urgency
-- **Role Immersion**: Squad-based setup with Zaun/Piltover operatives
-- **Mission Context**: Visual intelligence gathering for larger story
+### Act 1 Scene 1&2 → Picture Explanation Transition
+**Narrative Context**: Following the crime scene investigation where Jinx's break-in revealed files marked with red X's, the team heads to Piltover Enforcer HQ to identify the four scientists from corrupted surveillance photos. 
+
+**Story Beats**:
+- Discovery of Project Safeguard files at the crime scene
+- Marcus's private collection containing scientist personnel files
+- Jinx's red X markings indicating targets for elimination
+- Urgent need to identify scientists before they're found and eliminated
+
+**Character Motivations**:
+- **Caitlyn**: Using her enforcer access to analyze evidence files properly
+- **Vi**: Desperate to understand what Silco has told Jinx about these scientists
+- **Players**: Racing against time to save innocent people from Jinx's misguided vengeance
 
 ### Thematic Elements
 ### Act 1 Visual Novel → Picture Explanation Transition
@@ -227,36 +244,40 @@ string nextPhaseRoomId = $"{originalSquadName}_FromPicturePuzzle";
 - Quick response times for choice selection
 - Reliable state synchronization across players
 
-## Image Asset Requirements
+## Story-Specific Image Assets
 
 ### Directory Structure
-All challenge images should be placed in: `/wwwroot/images/pictures/`
+All scientist identification images should be placed in: `/wwwroot/images/pictures/scientists/`
 
-### Image Categories
+### Required Scientist Photos
 
-#### Technology Category
-- **hextech_crystal.jpg**: Glowing bright blue hextech crystal with geometric patterns
-- **shimmer_crystal.jpg**: Purple-pink shimmer crystal with organic curves (distractor)
-- **zaun_pipe.jpg**: Industrial metal pipe with green chemical residue (distractor)
-- **piltover_gear.jpg**: Golden mechanical gear with precise teeth (distractor)
+#### Dr. Werner Steinberg Set
+- **werner_personnel.jpg**: Clear academy ID photo showing elderly man with wire-rimmed glasses
+- **werner_surveillance1.jpg**: Blurry surveillance photo (distractor)
+- **werner_surveillance2.jpg**: Photo of different elderly man (distractor) 
+- **werner_corrupted.jpg**: Heavily pixelated photo (distractor)
 
-#### Location Category
-- **zaun_undercity.jpg**: Dark underground city with green chemical lighting
-- **piltover_academy.jpg**: Elegant white and gold Academy building (distractor)
-- **bridge_progress.jpg**: Large stone bridge connecting cities (distractor)
-- **hexgate.jpg**: Portal structure with blue energy rings (distractor)
+#### Dr. Renni Stiltner Set
+- **renni_lab.jpg**: Clear photo of woman in practical lab attire with tool belt
+- **renni_workshop1.jpg**: Blurry workshop photo (distractor)
+- **renni_workshop2.jpg**: Photo of different woman with tools (distractor)
+- **renni_damaged.jpg**: Water-damaged photo with missing sections (distractor)
 
-#### Weapon Category
-- **vi_gauntlets.jpg**: Large metal gauntlets with blue energy cores
-- **jayce_hammer.jpg**: Mercury hammer with golden accents (distractor)
-- **caitlyn_rifle.jpg**: Hextech sniper rifle with precision scope (distractor)
-- **viktor_staff.jpg**: Mechanical staff with purple hexcore (distractor)
+#### Professor Albus Ferros Set
+- **albus_formal.jpg**: Clear photo showing white-bearded professor with academy medallion
+- **albus_group1.jpg**: Group photo where his face is partially obscured (distractor)
+- **albus_group2.jpg**: Photo of different bearded professor (distractor)
+- **albus_torn.jpg**: Torn photo missing key identifying features (distractor)
 
-#### Chemistry Category
-- **shimmer_vial.jpg**: Glass vial with glowing purple-pink liquid
-- **hextech_potion.jpg**: Blue geometric bottle with clean lines (distractor)
-- **zaun_medicine.jpg**: Green chemical in rough industrial bottle (distractor)
-- **healing_elixir.jpg**: Golden potion with traditional bottle shape (distractor)
+#### Dr. Corin Reveck Set
+- **corin_research.jpg**: Clear photo of young scientist with dark hair and experimental equipment
+- **corin_shadow.jpg**: Photo taken in shadows obscuring features (distractor)
+- **corin_equipment1.jpg**: Photo of different young scientist (distractor)
+- **corin_static.jpg**: Photo with digital corruption/static (distractor)
+
+### Red X Overlay Assets
+- **red_x_overlay.png**: Transparent red X marking to overlay on identified scientists
+- **target_marked.png**: "MARKED FOR ELIMINATION" stamp overlay
 
 ### Technical Specifications
 - **Format**: JPG preferred for smaller file sizes
@@ -265,13 +286,13 @@ All challenge images should be placed in: `/wwwroot/images/pictures/`
 - **File Size**: Keep under 200KB each for fast loading
 - **Style**: Should match Arcane's art style and color palette
 
-### Voice-Friendly Design Requirements
-- **Describable Elements**: Images should have clear colors, shapes, objects, and lighting
-- **Distinctive Features**: Each image needs unique characteristics for verbal communication
-- **Clear Differentiation**: Distractors similar enough to be plausible but distinguishable
-- **Avoid Text**: Minimize text elements since players communicate over voice
-- **Lighting Cues**: Strong lighting differences aid description ("glowing blue", "dark shadows")
-- **Object Placement**: Clear foreground/background elements support spatial descriptions
+### Voice-Friendly Design Requirements for Scientist Photos
+- **Distinguishable Features**: Clear facial features, clothing details, and equipment that can be verbally described
+- **Age Differences**: Obvious age distinctions between scientists (elderly Werner vs young Corin)
+- **Clothing Cues**: Distinctive attire (formal robes, lab coats, tool belts, academy medallions)
+- **Equipment Context**: Scientific instruments and tools that help identification
+- **Lighting Quality**: Clear lighting on main photos, degraded lighting on distractors
+- **Corruption Patterns**: Realistic damage patterns (water damage, digital corruption, shadows) that obscure but don't eliminate key features
 
 ### Color Palette Guidelines
 - **Piltover**: Golden (#c89b3c), white, clean blues

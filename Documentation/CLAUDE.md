@@ -224,22 +224,27 @@ The story flow is controlled by the `StoryProgression` array in `Act1Multiplayer
 ```csharp
 public List<string> StoryProgression { get; set; } = new() 
 { 
-    "emergency_briefing",           // Scene 1 & 2 - Visual Novel
-    "picture_explanation_transition", // Puzzle - Picture Explanation
-    "database_revelation",          // Scene 3 - Visual Novel  
-    "signal_decoder_transition",    // Puzzle - Signal Decoder
-    "radio_decoded",                // Scene 4 - Visual Novel
-    "renni_apartment",             // Scene 5 - Visual Novel
-    "code_cracker_transition",     // Puzzle - Code Cracker
-    "code_decoded",                // Scene 6 - Visual Novel (NEW)
-    "navigation_maze_transition"   // Puzzle - Navigation Maze
+    "emergency_briefing",            // Scene 1 & 2 - Visual Novel
+    "picture_explanation_transition",// Puzzle - Picture Explanation
+    "database_revelation",           // Scene 3 - Visual Novel  
+    "signal_decoder_transition",     // Puzzle - Signal Decoder
+    "radio_decoded",                 // Scene 4 - Visual Novel
+    "renni_apartment",              // Scene 5 - Visual Novel
+    "code_cracker_transition",      // Puzzle - Code Cracker
+    "code_decoded",                 // Scene 6 - Visual Novel
+    "shimmer_factory_entrance",     // Scene 7 - Visual Novel (NEW)
+    "navigation_maze_transition",   // Puzzle - Navigation Maze (NEW)
+    "empty_cells",                  // Scene 8 - Visual Novel (NEW)
+    "alchemy_lab_transition"        // Puzzle - Alchemy Lab (NEW)
 };
 ```
 
 **Key Updates (2025):**
 - **Complete Signal Decoder Integration**: Full story-to-puzzle and puzzle-to-story transitions
 - **Fixed Scene 3 Transitions**: Scene 3 (Database Revelation) now correctly transitions to Signal Decoder instead of Picture Explanation
-- **Dynamic Progression Logic**: System automatically determines next puzzle based on current scene index
+- **New Scenes**: Scene 7 (Shimmer Factory Entrance) and Scene 8 (Empty Holding Cells)
+- **New Puzzle Integration**: Navigation Maze after Scene 6; Alchemy Lab after Scene 8
+- **Auto-Join Story Mode**: All puzzles support URL-based auto-join with `story=true` and `transition=` to create unique synchronized rooms
 
 ### From Scene to Puzzle Transitions
 
@@ -254,6 +259,26 @@ case "picture_explanation_transition":
     game.Status = Act1GameStatus.SceneTransition;
     game.ShowTransition = true;
     game.NextGameName = "Visual Intelligence Analysis";
+```
+
+Additional transitions follow the same pattern:
+
+```csharp
+case "signal_decoder_transition":
+    game.NextGameName = "Signal Decoder Analysis";
+    // URLs: /signal-decoder?role=...&squad=...&story=true&transition=FromScene3
+
+case "code_cracker_transition":
+    game.NextGameName = "Code Cracker Analysis";
+    // URLs: /code-cracker?role=...&squad=...&story=true&transition=FromRenniApartment
+
+case "navigation_maze_transition":
+    game.NextGameName = "Navigation Maze";
+    // URLs: /navigation-maze?role=...&squad=...&story=true&transition=FromCodeDecoded
+
+case "alchemy_lab_transition":
+    game.NextGameName = "Alchemy Lab";
+    // URLs: /alchemy-lab?role=...&squad=...&story=true&transition=FromEmptyCells
 ```
 
 **Step 3: URL Construction with State Preservation**
@@ -382,6 +407,19 @@ public async Task ContinuePuzzleToNextScene(string roomId, int targetSceneIndex)
         await Clients.Client(connectionId).SendAsync("RedirectToNextScene", url);
     }
 }
+```
+
+**Additional Hub Methods (2025):**
+
+```csharp
+// After Signal Decoder → Scene 4 (radio_decoded)
+public async Task ContinueStoryAfterSignalDecoder(string roomId) { /* redirects to sceneIndex=4 */ }
+
+// After Code Cracker → Scene 6 (code_decoded)
+public async Task ContinueStoryAfterCodeCracker(string roomId) { /* redirects to sceneIndex=7 */ }
+
+// After Navigation Maze → Scene 8 (empty_cells)
+public async Task ContinueStoryAfterNavigationMaze(string roomId) { /* redirects to sceneIndex=10 */ }
 ```
 
 **3. Scene Index Support (Act1Multiplayer.razor)**

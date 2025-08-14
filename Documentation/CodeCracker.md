@@ -1,46 +1,47 @@
 # CodeCracker - Lexical Puzzle
 
 ## Overview
-CodeCracker is a cooperative vocabulary-building puzzle where two players must work together to decode corrupted words. Set in the Arcane universe, one player (Piltover/Caitlyn) sees distorted words while the other (Zaunite/Vi) receives clues to help decode them.
+CodeCracker is a cooperative vocabulary-building puzzle where players must decode Dr. Renni Stiltner's hidden message left on her apartment wall. After arriving at Renni's apartment in Zaun and meeting her desperate sister Kira, players discover Renni has left a coded message using their childhood word games. One player (Piltover/Caitlyn) sees the graffiti wall with missing letters while the other (Zaunite/Vi) has Renni's definition paper with clues to complete the message.
 
 ## Game Mechanics
 
 ### Player Roles
-- **Piltover (Caitlyn)**: Sees corrupted words with missing letters (e.g., "m_r_u_")
-- **Zaunite (Vi)**: Receives detailed clues including definitions, German translations, and synonyms
+- **Piltover (Caitlyn - Code Analyst)**: Sees Renni's graffiti wall with words containing missing letters (e.g., "SH_MM_R")
+- **Zaunite (Vi - Clue Reader)**: Has Renni's definition paper with synonyms and word game clues left for her sister
 
 ### Objective
-Work together to correctly decode all 10 corrupted words within the time limit.
+Work together to decode Renni's hidden message by completing the words on the graffiti wall. The completed message will reveal where Renni went - her next location in the dangerous investigation of Project Safeguard.
 
 ### Gameplay Flow
 1. Both players join the same room using a shared room ID
-2. First player becomes Piltover, second becomes Zaunite
-3. Piltover sees a corrupted word and must guess the complete word
-4. Zaunite receives clues and helps Piltover through chat communication
-5. Players score points for correct answers and speed
-6. Game progresses through 10 rounds with increasing difficulty
+2. First player becomes Caitlyn (Code Analyst), second becomes Vi (Clue Reader)
+3. Caitlyn examines the graffiti wall and sees words with missing letters
+4. Vi reads Renni's definition paper and provides synonyms and clues through chat
+5. Players work together to complete each word in Renni's coded message
+6. Completing all words reveals the hidden message: "SHIMMER FACTORY LEVEL THREE"
 
 ### Scoring System
-- **Correct Answer**: Base points awarded
-- **Time Bonus**: Extra points for quick responses
-- **Streak Bonus**: Additional points for consecutive correct answers
+- **Correct Word**: Points awarded for each decoded word in Renni's message
+- **Communication Efficiency**: Bonus points for effective clue-giving and collaboration
+- **Message Revelation**: Major points awarded when the complete hidden message is revealed
 
 ## Educational Value
 
 ### Primary Skills
-- **Vocabulary Building**: Expanding English word knowledge
-- **Communication**: Describing and interpreting clues
-- **Collaboration**: Working together under time pressure
+- **Vocabulary Building**: Learning Zaun/Piltover specific terminology and industrial vocabulary
+- **Code Breaking**: Pattern recognition and logical deduction skills
+- **Communication**: Effectively describing clues and working through word puzzles collaboratively
+- **Story Comprehension**: Understanding character motivations and following narrative clues
 
 ### Target Audience
-- ESL (English as Second Language) students
-- German speakers learning English (includes German translations)
-- Students developing communication skills
+- ESL (English as Second Language) students learning through immersive storytelling
+- Students developing collaborative problem-solving skills
+- Players interested in mystery and detective story elements
 
 ### Language Features
-- English-German word pairs for bilingual learning
-- Definitions and synonyms for comprehensive understanding
-- Progressive difficulty to scaffold learning
+- Arcane universe vocabulary related to shimmer, factories, and underground locations
+- Sister-to-sister coded communication reflecting family bonds and shared childhood games
+- Contextual clues that advance the story while building language skills
 
 ## Technical Implementation
 
@@ -95,10 +96,22 @@ The puzzle includes a variety of word types:
 - Focus on word patterns and letter combinations
 - Celebrate collaborative problem-solving
 
-### Difficulty Progression
-- **Early rounds**: Simple, common words with obvious patterns
-- **Middle rounds**: More complex vocabulary with subtle clues
-- **Late rounds**: Advanced words requiring strong collaboration
+### Renni's Hidden Message Structure
+The specific words in Renni's coded message relate to her investigation and whereabouts:
+
+**Word Categories**:
+- **Location Words**: SHIMMER, FACTORY (industrial Zaun locations)
+- **Direction Words**: LEVEL, THREE (specific location within the factory)
+- **Context Words**: Related vocabulary that builds the complete message
+
+**Message Solution**: "SHIMMER FACTORY LEVEL THREE"
+This reveals that Renni didn't go into hiding - she went to investigate the old shimmer refinement facility, specifically Level 3 where she believes the other scientists are being held.
+
+### Story Context Integration
+- **Kira's Desperation**: Her sister has been missing and she doesn't understand the coded message
+- **Childhood Bond**: The word games reflect Renni and Kira's shared past
+- **Urgency**: Decoding the message reveals Renni went into extreme danger alone
+- **Next Story Beat**: The message triggers the team's realization that they must head to the shimmer factory immediately
 
 ## Technical Notes
 

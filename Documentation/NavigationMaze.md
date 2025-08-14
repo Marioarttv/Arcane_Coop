@@ -1,16 +1,22 @@
 # NavigationMaze - Underground Escape
 
 ## Overview
-NavigationMaze is a cooperative spatial reasoning puzzle where two players must work together to navigate dangerous Zaun locations and reach safety in Piltover. One player (Piltover/Caitlyn) serves as Navigator with tactical maps and intel, while the other (Zaunite/Vi) acts as Explorer making first-person navigation choices.
+NavigationMaze is a cooperative spatial reasoning puzzle where players must navigate through the dangerous shimmer factory using Dr. Renni's hand-drawn map. After decoding Renni's message revealing she went to "SHIMMER FACTORY LEVEL THREE," the team arrives at the abandoned facility to find an explosion has occurred. One player (Piltover/Caitlyn) reads Renni's tactical map with route annotations, while the other (Zaunite/Vi) navigates through the unstable factory interior, avoiding hazards and Silco's remaining guards.
 
 ## Game Mechanics
 
 ### Player Roles
-- **Piltover (Caitlyn - Navigator)**: Views tactical maps, location data, safe routes, and hazard intel
-- **Zaunite (Vi - Explorer)**: Sees first-person view of locations and makes navigation choices
+- **Piltover (Caitlyn - Map Reader)**: Studies Renni's hand-drawn factory map with route annotations, safe passages, and hazard warnings
+- **Zaunite (Vi - Factory Explorer)**: Sees first-person view of the damaged factory interior and makes navigation choices through unstable areas
 
 ### Objective
-Guide Vi safely through 5 dangerous Zaun locations to reach the bridge to Piltover by using precise directional communication and spatial reasoning.
+Guide Vi safely through the shimmer factory's 5 levels to reach Level 3 where the holding cells are located, using Renni's map annotations and avoiding structural damage, chemical hazards, and remaining guards.
+
+### Story Integration (Act 1)
+- Triggered after Scene 7 (`code_decoded`) via `navigation_maze_transition`
+- Auto-join via URL parameters: `?role=...&avatar=...&name=...&squad=...&story=true&transition=FromCodeDecoded`
+- Unique room naming: `{squad}_FromCodeDecoded`
+- On completion, hub `ContinueStoryAfterNavigationMaze(roomId)` redirects both players to Scene 8 (`empty_cells`, `sceneIndex=10`)
 
 ### Gameplay Flow
 1. Both players join the same room using a shared room ID
@@ -20,44 +26,44 @@ Guide Vi safely through 5 dangerous Zaun locations to reach the bridge to Piltov
 5. Players communicate via chat to coordinate navigation decisions
 6. Progress through 5 increasingly challenging locations
 
-## Location Progression
+## Factory Navigation Progression
 
-### Location 1: Sewer Entrance (Beginner)
-**ESL Focus**: Basic directions (left, right, forward)
-**Scenario**: Dark stone sewer entrance with three tunnel openings
-**Correct Path**: FORWARD (leads to Industrial Pipes)
+### Level 1: Main Processing Floor (Beginner)
+**ESL Focus**: Basic factory directions (left, right, forward)
+**Scenario**: Large industrial floor with conveyor belts and processing equipment, purple shimmer residue everywhere
+**Correct Path**: FORWARD through the main walkway (leads to Storage Tanks)
 **Wrong Choices**:
-- LEFT: Toxic waste tunnel → Game Over
-- RIGHT: Creature den → Game Over
+- LEFT: Collapsed ceiling from recent explosion → Game Over
+- RIGHT: Active shimmer leak creating toxic fumes → Game Over
 
-### Location 2: Industrial Pipe Junction (Intermediate)
+### Level 2: Storage Tank Area (Intermediate)
 **ESL Focus**: Directional prepositions (through, under, around)
-**Scenario**: Large underground chamber with massive pipes and steam
-**Correct Path**: AROUND the pipes to the right (leads to Chemical Plant)
+**Scenario**: Massive shimmer storage tanks with leaking purple chemical and steam
+**Correct Path**: AROUND the leaking tank to avoid toxic exposure (leads to Maintenance Corridor)
 **Wrong Choices**:
-- THROUGH large pipe: Structural collapse → Game Over
-- UNDER main pipe: Steam trap → Game Over
+- THROUGH tank corridor: Chemical exposure from shimmer leak → Game Over
+- UNDER main pipes: Steam burst from damaged systems → Game Over
 
-### Location 3: Chemical Processing Plant (Intermediate+)
+### Level 3: Maintenance Corridor (Intermediate+)
 **ESL Focus**: Spatial relationships (between, behind, beside)
-**Scenario**: Industrial area with chemical vats and processing equipment
-**Correct Path**: BESIDE the main tank (leads to Underground Market)
+**Scenario**: Narrow maintenance area with electrical hazards and damaged machinery
+**Correct Path**: BESIDE the main electrical panel to avoid live wires (leads to Guard Station)
 **Wrong Choices**:
-- BETWEEN chemical vats: Chemical spill → Game Over
-- BEHIND machinery: Dead end trap → Game Over
+- BETWEEN electrical panels: Electrical shock from damaged wiring → Game Over
+- BEHIND machinery: Structural collapse from explosion damage → Game Over
 
-### Location 4: Underground Market (Advanced)
+### Level 4: Abandoned Guard Station (Advanced)
 **ESL Focus**: Combined spatial vocabulary (up through, down into, across over)
-**Scenario**: Multi-level marketplace with bridges, stairs, and tunnels
-**Correct Path**: ACROSS OVER the rope bridge (leads to Bridge to Piltover)
+**Scenario**: Multi-level security area with catwalks, stairs, and surveillance equipment
+**Correct Path**: ACROSS OVER the metal catwalk (leads to Holding Cells Level 3)
 **Wrong Choices**:
-- UP THROUGH market: Spotted by enforcers → Game Over
-- DOWN INTO mines: Cave-in → Game Over
+- UP THROUGH guard tower: Remaining Silco guards spot movement → Game Over
+- DOWN INTO basement: Flooded area with chemical contamination → Game Over
 
-### Location 5: Bridge to Piltover (Victory)
-**ESL Focus**: Success celebration vocabulary
-**Scenario**: Magnificent bridge spanning between cities
-**Outcome**: SUCCESS - Mission completed, players reach safety
+### Level 5: Holding Cells - Level 3 (Discovery)
+**ESL Focus**: Success vocabulary and discovery terms
+**Scenario**: The destination from Renni's message - prison cells and laboratory equipment
+**Outcome**: SUCCESS - Team reaches the holding cells but finds them empty, leading to the discovery of the adjacent laboratory
 
 ## Educational Value
 
@@ -115,18 +121,19 @@ Guide Vi safely through 5 dangerous Zaun locations to reach the bridge to Piltov
 - Correct choices advance to the next location
 
 ### Winning Conditions
-- Successfully navigate through all 5 locations
-- Reach the Bridge to Piltover without game-over
-- Cooperative success - both players win together
+- Successfully navigate through all 5 factory levels using Renni's map
+- Reach the Holding Cells on Level 3 without triggering hazards
+- Discover the empty cells and adjacent laboratory where the Alchemy Lab puzzle begins
+- Cooperative success - both players advance the investigation together
 
 ## Game Over Scenarios
 
-### Arcane-Themed Messages
-- "Even Vi needs backup sometimes... Try again!"
-- "That path was more dangerous than a Piltover Enforcer raid!"
-- "Jinx would have blown that up too... Reset and try again!"
-- "Not even Vander could have survived that route!"
-- "The Undercity has claimed another victim... Restart?"
+### Factory-Specific Failure Messages
+- "The shimmer fumes are too toxic! Even Vi can't push through... Try another route!"
+- "That explosion damage was worse than it looked... Reset and find a safer path!"
+- "Silco's guards are still patrolling! Stay hidden and try again!"
+- "The factory's structural damage is too dangerous... Renni would want you to be careful!"
+- "Chemical exposure levels are critical! Find the safe route Renni marked on her map!"
 
 ### Educational Value of Failure
 - **Immediate Feedback**: Wrong choices provide memorable consequences
@@ -182,31 +189,32 @@ Guide Vi safely through 5 dangerous Zaun locations to reach the bridge to Piltov
 - **Hub Methods**: Implemented in `GameHub.cs`
 - **Documentation**: This file (`NavigationMaze.md`) and `navigation-locations.md`
 
-## Map Visual Design (Navigator View)
+## Renni's Hand-Drawn Map (Navigator View)
 
-### Tactical Map Layout
+### Factory Map Layout
 ```
-[START: Sewer Entrance]
+[START: Main Processing Floor]
         |
-        ↓ (FORWARD)
-[Industrial Pipes]
+        ↓ (FORWARD through walkway)
+[Storage Tank Area]
         |
-        ↓ (AROUND right)
-[Chemical Plant]
+        ↓ (AROUND leaking tank)
+[Maintenance Corridor]
         |
-        ↓ (BESIDE tank)
-[Underground Market]
+        ↓ (BESIDE electrical panel)
+[Guard Station]
         |
-        ↓ (ACROSS bridge)
-[PILTOVER BRIDGE - VICTORY!]
+        ↓ (ACROSS OVER catwalk)
+[HOLDING CELLS LEVEL 3 - TARGET!]
 ```
 
-### Visual Elements
-- **Safe Route**: Bright red line indicating correct path
-- **Location Icons**: Distinctive symbols (pipe, flask, market, bridge)
-- **Current Position**: Glowing golden indicator (Piltover styling)
-- **Wrong Paths**: Faded gray indicators for incorrect choices
-- **Preposition Labels**: Clear spatial relationship text
+### Renni's Map Annotations
+- **Safe Route**: Hand-drawn red arrows indicating Renni's tested path
+- **Hazard Warnings**: Skull symbols marking dangerous areas (chemical leaks, structural damage)
+- **Current Position**: Player's location marked with "YOU ARE HERE" in Renni's handwriting
+- **Wrong Paths**: X marks over dangerous routes with notes like "TOXIC!" or "UNSTABLE!"
+- **Objective**: Large circle around "HOLDING CELLS - LEVEL 3" with question marks indicating uncertainty
+- **Personal Notes**: Renni's worried annotations like "Where are they?" and "Too quiet..."
 
 ## Future Enhancements
 - **Dynamic Locations**: Procedurally generated maze layouts

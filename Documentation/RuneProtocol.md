@@ -1,103 +1,106 @@
-# Rune Protocol Synchronizer: Advanced 2-Player Logic Puzzles
+# Hextech Bomb Defusal: Advanced 2-Player Logic Puzzles
 
 ## Overview
 
-The **Rune Protocol Synchronizer** is a sophisticated cooperative logic puzzle system built into the Arcane Coop escape room experience. Two players must work together to synchronize mystical runes by satisfying complex conditional rules, with each player controlling different runes and seeing different rule sets.
+The **Hextech Bomb Defusal** is a sophisticated cooperative logic puzzle where two players must work together to defuse Jinx's bomb in Jayce's workshop. After discovering Jinx has stolen Jayce's stabilization notes and left a deadly device behind, players must decode the bomb's mechanical lever system by satisfying complex conditional rules. Each player sees different rules etched on opposite sides of the bomb, and they must coordinate to find the safe configuration before a potential chain reaction destroys half the Academy district.
 
 ## Game Mechanics
 
 ### Core Concept
-- **8 Runes Total**: R1, R2, R3, R4, R5, R6, R7, R8 (each can be ON or OFF)
-- **Player A (Piltover/Caitlyn)**: Controls R1-R4, sees Alpha Protocol Rules
-- **Player B (Zaunite/Vi)**: Controls R5-R8, sees Beta Protocol Rules  
-- **Cooperative Goal**: All rules for both players must be satisfied simultaneously
-- **Rule-Based Victory**: Win condition is triggered when ALL rules for both players are satisfied simultaneously (may have multiple valid solutions)
+- **8 Mechanical Levers**: L1, L2, L3, L4, L5, L6, L7, L8 (each can be UP or DOWN)
+- **Player A (Piltover/Caitlyn)**: Controls L1-L4, reads Side A defusal instructions etched on the bomb
+- **Player B (Zaunite/Vi)**: Controls L5-L8, reads Side B defusal instructions etched on the bomb
+- **Life-or-Death Goal**: All rules for both players must be satisfied simultaneously to safely defuse the bomb
+- **Rule-Based Defusal**: Bomb is defused when ALL rules for both players are satisfied simultaneously (may have multiple valid solutions)
+- **Stakes**: Failure could trigger a hextech chain reaction destroying the Academy district
 
-### Gameplay Flow
-1. Players join the same room and start the protocol
-2. Each player sees their specific rules and can only toggle their assigned runes
-3. **Default Mode**: Rules are shown without validation status for maximum challenge
-4. **Optional Hints**: Players can toggle "💡 Show Hints" to see real-time rule validation (✓/✗)
-5. Players must communicate and coordinate to find valid solutions
-6. Success unlocks the next level with increased complexity
+### Defusal Process
+1. Both players discover the bomb in Jayce's workshop and examine opposite sides
+2. Each player reads their specific defusal instructions and can only control their assigned levers
+3. **Default Mode**: Instructions are shown without validation status for maximum tension
+4. **Optional Analysis**: Players can toggle "🔍 Show Analysis" to see real-time rule validation (✓/✗) 
+5. Players must communicate and coordinate under pressure to find the safe configuration
+6. Success defuses the bomb and allows the team to continue pursuing Jinx
+7. **Story Context**: Jinx's love of puzzles means the bomb can be solved through logic, not just luck
 
-### Difficulty Modes
-- **Pure Puzzle Mode** (Default): No validation feedback - players must deduce rule satisfaction through logic and communication
-- **Assisted Mode**: Toggle hints to show which rules are currently satisfied/violated
+### Defusal Modes
+- **High Pressure Mode** (Default): No validation feedback - players must deduce defusal progress through logic and communication under extreme pressure
+- **Analysis Mode**: Toggle analysis to show which rules are currently satisfied/violated (like having bomb disposal equipment)
 - Both modes offer the same logical challenge but different levels of feedback
+- **Story Justification**: Jinx designed the bomb to be solvable because she wants to test the team's intelligence, not just kill them randomly
 
-## Level 1: Logic Gateway Protocol - Alpha
+## Defusal Configuration 1: Primary Hextech Stabilization
 
-### Rules Summary
-**Player A (Alpha/Piltover) Rules:**
-- A1: Exactly three of your runes (R1-R4) must be active
-- A2: IF R5 is active, THEN R1 must be inactive  
-- A3: IF R7 is inactive, THEN R2 and R4 must be in the same state
+### Bomb Defusal Instructions
+**Side A (Caitlyn's Instructions):**
+- A1: Exactly three of your levers (L1-L4) must be UP to maintain circuit stability
+- A2: IF L5 is UP, THEN L1 must be DOWN to prevent overload
+- A3: IF L7 is DOWN, THEN L2 and L4 must be in the same state for balance
 
-**Player B (Beta/Zaunite) Rules:**
-- B1: Exactly one of your runes (R5-R8) must be active
-- B2: Either R5 or R7 must be active (but not both)
-- B3: IF R1 is inactive, THEN R5 must be active
+**Side B (Vi's Instructions):**
+- B1: Exactly one of your levers (L5-L8) must be UP to avoid power surge
+- B2: Either L5 or L7 must be UP (but not both) to maintain core stability
+- B3: IF L1 is DOWN, THEN L5 must be UP to complete the safety circuit
 
-### Solution Path (Level 1)
-The logical deduction chain:
+### Defusal Logic Chain
+The bomb defusal deduction sequence:
 
-1. **From B1 & B2**: Only one Beta rune can be UP, and it must be either R5 or R7
-2. **Testing R7=UP**: This would mean R5=DOWN, but then B3 requires R5=UP if R1=DOWN, creating contradiction
-3. **Therefore R5=UP**: This is the only Beta rune that can be active
-4. **From A2**: Since R5=UP, R1 must be DOWN  
-5. **From B3**: Since R1=DOWN, R5 must be UP (✓ consistent)
-6. **From A1**: Need exactly 3 Alpha runes UP, but R1=DOWN, so R2, R3, R4 must all be UP
-7. **From A3**: R7=DOWN (since R5=UP and B2), so R2 and R4 must match (both UP ✓)
+1. **From B1 & B2**: Only one Side B lever can be UP, and it must be either L5 or L7 to maintain stability
+2. **Testing L7=UP**: This would mean L5=DOWN, but then B3 requires L5=UP if L1=DOWN, creating a circuit contradiction
+3. **Therefore L5=UP**: This is the only Side B lever that can be safely activated
+4. **From A2**: Since L5=UP, L1 must be DOWN to prevent hextech overload
+5. **From B3**: Since L1=DOWN, L5 must be UP to complete the safety circuit (✓ consistent)
+6. **From A1**: Need exactly 3 Side A levers UP for stability, but L1=DOWN, so L2, L3, L4 must all be UP
+7. **From A3**: L7=DOWN (since L5=UP and B2), so L2 and L4 must match (both UP ✓)
 
-**Primary Solution**: R1=DOWN, R2=UP, R3=UP, R4=UP, R5=UP, R6=DOWN, R7=DOWN, R8=DOWN
+**Safe Configuration**: L1=DOWN, L2=UP, L3=UP, L4=UP, L5=UP, L6=DOWN, L7=DOWN, L8=DOWN
 
-**Note**: The system now accepts any configuration where all rules are satisfied, not just this specific solution. There may be additional valid combinations!
+**Note**: The bomb accepts any configuration where all defusal rules are satisfied simultaneously. Multiple valid solutions may exist!
 
-### Key Insight
-R5 being UP is the critical insight that unlocks the entire logical chain. This forces specific states for other runes through the conditional dependencies.
+### Critical Defusal Insight
+L5 being UP is the crucial realization that unlocks the entire bomb defusal sequence. This forces specific states for other levers through the hextech circuit dependencies. Understanding this primary circuit requirement allows the team to systematically work through the remaining lever positions to safely defuse the device.
 
-## Level 2: Logic Gateway Protocol - Beta
+## Defusal Configuration 2: Advanced Hextech Stabilization
 
-### Rules Summary  
-**Player A (Alpha/Piltover) Rules:**
-- A1: IF R5 and R6 are different positions, THEN R1 must equal R7
-- A2: IF R3 is active, THEN exactly 5 total runes must be active
-- A3: Alpha UP count must equal Beta DOWN count
+### Complex Bomb Instructions
+**Side A (Caitlyn's Advanced Instructions):**
+- A1: IF L5 and L6 are in different positions, THEN L1 must match L7 for circuit balance
+- A2: IF L3 is UP, THEN exactly 5 total levers must be UP for stable power distribution  
+- A3: Side A UP count must equal Side B DOWN count for hextech equilibrium
 
-**Player B (Beta/Zaunite) Rules:**
-- B1: IF R1 equals R4, THEN R6 must be active
-- B2: IF R8 is inactive, THEN R2 and R3 must be different  
-- B3: Either R5 is active OR (R7 is inactive AND R4 is active)
+**Side B (Vi's Advanced Instructions):**
+- B1: IF L1 matches L4, THEN L6 must be UP to complete the stabilization circuit
+- B2: IF L8 is DOWN, THEN L2 and L3 must be different to prevent resonance cascade
+- B3: Either L5 is UP OR (L7 is DOWN AND L4 is UP) to maintain core integrity
 
-### Solution Path (Level 2)
-The advanced deduction requires finding contradictions:
+### Advanced Defusal Logic
+The complex bomb defusal requires finding hextech contradictions:
 
-1. **From A3**: Alpha UP count = Beta DOWN count
-   - If Alpha has X UP, then Alpha has (4-X) DOWN
-   - If Beta has Y UP, then Beta has (4-Y) DOWN  
-   - Rule: X = (4-Y), therefore X + Y = 4
-   - **Total UP across both players = 4 (always!)**
+1. **From A3**: Side A UP count = Side B DOWN count for hextech equilibrium
+   - If Side A has X UP, then Side A has (4-X) DOWN
+   - If Side B has Y UP, then Side B has (4-Y) DOWN  
+   - Equilibrium rule: X = (4-Y), therefore X + Y = 4
+   - **Total UP across both sides = 4 (hextech stability requirement!)**
 
-2. **From A2 Contradiction**: If R3=UP, then exactly 5 total must be UP
-   - But A3 proves total must always be 4
-   - **Therefore R3 must be DOWN!**
+2. **From A2 Contradiction**: If L3=UP, then exactly 5 total must be UP for power distribution
+   - But A3 proves total must always be 4 for stability
+   - **Therefore L3 must be DOWN to prevent power overload!**
 
-3. **Cascade Effect**: With R3=DOWN established:
-   - From B2: If R8=DOWN, then R2≠R3, so R2=UP (since R3=DOWN)
-   - From B3: Either R5=UP OR (R7=DOWN AND R4=UP) must be true
-   - From A3: Need Alpha UP = Beta DOWN = 2 (since total UP = 4)
+3. **Cascade Effect**: With L3=DOWN established to prevent overload:
+   - From B2: If L8=DOWN, then L2≠L3, so L2=UP (since L3=DOWN) to prevent resonance
+   - From B3: Either L5=UP OR (L7=DOWN AND L4=UP) must be true for core integrity
+   - From A3: Need Side A UP = Side B DOWN = 2 (since total UP = 4 for stability)
 
-4. **Final Deduction**: Working through the constraints:
-   - R2=UP, R3=DOWN (established above)
-   - Need 2 total Alpha UP: R2=UP, so need 1 more from {R1,R4}
-   - Need 2 total Beta UP to satisfy A3
-   - B3 forces either R5=UP or both (R7=DOWN AND R4=UP)
+4. **Final Defusal Sequence**: Working through the hextech constraints:
+   - L2=UP, L3=DOWN (established above to prevent cascade failure)
+   - Need 2 total Side A UP: L2=UP, so need 1 more from {L1,L4}
+   - Need 2 total Side B UP to satisfy hextech equilibrium
+   - B3 forces either L5=UP or both (L7=DOWN AND L4=UP) for core stability
 
-**Unique Solution**: R1=DOWN, R2=UP, R3=DOWN, R4=UP, R5=UP, R6=UP, R7=DOWN, R8=DOWN
+**Safe Configuration**: L1=DOWN, L2=UP, L3=DOWN, L4=UP, L5=UP, L6=UP, L7=DOWN, L8=DOWN
 
-### Key Insight  
-The "impossible 5-UP requirement" is the critical contradiction that forces R3=DOWN, creating a cascade of logical deductions. Players must recognize that some rule combinations create impossible situations.
+### Critical Defusal Insight
+The "impossible 5-UP power requirement" is the critical contradiction that forces L3=DOWN, creating a cascade of hextech stabilization deductions. Players must recognize that some lever combinations would create impossible power overloads that would trigger the bomb rather than defuse it. This is Jinx's way of testing whether the team truly understands hextech principles or will blindly follow contradictory instructions.
 
 ## Technical Infrastructure
 
@@ -178,18 +181,18 @@ if (allRulesSatisfied)
 ### SignalR Multiplayer System
 
 #### Hub Methods
-- `JoinRuneProtocolGame(roomId, playerName)`: Role assignment and game initialization
-- `ToggleRune(roomId, runeIndex)`: Rune state changes with validation
-- `ToggleRuneProtocolValidationHints(roomId)`: Toggle validation feedback display
-- `AdvanceRuneProtocolLevel(roomId)`: Progress to next difficulty level
-- `RestartRuneProtocolGame(roomId)`: Reset current level
+- `JoinRuneProtocolGame(roomId, playerName)`: Role assignment and bomb defusal initialization
+- `ToggleRune(roomId, leverIndex)`: Mechanical lever state changes with circuit validation  
+- `ToggleRuneProtocolValidationHints(roomId)`: Toggle defusal analysis feedback display
+- `AdvanceRuneProtocolLevel(roomId)`: Progress to more complex bomb configurations
+- `RestartRuneProtocolGame(roomId)`: Reset bomb to safe configuration and restart defusal attempt
 
 #### Real-time Events
-- `RuneProtocolGameJoined`: Player joins with role-specific view
-- `RuneProtocolGameStateUpdated`: Global game state synchronization  
-- `RuneProtocolPlayerViewUpdated`: Individual rule validation updates
-- `RuneProtocolGameCompleted`: Victory notification with scoring
-- `RuneProtocolValidationToggled`: Validation hint display toggle notification
+- `RuneProtocolGameJoined`: Player joins bomb defusal with side-specific instructions
+- `RuneProtocolGameStateUpdated`: Global bomb state synchronization across both players
+- `RuneProtocolPlayerViewUpdated`: Individual defusal rule validation updates
+- `RuneProtocolGameCompleted`: Bomb successfully defused notification
+- `RuneProtocolValidationToggled`: Defusal analysis display toggle notification
 
 ### Advanced Rule Validation Engine
 

@@ -82,10 +82,18 @@ The Visual Novel engine powers a synchronized, two-player story intro for Act 1 
 ```csharp
 public List<string> StoryProgression = new() 
 { 
-    "emergency_briefing",           // Scene 1 & 2 (Visual Novel)
-    "picture_explanation_transition", // Puzzle transition
-    "database_revelation",          // Scene 3 (Visual Novel)
-    "signal_decoder_transition"     // Puzzle - Signal Decoder (Complete Integration 2025)
+    "emergency_briefing",            // Scene 1 & 2 (Visual Novel)
+    "picture_explanation_transition",// Puzzle - Picture Explanation
+    "database_revelation",           // Scene 3 (Visual Novel)
+    "signal_decoder_transition",     // Puzzle - Signal Decoder
+    "radio_decoded",                 // Scene 4 (Visual Novel)
+    "renni_apartment",              // Scene 5 (Visual Novel)
+    "code_cracker_transition",      // Puzzle - Code Cracker
+    "code_decoded",                 // Scene 6 (Visual Novel)
+    "shimmer_factory_entrance",     // Scene 7 (Visual Novel)
+    "navigation_maze_transition",   // Puzzle - Navigation Maze
+    "empty_cells",                  // Scene 8 (Visual Novel)
+    "alchemy_lab_transition"        // Puzzle - Alchemy Lab
 };
 ```
 
@@ -124,6 +132,20 @@ Scene 3 → Signal Decoder:
 Signal Decoder → Next Scene:
   Extract: SquadAlpha (from SquadAlpha_FromPicturePuzzle_FromScene3)
   New Room ID: SquadAlpha_FromSignalDecoder
+  URL: /act1-multiplayer?roomId=SquadAlpha_FromSignalDecoder&sceneIndex=4
+
+ Scene 6 → Navigation Maze:
+  URL: /navigation-maze?squad=SquadAlpha&transition=FromCodeDecoded&story=true
+  Room ID: SquadAlpha_FromCodeDecoded
+
+ Navigation Maze → Scene 8:
+  Extract: SquadAlpha (from SquadAlpha_FromCodeDecoded)
+  New Room ID: SquadAlpha_FromNavigationMaze
+  URL: /act1-multiplayer?roomId=SquadAlpha_FromNavigationMaze&sceneIndex=10
+
+ Scene 8 → Alchemy Lab:
+  URL: /alchemy-lab?squad=SquadAlpha&transition=FromEmptyCells&story=true
+  Room ID: SquadAlpha_FromEmptyCells
 ```
 
 **Critical Implementation Details:**

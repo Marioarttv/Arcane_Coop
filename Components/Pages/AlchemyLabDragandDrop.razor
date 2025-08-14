@@ -9,7 +9,7 @@
 
 <PageTitle>Alchemy Lab: Vi's Healing Potion</PageTitle>
 
-<div class="alchemy-container">
+<div class="alchemy-container @(isFromStory ? "story-mode" : string.Empty)">
     <div class="header-section">
         @if (isFromStory)
         {
@@ -29,14 +29,12 @@
         }
     </div>
     
-    <div class="connection-status mb-3">
-        <strong>Connection Status:</strong> 
-        <span class="@(IsConnected ? "text-success" : "text-danger")">
-            @(IsConnected ? "Connected" : "Disconnected")
-        </span>
+    <div class="top-right-status">
+        <span class="label">Status:</span>
+        <span class="value @(IsConnected ? "connected" : "disconnected")">@(IsConnected ? "Connected" : "Disconnected")</span>
     </div>
 
-    @if (!inGame)
+    @if (!inGame && !isFromStory)
     {
         <div class="game-setup mb-4">
             <div class="row">
@@ -66,7 +64,7 @@
             </div>
         </div>
 
-        @if (inRoom && !inGame)
+        @if (inRoom && !inGame && !isFromStory)
         {
             <div class="players-section">
                 <div class="players-header">
@@ -94,7 +92,7 @@
 
     @if (inGame && playerView != null)
     {
-        <div class="game-interface @playerView.Role.ToLower()">
+        <div class="game-interface compact-layout @playerView.Role.ToLower() one-screen-grid">
             @if (playerView.Role == "Piltover")
             {
                 <!-- Piltover Player: Recipe Reader Interface -->
@@ -125,19 +123,19 @@
                         </div>
                     </div>
                     
-                    <div class="instruction-panel piltover-instruction">
+                        <div class="instruction-panel piltover-instruction parchment">
                         <p>@playerView.Instruction</p>
                     </div>
                     
                     @if (playerView.Recipe != null)
                     {
-                        <div class="recipe-scroll">
+                        <div class="recipe-scroll old-scroll">
                             <div class="recipe-header">
                                 <h4>📜 @playerView.Recipe.Name</h4>
                                 <p class="recipe-description">@playerView.Recipe.Description</p>
                             </div>
                             
-                            <div class="recipe-steps">
+                            <div class="recipe-steps compact-steps">
                                 @foreach (var step in playerView.Recipe.Steps)
                                 {
                                     <div class="recipe-step step-active">
@@ -176,233 +174,112 @@
             {
                 <!-- Zaunite Player: Laboratory Interface -->
                 <div class="zaunite-interface">
-                    <div class="interface-header">
-                        <div class="character-info">
-                            <img src="/images/vi.jpeg" alt="Vi" class="character-portrait" />
-                            <div class="character-details">
-                                <h3>@playerView.DisplayName</h3>
-                                <p class="role-subtitle">Lab Assistant</p>
-                            </div>
-                        </div>
-                        <div class="lab-info">
-                            <div class="score-display">
-                                <span class="score-label">Potion Potency:</span>
-                                <span class="score-value">@playerView.Score%</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Header collapsed for space -->
                     
-                    <div class="instruction-panel zaunite-instruction">
+                        <div class="instruction-panel zaunite-instruction parchment">
                         <p>@playerView.Instruction</p>
                     </div>
                     
                     @if (!playerView.IsCompleted)
                     {
-                        <div class="dragdrop-laboratory">
-                            <!-- Ingredients Pool -->
-                            <div class="ingredients-pool">
+                        <div class="lab-grid">
+                            <!-- Left: Ingredients -->
+                            <div class="lab-panel ingredients-panel">
                                 <h4>🧪 Ingredient Storage</h4>
-                                <div class="ingredients-draggable-container">
+                                <div class="ingredients-draggable-container no-scroll">
                                     @if (playerView.AvailableIngredients != null)
                                     {
-                                        <Dropzone Items="@ingredientPoolItems" 
-                                                  Class="ingredients-dropzone" 
-                                                  Accepts="@((ingredient, targetZone) => true)">
-                                            <div class="draggable-ingredient @GetIngredientStateClass(context.State)" 
-                                                 draggable="true">
-                                                <div class="ingredient-image">
-                                                    <img src="@context.ImagePath" alt="@context.Name" />
-                                                </div>
+                                        <Dropzone Items="@ingredientPoolItems" Class="ingredients-dropzone" Accepts="@((ingredient, targetZone) => true)">
+                                            <div class="draggable-ingredient @GetIngredientStateClass(context.State)" draggable="true">
+                                                <div class="ingredient-image"><img src="@context.ImagePath" alt="@context.Name" /></div>
                                                 <div class="ingredient-info">
                                                     <h6>@context.Name</h6>
                                                     <span class="ingredient-state">@GetStateDisplayName(context.State)</span>
                                                 </div>
-                                                @if (context.State != IngredientState.Raw)
-                                                {
-                                                    <button class="add-to-cauldron-btn" @onclick="() => AddToCauldronViaSignalR(context)">
-                                                        → Cauldron
-                                                    </button>
-                                                }
                                             </div>
                                         </Dropzone>
                                     }
                                 </div>
                             </div>
-                            
-                            <!-- Processing Stations -->
-                            <div class="processing-stations">
+
+                            <!-- Middle: Stations -->
+                            <div class="lab-panel stations-panel">
                                 <h4>⚙️ Processing Stations</h4>
-                                <div class="stations-grid">
-                                    <!-- Mixing Station - NEW! -->
+                                <div class="stations-grid two-by-two">
                                     <div class="processing-station mixing-station">
-                                        <div class="station-header">
-                                            <span class="station-icon">⚗️</span>
-                                            <h5>Mixing Station</h5>
-                                        </div>
-                                        <Dropzone Items="@mixingItems" 
-                                                  Class="station-dropzone mixing-dropzone"
-                                                  MaxItems="2"
-                                                  OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())"
-                                                  Accepts="@((ingredient, targetZone) => CanCombineIngredient(ingredient))">
+                                        <div class="station-header"><span class="station-icon">⚗️</span><h5>Mixing Station</h5></div>
+                                        <Dropzone Items="@mixingItems" Class="station-dropzone mixing-dropzone" MaxItems="2" OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())" Accepts="@((ingredient, targetZone) => CanCombineIngredient(ingredient))">
                                             @if (context != null)
                                             {
-                                                <div class="processing-ingredient">
-                                                    <img src="@context.ImagePath" alt="@context.Name" />
-                                                    <span>@context.Name</span>
-                                                </div>
+                                                <div class="processing-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name</span></div>
                                             }
                                             else if (mixingItems.Count == 0)
                                             {
-                                                <div class="station-placeholder">
-                                                    <p>Drop Shimmer Crystal + Hex Berries</p>
-                                                    <small>(2 ingredients required)</small>
-                                                </div>
+                                                <div class="station-placeholder"><p>Drop Shimmer Crystal + Hex Berries</p><small>(2 ingredients required)</small></div>
                                             }
                                         </Dropzone>
                                         @if (mixingItems.Count == 2)
                                         {
-                                            <button class="process-btn combine-btn" @onclick="() => CombineAtMixing()">
-                                                ✨ Combine
-                                            </button>
+                                            <button class="process-btn combine-btn" @onclick="() => CombineAtMixing()">✨ Combine</button>
                                         }
                                     </div>
-                                    
-                                    <!-- Mortar & Pestle Station -->
+
                                     <div class="processing-station mortar-station">
-                                        <div class="station-header">
-                                            <span class="station-icon">🥣</span>
-                                            <h5>Mortar & Pestle</h5>
-                                        </div>
-                                        <Dropzone Items="@mortarItems" 
-                                                  Class="station-dropzone mortar-dropzone"
-                                                  MaxItems="1"
-                                                  OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())"
-                                                  Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.MortarPestle))">
+                                        <div class="station-header"><span class="station-icon">🥣</span><h5>Mortar & Pestle</h5></div>
+                                        <Dropzone Items="@mortarItems" Class="station-dropzone mortar-dropzone" MaxItems="1" OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())" Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.MortarPestle))">
                                             @if (context != null)
                                             {
-                                                <div class="processing-ingredient">
-                                                    <img src="@context.ImagePath" alt="@context.Name" />
-                                                    <span>@context.Name</span>
-                                                </div>
+                                                <div class="processing-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name</span></div>
                                             }
-                                            else
-                                            {
-                                                <div class="station-placeholder">
-                                                    <p>Drop ingredient to grind</p>
-                                                </div>
-                                            }
+                                            else { <div class="station-placeholder"><p>Drop ingredient to grind</p></div> }
                                         </Dropzone>
-                                        @if (mortarItems.Any())
-                                        {
-                                            <button class="process-btn" @onclick="() => ProcessAtMortar()">
-                                                🔄 Grind
-                                            </button>
-                                        }
+                                        @if (mortarItems.Any()) { <button class="process-btn" @onclick="() => ProcessAtMortar()">🔄 Grind</button> }
                                     </div>
-                                    
-                                    <!-- Heating Station -->
+
                                     <div class="processing-station heating-station">
-                                        <div class="station-header">
-                                            <span class="station-icon">🔥</span>
-                                            <h5>Heating Station</h5>
-                                        </div>
-                                        <Dropzone Items="@heatingItems" 
-                                                  Class="station-dropzone heating-dropzone"
-                                                  MaxItems="1"
-                                                  OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())"
-                                                  Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.HeatingStation))">
+                                        <div class="station-header"><span class="station-icon">🔥</span><h5>Heating Station</h5></div>
+                                        <Dropzone Items="@heatingItems" Class="station-dropzone heating-dropzone" MaxItems="1" OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())" Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.HeatingStation))">
                                             @if (context != null)
                                             {
-                                                <div class="processing-ingredient">
-                                                    <img src="@context.ImagePath" alt="@context.Name" />
-                                                    <span>@context.Name</span>
-                                                </div>
+                                                <div class="processing-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name</span></div>
                                             }
-                                            else
-                                            {
-                                                <div class="station-placeholder">
-                                                    <p>Drop ingredient to heat</p>
-                                                </div>
-                                            }
+                                            else { <div class="station-placeholder"><p>Drop ingredient to heat</p></div> }
                                         </Dropzone>
-                                        @if (heatingItems.Any())
-                                        {
-                                            <button class="process-btn" @onclick="() => ProcessAtHeating()">
-                                                🔥 Heat
-                                            </button>
-                                        }
+                                        @if (heatingItems.Any()) { <button class="process-btn" @onclick="() => ProcessAtHeating()">🔥 Heat</button> }
                                     </div>
-                                    
-                                    <!-- Cutting Board Station -->
+
                                     <div class="processing-station cutting-station">
-                                        <div class="station-header">
-                                            <span class="station-icon">🔪</span>
-                                            <h5>Cutting Board</h5>
-                                        </div>
-                                        <Dropzone Items="@cuttingItems" 
-                                                  Class="station-dropzone cutting-dropzone"
-                                                  MaxItems="1"
-                                                  OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())"
-                                                  Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.CuttingBoard))">
+                                        <div class="station-header"><span class="station-icon">🔪</span><h5>Cutting Board</h5></div>
+                                        <Dropzone Items="@cuttingItems" Class="station-dropzone cutting-dropzone" MaxItems="1" OnItemDrop="@((AlchemyIngredient item) => StateHasChanged())" Accepts="@((ingredient, targetZone) => CanProcessAtStation(ingredient, ProcessingStation.CuttingBoard))">
                                             @if (context != null)
                                             {
-                                                <div class="processing-ingredient">
-                                                    <img src="@context.ImagePath" alt="@context.Name" />
-                                                    <span>@context.Name</span>
-                                                </div>
+                                                <div class="processing-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name</span></div>
                                             }
-                                            else
-                                            {
-                                                <div class="station-placeholder">
-                                                    <p>Drop ingredient to chop</p>
-                                                </div>
-                                            }
+                                            else { <div class="station-placeholder"><p>Drop ingredient to chop</p></div> }
                                         </Dropzone>
-                                        @if (cuttingItems.Any())
-                                        {
-                                            <button class="process-btn" @onclick="() => ProcessAtCutting()">
-                                                🔪 Chop
-                                            </button>
-                                        }
+                                        @if (cuttingItems.Any()) { <button class="process-btn" @onclick="() => ProcessAtCutting()">🔪 Chop</button> }
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Cauldron Section -->
-                            <div class="cauldron-section">
+
+                            <!-- Right: Cauldron -->
+                            <div class="lab-panel cauldron-panel">
                                 <h4>🍯 Brewing Cauldron</h4>
-                                <Dropzone Items="@cauldronItems" 
-                                          Class="cauldron-dropzone"
-                                          MaxItems="3"
-                                          OnItemDrop="@((AlchemyIngredient item) => OnCauldronDrop(item))"
-                                          Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && CanAddToCauldron(ingredient))">
+                                <Dropzone Items="@cauldronItems" Class="cauldron-dropzone" MaxItems="3" OnItemDrop="@((AlchemyIngredient item) => OnCauldronDrop(item))" Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && CanAddToCauldron(ingredient))">
                                     @if (context != null)
                                     {
-                                        <div class="cauldron-ingredient">
-                                            <img src="@context.ImagePath" alt="@context.Name" />
-                                            <span>@context.Name (@GetStateDisplayName(context.State))</span>
-                                        </div>
+                                        <div class="cauldron-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name (@GetStateDisplayName(context.State))</span></div>
                                     }
                                     else if (cauldronItems.Count == 0)
                                     {
-                                        <div class="cauldron-placeholder">
-                                            <span>🍯</span>
-                                            <p>Drop processed ingredients here</p>
-                                            <small>(Max 3 ingredients - only processed ingredients allowed)</small>
-                                        </div>
+                                        <div class="cauldron-placeholder"><span>🍯</span><p>Drop processed ingredients here</p><small>(Max 3 ingredients - only processed ingredients allowed)</small></div>
                                     }
                                 </Dropzone>
-                                
                                 @if (cauldronItems.Count > 0)
                                 {
-                                    <button class="arcane-btn arcane-btn-success submit-potion-btn" @onclick="SubmitPotion">
-                                        ✨ Brew Potion (@cauldronItems.Count/3)
-                                    </button>
+                                    <button class="arcane-btn arcane-btn-success submit-potion-btn" @onclick="SubmitPotion">✨ Brew Potion (@cauldronItems.Count/3)</button>
                                 }
-                                
-                                <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
-                                    🔄 Reset Game
-                                </button>
+                                <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">🔄 Reset Game</button>
                             </div>
                         </div>
                     }
@@ -415,9 +292,8 @@
                                 <h3>🎉 Perfect Brewing!</h3>
                                 <p>@playerView.CompletionMessage</p>
                             </div>
-                            
-                            <button class="arcane-btn arcane-btn-warning" @onclick="RestartGame">
-                                🔄 Brew Another Potion
+                            <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+                                ➡️ Continue Story
                             </button>
                         </div>
                     }
@@ -592,6 +468,13 @@
         });
 
         await hubConnection.StartAsync();
+
+        // Redirect handler to continue story
+        hubConnection.On<string>("RedirectToNextScene", (url) =>
+        {
+            Console.WriteLine($"[AlchemyLab] Redirecting to next scene: {url}");
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
         
         // Auto-connect and join if parameters are provided
         if (!string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
@@ -602,8 +485,6 @@
     
     private void ParseUrlParameters()
     {
-        if (string.IsNullOrEmpty(Parameters)) return;
-        
         try
         {
             var uri = new Uri(Navigation.Uri);
@@ -614,6 +495,7 @@
             var name = query["name"];
             var squad = query["squad"];
             var story = query["story"];
+            var transition = query["transition"]; // FromEmptyCells, etc.
             
             if (!string.IsNullOrEmpty(role))
                 playerRole = role;
@@ -624,14 +506,19 @@
             if (!string.IsNullOrEmpty(name))
                 playerName = Uri.UnescapeDataString(name);
             
-            if (!string.IsNullOrEmpty(squad))
-            {
-                roomId = Uri.UnescapeDataString(squad);
-                squadName = Uri.UnescapeDataString(squad);
-            }
+			if (!string.IsNullOrEmpty(squad))
+			{
+				squadName = Uri.UnescapeDataString(squad);
+			}
             
-            if (story == "true")
-                isFromStory = true;
+			if (story == "true")
+				isFromStory = true;
+
+			// Build unique roomId for story transitions
+			if (!string.IsNullOrEmpty(squadName))
+			{
+				roomId = isFromStory && !string.IsNullOrEmpty(transition) ? $"{squadName}_{transition}" : squadName;
+			}
         }
         catch (Exception ex)
         {
@@ -732,14 +619,19 @@
     // Cauldron drop handler - sync with SignalR backend
     private async void OnCauldronDrop(AlchemyIngredient ingredient)
     {
-        // Only allow processed ingredients (not raw) into the cauldron
-        if (ingredient.State == IngredientState.Raw)
+        // Allow raw only for Vial of Tears (catalyst). Block other raw items.
+        if (ingredient.State == IngredientState.Raw && ingredient.Id != "vial_of_tears")
         {
-            ShowStatus("Only processed ingredients can be added to the cauldron!", "warning");
+            ShowStatus("Only processed ingredients (or Vial of Tears) can be added to the cauldron!", "warning");
             return;
         }
-        
-        // Add ingredient to cauldron via SignalR
+
+        // Optimistically remove from local ingredient pool to avoid temporary duplication
+        if (ingredientPoolItems.Contains(ingredient))
+        {
+            ingredientPoolItems.Remove(ingredient);
+        }
+        // Add ingredient to cauldron via SignalR so server marks it used and syncs state
         await AddToCauldronViaSignalR(ingredient);
         StateHasChanged();
     }
@@ -821,6 +713,14 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
             await hubConnection.SendAsync("SubmitPotion", roomId);
+        }
+    }
+    
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("ContinueStoryAfterAlchemyLab", roomId);
         }
     }
     
@@ -939,9 +839,51 @@
     background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
     color: #ffffff;
     font-family: 'Orbitron', 'Rajdhani', sans-serif;
-    padding: 20px;
-    padding-bottom: 3rem;
+    padding: 14px;
+    padding-bottom: 1.5rem;
+    position: relative;
 }
+
+/* One-screen layout plan
+   - Header strip (5vh)
+   - Main functional grid (95vh):
+       [ Ingredients  |  Stations (3x)  ] top row ~40vh
+       [ Cauldron + Brew Bar ] bottom row ~32vh
+   - No scrollbars anywhere; content scales to fit
+*/
+
+.one-screen-grid {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    min-height: 60vh;
+    overflow: hidden;
+}
+
+/* Top row: ingredients + stations */
+.lab-grid, .compact-lab .ingredients-stations-row {
+    display: grid;
+    grid-template-columns: 22% 52% 26%;
+    gap: 0.5rem;
+    min-height: 48vh;
+}
+
+.ingredients-pool, .processing-stations, .cauldron-section { overflow: hidden; }
+
+.lab-panel { background: rgba(26, 26, 46, 0.6); border: 1px solid #c8aa6e; border-radius: 10px; padding: 0.5rem; }
+.stations-panel { min-height: 48vh; }
+.stations-panel .stations-grid.two-by-two {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: minmax(180px, auto) minmax(180px, auto);
+    gap: 1.6rem 0.8rem; /* larger row gap, slightly wider column gap */
+    height: auto;
+    min-height: unset;
+    max-height: unset;
+}
+.ingredients-panel { max-height: 60vh; }
+.cauldron-panel { max-height: 43vh; display: flex; flex-direction: column; }
 
 .header-section {
     text-align: center;
@@ -975,6 +917,24 @@
     font-family: 'Orbitron', sans-serif;
     font-weight: 600;
 }
+
+.top-right-status {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: rgba(26,26,46,0.8);
+    border: 1px solid #c8aa6e;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+.top-right-status .label { color: #c8aa6e; opacity: 0.85; }
+.top-right-status .value.connected { color: #00ff88; }
+.top-right-status .value.disconnected { color: #ff6b6b; }
 
 .text-success {
     color: #00ff88 !important;
@@ -1222,7 +1182,7 @@
 .instruction-panel {
     padding: 1rem;
     border-radius: 8px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
     font-size: 1rem;
     text-align: center;
 }
@@ -1243,11 +1203,33 @@
     background: rgba(26, 26, 46, 0.4);
     border: 1px solid #c8aa6e;
     border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    max-height: 500px;
-    overflow-y: auto;
+    padding: 1.2rem;
+    margin-bottom: 0.75rem;
+    max-height: none;
+    overflow: hidden;
 }
+
+.old-scroll {
+    background: #2a2016;
+    border: 2px solid #a37b2c;
+    border-radius: 10px;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.6), 0 6px 20px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+.old-scroll:before,
+.old-scroll:after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    height: 14px;
+    background: linear-gradient(90deg, rgba(163,123,44,0.6), rgba(255,219,140,0.15), rgba(163,123,44,0.6));
+}
+.old-scroll:before { top: 0; }
+.old-scroll:after { bottom: 0; }
+
+.old-scroll .recipe-header h4 { color: #f3e3b0; text-shadow: 0 0 8px rgba(243,227,176,0.35); }
+.old-scroll .step-content h5 { color: #f1e6c8; }
 
 .recipe-header {
     text-align: center;
@@ -1270,11 +1252,8 @@
     line-height: 1.4;
 }
 
-.recipe-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+.recipe-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.compact-steps .recipe-step { padding: 0.75rem; }
 
 .recipe-step {
     display: flex;
@@ -1342,22 +1321,24 @@
 /* Drag and Drop Laboratory Layout - Compact Version */
 .dragdrop-laboratory {
     display: grid;
-    grid-template-rows: 18vh 40vh 42vh;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    min-height: 100vh;
+    grid-template-rows: 20vh 34vh 36vh;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-height: 90vh;
     max-height: none;
-    overflow: visible;
-    padding: 0.5rem;
+    overflow: hidden;
+    padding: 0.25rem;
 }
+.compact-lab .processing-stations { max-height: 34vh; }
+.compact-lab .cauldron-section { min-height: 36vh; }
 
 .ingredients-pool {
     background: rgba(0, 153, 153, 0.08);
     border: 2px solid rgba(0, 200, 200, 0.3);
     border-radius: 12px;
-    padding: 1rem;
-    max-height: 18vh;
-    overflow-y: auto;
+    padding: 0.5rem;
+    max-height: 24vh;
+    overflow: visible;
 }
 
 .ingredients-pool h4 {
@@ -1366,17 +1347,16 @@
     text-align: center;
 }
 
-.ingredients-draggable-container {
-    min-height: 100px;
-}
+.ingredients-draggable-container { min-height: 100px; overflow: hidden; }
+.no-scroll { overflow: hidden !important; }
 
 .ingredients-dropzone {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.75rem;
     justify-content: center;
     min-height: 80px;
-    padding: 1rem;
+    padding: 0.75rem;
     border: 2px dashed rgba(0, 200, 200, 0.3);
     border-radius: 8px;
     background: rgba(0, 200, 200, 0.02);
@@ -1400,7 +1380,7 @@
     border-radius: 8px;
     cursor: grab;
     transition: all 0.3s ease;
-    min-width: 100px;
+    min-width: 96px;
     text-align: center;
 }
 
@@ -1467,8 +1447,8 @@
     background: rgba(200, 155, 60, 0.08);
     border: 2px solid rgba(200, 170, 110, 0.3);
     border-radius: 12px;
-    padding: 1rem;
-    max-height: 40vh;
+    padding: 0.75rem 0.5rem 0.75rem 0.5rem;
+    max-height: none;
     overflow: visible;
 }
 
@@ -1504,9 +1484,7 @@
     box-shadow: 0 4px 15px rgba(200, 155, 60, 0.2);
 }
 
-.station-header {
-    margin-bottom: 1rem;
-}
+.station-header { margin-bottom: 0.5rem; }
 
 .station-icon {
     font-size: 2rem;
@@ -1522,8 +1500,8 @@
 }
 
 .station-dropzone {
-    min-height: 120px;
-    max-height: 120px;
+    min-height: 96px;
+    max-height: 92px;
     border: 2px dashed rgba(200, 170, 110, 0.5);
     border-radius: 8px;
     padding: 0.5rem;
@@ -1594,7 +1572,7 @@
 
 /* Cauldron Dropzone */
 .cauldron-dropzone {
-    min-height: 200px;
+    min-height: 330px;
     flex: 1;
     border: 3px dashed rgba(255, 193, 7, 0.4);
     border-radius: 12px;
@@ -1807,7 +1785,7 @@
 }
 
 .cauldron-container {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem 1rem 1rem;
     background: rgba(255, 193, 7, 0.05);
     border: 2px dashed rgba(255, 193, 7, 0.3);
     border-radius: 8px;
@@ -1815,7 +1793,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .cauldron-ingredient {
@@ -1871,7 +1849,7 @@
 }
 
 .submit-potion-btn {
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     margin-bottom: 1rem;
     width: 100%;
     font-size: 1.1rem;
@@ -1882,7 +1860,7 @@
 }
 
 .reset-btn {
-    margin-top: 0.5rem;
+    margin-top: 1rem;
     margin-bottom: 1rem;
     width: 100%;
     font-size: 1rem;

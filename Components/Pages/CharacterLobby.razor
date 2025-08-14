@@ -255,6 +255,21 @@
                                         <span class="scene-name">Shimmer Factory Entrance</span>
                                         <span class="scene-desc">Scene 7 - After Code Decoded</span>
                                     </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(10)">
+                                        <span class="scene-icon">🧪</span>
+                                        <span class="scene-name">Empty Holding Cells</span>
+                                        <span class="scene-desc">Scene 8 - After Navigation Maze</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(12)">
+                                        <span class="scene-icon">🔍</span>
+                                        <span class="scene-name">Tracer Revealed</span>
+                                        <span class="scene-desc">Scene 9 - After Alchemy Lab</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(13)">
+                                        <span class="scene-icon">👣</span>
+                                        <span class="scene-name">Following the Trail</span>
+                                        <span class="scene-desc">Scene 10 - After Tracer Revealed</span>
+                                    </button>
                                 </div>
                                 
                                 <div class="scene-group">
@@ -278,6 +293,11 @@
                                         <span class="scene-icon">🗺️</span>
                                         <span class="scene-name">Navigation Maze</span>
                                         <span class="scene-desc">After Shimmer Factory Entrance</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromAlchemyLab">
+                                        <span class="scene-icon">🧪</span>
+                                        <span class="scene-name">Alchemy Lab</span>
+                                        <span class="scene-desc">After Empty Holding Cells</span>
                                     </button>
                                 </div>
                             </div>
@@ -1609,6 +1629,27 @@
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
             NavigationManager.NavigateTo($"/navigation-maze?{parameters}");
+        }
+    }
+    
+    private async Task StartFromAlchemyLab()
+    {
+        if (!squadVerified) return;
+        
+        // Generate a shared room name for testing (without timestamp)
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "alchemy-lab");
+        
+        // Use SignalR to redirect both players to Alchemy Lab puzzle
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "alchemy-lab");
+        }
+        else
+        {
+            // Fallback: direct navigation if SignalR not connected
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/alchemy-lab?{parameters}");
         }
     }
     
