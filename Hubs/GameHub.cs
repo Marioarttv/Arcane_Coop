@@ -1856,6 +1856,10 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateFollowingJinxTrailScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "jayce_workshop_arrival")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateJayceWorkshopArrivalScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -1913,6 +1917,18 @@ public class GameHub : Hub
                 else if (currentPhase == "following_jinx_trail")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateFollowingJinxTrailScene(originalSquadName, game);
+                }
+                else if (currentPhase == "jayce_workshop_arrival")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateJayceWorkshopArrivalScene(originalSquadName, game);
+                }
+                else if (currentPhase == "bomb_discovery")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
+                }
+                else if (currentPhase == "bomb_discovery")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
                 }
                 else
                 {

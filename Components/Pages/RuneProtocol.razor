@@ -21,7 +21,7 @@
         </span>
     </div>
 
-    @if (!inGame)
+@if (!inGame && !isFromStory)
     {
         <div class="instructions-panel">
             <div class="instruction-header">
@@ -76,7 +76,7 @@
         </div>
     }
 
-    @if (!inGame)
+@if (!inGame && !isFromStory)
     {
         <div class="game-setup mb-4">
         <div class="row">
@@ -122,7 +122,7 @@
         }
     </div>
 
-    @if (inRoom && !inGame)
+    @if (inRoom && !inGame && !isFromStory)
     {
         <div class="players-section">
             <div class="players-header">
@@ -344,6 +344,10 @@
     // Game state
     private string roomId = "";
     private string playerName = "";
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
     private bool inRoom = false;
     private bool inGame = false;
     private Arcane_Coop.Models.RuneProtocolPlayerView? playerView;
@@ -358,6 +362,7 @@
     
     protected override async Task OnInitializedAsync()
     {
+        ParseUrlParameters();
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
@@ -399,6 +404,13 @@
             playerView = view;
             ShowStatus($"Joined as {view.DisplayName}", "success");
             InvokeAsync(StateHasChanged);
+        });
+
+        // Handle story redirects (server-triggered)
+        hubConnection.On<string>("RedirectToNextScene", (url) =>
+        {
+            Console.WriteLine($"[RuneProtocol] Redirecting to next scene: {url}");
+            Navigation.NavigateTo(url, forceLoad: true);
         });
 
         hubConnection.On<Arcane_Coop.Models.RuneProtocolGameState>("RuneProtocolGameStateUpdated", (newGameState) =>
@@ -448,6 +460,47 @@
         });
 
         await hubConnection.StartAsync();
+
+        // Auto-join for story mode
+        if (isFromStory && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            // Build unique roomId if 'transition' present
+            await AutoConnect();
+        }
+    }
+
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var role = query["role"]; var avatar = query["avatar"]; var name = query["name"]; var squad = query["squad"]; var story = query["story"]; var transition = query["transition"]; // FromJayceWorkshop
+            if (!string.IsNullOrEmpty(role)) playerRole = role;
+            if (!string.IsNullOrEmpty(avatar)) playerAvatar = avatar;
+            if (!string.IsNullOrEmpty(name)) playerName = Uri.UnescapeDataString(name);
+            if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
+            if (story == "true") isFromStory = true;
+            if (!string.IsNullOrEmpty(squadName)) roomId = isFromStory && !string.IsNullOrEmpty(transition) ? $"{squadName}_{transition}" : squadName;
+        }
+        catch { }
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            await Task.Delay(200);
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(150);
+                await JoinGame();
+                inGame = true;
+                StateHasChanged();
+            }
+        }
+        catch { }
     }
 
     private async Task JoinRoom()

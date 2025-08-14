@@ -15,6 +15,8 @@ namespace Arcane_Coop.Services
         VisualNovelScene CreateEmptyCellsScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateTracerCompleteScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateFollowingJinxTrailScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateJayceWorkshopArrivalScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateBombDiscoveryScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -2698,6 +2700,131 @@ namespace Arcane_Coop.Services
 			return scene;
 		}
 
+		public VisualNovelScene CreateJayceWorkshopArrivalScene(string squadName, Act1MultiplayerGame game)
+		{
+			var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+			var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+
+			var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+			var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+			var scene = new VisualNovelScene
+			{
+				Id = "jayce_workshop_arrival",
+				Name = "The Workshop Entrance",
+				Layout = SceneLayout.DualCharacters,
+				Theme = NovelTheme.Piltover
+			};
+
+			scene.Characters.AddRange(new[]
+			{
+				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+			});
+
+			scene.DialogueLines.AddRange(new[]
+			{
+				new DialogueLine { CharacterId = "narrator", Text = "Scene 11: The Workshop Entrance — Academy District, Jayce's Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "caitlyn", Text = "The Academy should be just ahead!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "vi", Text = "The lights are still on in Jayce's workshop. Good, he's there.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "playerA", Text = "But it's too quiet. The Academy's usually bustling even at night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "playerB", Text = "The door to the workshop... it's ajar.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "vi", Text = "No. We're too late.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+				new DialogueLine { CharacterId = "narrator", Text = "Entering the Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "vi", Text = "Jayce! JAYCE!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "Vi? Caitlyn? Thank the gods you're here!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "caitlyn", Text = "You're alive! We thought—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "She was here! The blue-haired girl! She took everything!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+				new DialogueLine { CharacterId = "narrator", Text = "The Theft", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "playerA", Text = "The place is ransacked.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "My stabilization notes, the frequency calibrations, even the prototype crystals - all gone!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "playerB", Text = "How long ago?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "Maybe an hour? I was in the back room when I heard the explosion. By the time I got here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "vi", Text = "The footprints. They're fresh. She's been all over this room.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+				new DialogueLine { CharacterId = "narrator", Text = "The Discovery", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "caitlyn", Text = "Jayce, where's Viktor? Shouldn't he be here?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "He's been bedridden for days. His illness... it's getting worse. I've been trying to finish our work alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "playerA", Text = "That's why Jinx struck now. She knew you'd be alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "Wait... look at the floor. What's that glow?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "playerB", Text = "The shimmer trail! It leads... behind the main forge?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+				new DialogueLine { CharacterId = "narrator", Text = "Finding the Bomb", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "vi", Text = "Everyone stay back. Let me check—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "Oh gods. Is that...?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "narrator", Text = "[Behind the forge - a complex device with Jinx's monkey symbol]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+				new DialogueLine { CharacterId = "caitlyn", Text = "It's a bomb. Everyone out, NOW!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+				new DialogueLine { CharacterId = "jayce", Text = "No! Wait! If that detonates here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+			});
+
+			scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+			Console.WriteLine($"[Act1StoryEngine] Jayce Workshop Arrival scene created with {scene.DialogueLines.Count} dialogues");
+			return scene;
+		}
+
+        public VisualNovelScene CreateBombDiscoveryScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "bomb_discovery",
+                Name = "Discovering the Bomb",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Piltover
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 12: Discovering the Bomb — Jayce's Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Everyone needs to evacuate. Now!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "No! You don't understand - if it detonates here, it'll trigger all the Hextech crystals in storage!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "How many crystals?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Enough to level half the Academy district. Maybe more.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "Look at this thing. Eight mechanical levers, all interconnected.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "There's writing etched on the casing. Rules or... instructions?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                new DialogueLine { CharacterId = "narrator", Text = "Understanding the Threat", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "She didn't set a timer. Why leave it without a timer?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "It's a message. She wants us to know she could destroy everything... but is choosing not to. Yet.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Can we disarm it? There must be a way!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "I can see some rules on this side. 'Levers 1 and 5 must match positions.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "And I've got different rules over here. 'Exactly 5 levers must be UP.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                new DialogueLine { CharacterId = "narrator", Text = "Setting Up Defusal", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "It's a puzzle. Jinx always loved her puzzles.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "We need to find the configuration that satisfies all the rules.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "One wrong move could trigger it. We need to be absolutely certain.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "I'll read out my rules. We work through this logically.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "And I'll track which combinations satisfy both sets. We can do this.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Work fast but careful. Powder... Jinx... she's testing us.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Bomb Discovery scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -2980,6 +3107,51 @@ namespace Arcane_Coop.Services
                         game.TextAnimationStartTime = DateTime.UtcNow;
                         game.RecordAction();
                         Console.WriteLine($"[Act1StoryEngine] Progressed to Following Jinx Trail scene");
+                        break;
+
+                    case "jayce_workshop_arrival":
+                        // Move to Scene 11 (Workshop Entrance)
+                        game.CurrentScene = CreateJayceWorkshopArrivalScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Jayce Workshop Arrival scene");
+                        break;
+
+                    case "bomb_discovery":
+                        // Move to Scene 12 (Discovering the Bomb)
+                        game.CurrentScene = CreateBombDiscoveryScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Bomb Discovery scene");
+                        break;
+
+                    case "rune_protocol_transition":
+                        // Transition to Rune Protocol puzzle (Bomb Defusal)
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Rune Protocol";
+
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Rune Protocol
+                        var runeUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromJayceWorkshop";
+                            runeUrls[p.PlayerId] = $"/rune-protocol?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = runeUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Rune Protocol");
                         break;
                 }
             }
