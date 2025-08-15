@@ -3,589 +3,168 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
-@using Arcane_Coop.Services
 @inject NavigationManager Navigation
-@inject IJSRuntime JS
-@inject Act1StoryEngine StoryEngine
 @implements IAsyncDisposable
 
-<PageTitle>Truth Echo - Final Puzzle</PageTitle>
+<PageTitle>Truth Echo - Final Transition</PageTitle>
 
 <style>
-    body {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        font-family: 'Segoe UI', system-ui, sans-serif;
-    }
-
-    .puzzle-container {
+    .page-container {
         min-height: 100vh;
         padding: 2rem;
         display: flex;
         flex-direction: column;
         align-items: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: #e6e6e6;
     }
 
     .title-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .title-header h1 {
-        font-size: 3rem;
+        font-size: 2.25rem;
         background: linear-gradient(45deg, #00d4ff, #ff00ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        margin-bottom: 0.25rem;
+        text-shadow: 0 0 30px rgba(0, 212, 255, 0.35);
     }
 
     .subtitle {
         color: #a0a0a0;
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
-    .game-area {
+    .status-card {
+        background: rgba(20, 20, 40, 0.85);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
         width: 100%;
-        max-width: 1400px;
-        background: rgba(20, 20, 40, 0.9);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        max-width: 720px;
     }
 
-    .player-info {
+    .row {
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 2rem;
-        padding: 1rem;
-        background: rgba(30, 30, 50, 0.8);
-        border-radius: 10px;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
 
-    .player-card {
-        padding: 1rem;
-        border-radius: 8px;
-        flex: 1;
-        margin: 0 0.5rem;
-    }
+    .row > div { flex: 1; min-width: 220px; }
 
-    .player-piltover {
-        background: linear-gradient(135deg, #1e3c72, #2a5298);
-        border: 2px solid #00d4ff;
-    }
+    .label { color: #7bdff6; font-weight: 600; }
+    .value { color: #e6e6e6; }
 
-    .player-zaun {
-        background: linear-gradient(135deg, #4a0080, #8b008b);
-        border: 2px solid #ff00ff;
-    }
-
-    .evidence-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .evidence-section {
-        background: rgba(40, 40, 60, 0.6);
-        border-radius: 15px;
-        padding: 1.5rem;
-    }
-
-    .section-title {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-        text-align: center;
-    }
-
-    .facts-title {
-        color: #00d4ff;
-    }
-
-    .memories-title {
-        color: #ff00ff;
-    }
-
-    .evidence-item {
-        background: rgba(60, 60, 80, 0.8);
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .evidence-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
-    }
-
-    .evidence-item.selected {
-        border: 2px solid #00ff00;
-        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
-    }
-
-    .evidence-item.matched {
-        background: rgba(0, 255, 0, 0.2);
-        border: 2px solid #00ff00;
-        opacity: 0.6;
-        pointer-events: none;
-    }
-
-    .evidence-content {
-        color: #ffffff;
-        line-height: 1.6;
-    }
-
-    .evidence-id {
-        position: absolute;
-        top: 5px;
-        right: 10px;
-        background: rgba(100, 100, 120, 0.5);
-        padding: 2px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        color: #a0a0a0;
-    }
-
-    .silco-lies {
-        background: rgba(80, 20, 20, 0.8);
-        border: 2px solid #ff0000;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .lie-statement {
-        color: #ff6b6b;
-        font-size: 1.2rem;
-        font-style: italic;
-        margin-bottom: 1rem;
-        padding: 1rem;
-        background: rgba(40, 10, 10, 0.6);
-        border-left: 4px solid #ff0000;
-    }
-
-    .action-area {
+    .actions {
+        margin-top: 1.5rem;
         display: flex;
         justify-content: center;
-        gap: 2rem;
-        margin-top: 2rem;
-    }
-
-    .action-button {
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: 600;
-    }
-
-    .submit-button {
-        background: linear-gradient(135deg, #00d4ff, #00ff88);
-        color: #000;
-    }
-
-    .submit-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.5);
-    }
-
-    .submit-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .reset-button {
-        background: rgba(100, 100, 120, 0.5);
-        color: #fff;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 30px;
-        background: rgba(40, 40, 60, 0.8);
-        border-radius: 15px;
-        overflow: hidden;
-        margin-bottom: 2rem;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #00d4ff, #00ff88);
-        transition: width 0.5s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #000;
-        font-weight: bold;
-    }
-
-    .feedback-message {
-        text-align: center;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        font-size: 1.1rem;
-    }
-
-    .feedback-success {
-        background: rgba(0, 255, 0, 0.2);
-        border: 2px solid #00ff00;
-        color: #00ff88;
-    }
-
-    .feedback-error {
-        background: rgba(255, 0, 0, 0.2);
-        border: 2px solid #ff0000;
-        color: #ff6b6b;
-    }
-
-    .waiting-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .waiting-content {
-        background: rgba(40, 40, 60, 0.95);
-        padding: 3rem;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
-    }
-
-    .waiting-title {
-        font-size: 2rem;
-        color: #00d4ff;
-        margin-bottom: 1rem;
-    }
-
-    .loading-spinner {
-        width: 60px;
-        height: 60px;
-        border: 4px solid rgba(0, 212, 255, 0.3);
-        border-top: 4px solid #00d4ff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 2rem auto;
-    }
-
-    @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .continue-story-button {
         background: linear-gradient(135deg, #00d4ff, #ff00ff);
         color: white;
-        padding: 1.5rem 3rem;
-        font-size: 1.3rem;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
         border: none;
-        border-radius: 15px;
+        border-radius: 10px;
         cursor: pointer;
         font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        transition: all 0.3s ease;
-        margin: 2rem auto;
-        display: block;
-        box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
+        box-shadow: 0 5px 18px rgba(0, 212, 255, 0.35);
     }
 
-    .continue-story-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6);
+    .continue-story-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(0, 212, 255, 0.45);
     }
 
-    .victory-screen {
-        text-align: center;
-        padding: 3rem;
-        background: rgba(0, 255, 136, 0.1);
-        border-radius: 20px;
-        border: 2px solid #00ff88;
+    .continue-story-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .connecting {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #a0a0a0;
     }
 
-    .victory-title {
-        font-size: 3rem;
-        color: #00ff88;
-        margin-bottom: 1rem;
-        text-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+    .spinner {
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(0, 212, 255, 0.25);
+        border-top: 3px solid #00d4ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
     }
+
+    @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 
-<div class="puzzle-container">
+<div class="page-container">
     <div class="title-header">
         <h1>Truth Echo</h1>
-        <div class="subtitle">Uncover the truth together to counter Silco's lies</div>
+        <div class="subtitle">Final transition back to the story</div>
     </div>
 
-    @if (!isConnected)
-    {
-        <div class="waiting-overlay">
-            <div class="waiting-content">
-                <div class="waiting-title">Connecting to game...</div>
-                <div class="loading-spinner"></div>
-                <div style="color: #a0a0a0;">Please wait while we establish connection</div>
-            </div>
-        </div>
-    }
-    else if (!isInGame)
-    {
-        <div class="waiting-overlay">
-            <div class="waiting-content">
-                <div class="waiting-title">Waiting for Partner</div>
-                <div class="loading-spinner"></div>
-                <div style="color: #a0a0a0;">Game Code: @gameCode</div>
-                <div style="color: #a0a0a0; margin-top: 1rem;">Share this code with your partner</div>
-            </div>
-        </div>
-    }
-    else if (isPuzzleComplete)
-    {
-        <div class="game-area">
-            <div class="victory-screen">
-                <h2 class="victory-title">Truth Revealed!</h2>
-                <p style="color: #00ff88; font-size: 1.3rem; margin-bottom: 2rem;">
-                    You've successfully exposed Silco's lies and revealed the truth about that fateful night.
-                </p>
-                <p style="color: #a0a0a0; font-size: 1.1rem;">
-                    The evidence is undeniable. Jinx now knows what really happened...
-                </p>
-                @if (isStoryMode)
-                {
-                    <button class="continue-story-button" @onclick="ContinueStory">
-                        Continue Story
-                    </button>
-                }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="game-area">
-            <div class="player-info">
-                <div class="player-card player-piltover">
-                    <h3>@playerAName (Piltover)</h3>
-                    <div>Role: Factual Evidence</div>
-                </div>
-                <div class="player-card player-zaun">
-                    <h3>@playerBName (Zaun)</h3>
-                    <div>Role: Emotional Memories</div>
-                </div>
-            </div>
-
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: @((matchedPairs.Count * 100.0 / totalPairs))%">
-                    @matchedPairs.Count / @totalPairs Truths Revealed
-                </div>
-            </div>
-
-            @if (!string.IsNullOrEmpty(currentLie))
-            {
-                <div class="silco-lies">
-                    <h3 style="color: #ff0000; text-align: center; margin-bottom: 1rem;">Silco's Lie #@(currentLieIndex + 1)</h3>
-                    <div class="lie-statement">
-                        "@currentLie"
-                    </div>
-                    <div style="color: #a0a0a0; text-align: center;">
-                        Find the matching evidence and memory to counter this lie
-                    </div>
-                </div>
-            }
-
-            @if (!string.IsNullOrEmpty(feedbackMessage))
-            {
-                <div class="feedback-message @(isCorrectMatch ? "feedback-success" : "feedback-error")">
-                    @feedbackMessage
-                </div>
-            }
-
-            <div class="evidence-grid">
-                <div class="evidence-section">
-                    <h2 class="section-title facts-title">Factual Evidence</h2>
-                    @if (playerRole == "A" || playerRole == "Piltover")
+    <div class="status-card">
+        <div class="row">
+            <div>
+                <div class="label">Connection</div>
+                <div class="value">
+                    @if (isConnected)
                     {
-                        @foreach (var evidence in factualEvidence)
-                        {
-                            <div class="evidence-item @(selectedFactId == evidence.Id ? "selected" : "") @(matchedPairs.Contains(evidence.Id) ? "matched" : "")"
-                                 @onclick="() => SelectFact(evidence.Id)">
-                                <div class="evidence-id">F-@evidence.Id</div>
-                                <div class="evidence-content">@evidence.Content</div>
-                            </div>
-                        }
+                        <span>Connected</span>
                     }
                     else
                     {
-                        <div style="text-align: center; color: #666; padding: 3rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-                            <div>Only Player A can see factual evidence</div>
-                        </div>
-                    }
-                </div>
-
-                <div class="evidence-section">
-                    <h2 class="section-title memories-title">Emotional Memories</h2>
-                    @if (playerRole == "B" || playerRole == "Zaun")
-                    {
-                        @foreach (var memory in emotionalMemories)
-                        {
-                            <div class="evidence-item @(selectedMemoryId == memory.Id ? "selected" : "") @(matchedPairs.Contains(memory.Id) ? "matched" : "")"
-                                 @onclick="() => SelectMemory(memory.Id)">
-                                <div class="evidence-id">M-@memory.Id</div>
-                                <div class="evidence-content">@memory.Content</div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div style="text-align: center; color: #666; padding: 3rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-                            <div>Only Player B can see emotional memories</div>
-                        </div>
+                        <span class="connecting"><span class="spinner"></span> Connecting...</span>
                     }
                 </div>
             </div>
-
-            <div class="action-area">
-                <button class="action-button submit-button"
-                        @onclick="SubmitPairing"
-                        disabled="@(!canSubmit)">
-                    Submit Pairing
-                </button>
-                <button class="action-button reset-button"
-                        @onclick="ResetSelection">
-                    Clear Selection
-                </button>
+            <div>
+                <div class="label">Room</div>
+                <div class="value">@(!string.IsNullOrEmpty(gameCode) ? gameCode : "-")</div>
             </div>
-
-            @if (playerRole == "A" || playerRole == "Piltover")
-            {
-                <div style="text-align: center; color: #00d4ff; margin-top: 2rem;">
-                    @if (selectedFactId > 0)
-                    {
-                        <div>You've selected: Fact F-@selectedFactId</div>
-                        <div style="color: #a0a0a0;">Wait for your partner to select a memory</div>
-                    }
-                    else
-                    {
-                        <div>Select a piece of factual evidence</div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div style="text-align: center; color: #ff00ff; margin-top: 2rem;">
-                    @if (selectedMemoryId > 0)
-                    {
-                        <div>You've selected: Memory M-@selectedMemoryId</div>
-                        <div style="color: #a0a0a0;">Wait for your partner to select evidence</div>
-                    }
-                    else
-                    {
-                        <div>Select an emotional memory</div>
-                    }
-                </div>
-            }
+            <div>
+                <div class="label">Role</div>
+                <div class="value">@(!string.IsNullOrEmpty(playerRole) ? playerRole : preservedRole)</div>
+            </div>
         </div>
-    }
+
+        <div class="actions">
+            <button class="continue-story-button" @onclick="ContinueStory">
+                Continue Story
+            </button>
+        </div>
+    </div>
 </div>
 
 @code {
+    [Parameter] public string? Parameters { get; set; }
     private HubConnection? hubConnection;
-    private string gameCode = "";
-    private string playerRole = "";
-    private string playerAName = "Player A";
-    private string playerBName = "Player B";
     private bool isConnected = false;
-    private bool isInGame = false;
-    private bool isStoryMode = false;
-    private bool isPuzzleComplete = false;
-    private string preservedRole = "";
-    private string playerAvatar = "";
-    private string playerNameFromUrl = "";
+
+    // URL/Join parameters
+    private string gameCode = "";              // Unique roomId for final puzzle (squad + transition)
+    private string preservedRole = "";         // role from URL (piltover/zaun or A/B)
+    private string playerRole = "";            // effective role after join (canonical: piltover/zaun)
     private string squadName = "";
     private string transitionSource = "";
-
-    private List<EvidenceItem> factualEvidence = new();
-    private List<EvidenceItem> emotionalMemories = new();
-    private List<string> silcoLies = new();
-    private HashSet<int> matchedPairs = new();
-    
-    private int selectedFactId = 0;
-    private int selectedMemoryId = 0;
-    private int partnerFactId = 0;
-    private int partnerMemoryId = 0;
-    private string currentLie = "";
-    private int currentLieIndex = 0;
-    private int totalPairs = 6;
-    
-    private string feedbackMessage = "";
-    private bool isCorrectMatch = false;
-    private bool canSubmit => (playerRole == "A" || playerRole == "Piltover") ? 
-        (selectedFactId > 0 && partnerMemoryId > 0) : 
-        (selectedMemoryId > 0 && partnerFactId > 0);
-
-    private class EvidenceItem
-    {
-        public int Id { get; set; }
-        public string Content { get; set; } = "";
-        public int PairId { get; set; }
-    }
+    private bool isStoryMode = false;
+    private string playerNameFromUrl = "";
 
     protected override async Task OnInitializedAsync()
     {
-        InitializeEvidence();
         await SetupSignalR();
         ParseUrlParameters();
         await AutoConnect();
-    }
-
-    private void InitializeEvidence()
-    {
-        silcoLies = new List<string>
-        {
-            "The hex crystals you stole weren't powerful enough to cause that explosion.",
-            "The scientists were already dead when we found them - killed by enforcers.",
-            "Your bomb was too small to do real damage - someone else must have planted explosives.",
-            "The building was already compromised - it would have collapsed anyway.",
-            "Vi abandoned you because she never really cared about you.",
-            "You're not responsible for what happened - it was all part of Piltover's plan."
-        };
-
-        factualEvidence = new List<EvidenceItem>
-        {
-            new() { Id = 1, Content = "Enforcer report: 'Hextech residue matches crystals from Jayce's apartment - no additional cores found.'", PairId = 1 },
-            new() { Id = 2, Content = "Silco's ledger: 'Scientists acquired Days 3, 7, 12, 15 - Holding at secondary location - alive.'", PairId = 2 },
-            new() { Id = 3, Content = "Witness testimony: 'Single explosion origin point - no secondary charges detected.'", PairId = 3 },
-            new() { Id = 4, Content = "Building inspection: 'Structure was sound before incident - no prior damage recorded.'", PairId = 4 },
-            new() { Id = 5, Content = "Vi's enforcer statement: 'I never stopped searching for my sister - checked every lead for years.'", PairId = 5 },
-            new() { Id = 6, Content = "Heimerdinger's records: 'All prototype cores destroyed six months prior - only stolen crystals present.'", PairId = 6 }
-        };
-
-        emotionalMemories = new List<EvidenceItem>
-        {
-            new() { Id = 1, Content = "The blue glow from the monkey toy... it was so bright, brighter than any shimmer.", PairId = 1 },
-            new() { Id = 2, Content = "Silco's voice: 'Don't worry about them, they're... taken care of.' But his eyes looked away.", PairId = 2 },
-            new() { Id = 3, Content = "The sound... just one explosion, then silence. No other booms, just my bomb.", PairId = 3 },
-            new() { Id = 4, Content = "Days before, Vander checked that building. 'Solid as the day it was built,' he said.", PairId = 4 },
-            new() { Id = 5, Content = "Vi's tears when she left... 'I'll come back for you, I promise!' She was sobbing.", PairId = 5 },
-            new() { Id = 6, Content = "Jayce's crystals in my hand, humming with power. 'These could power a city,' Mylo had joked.", PairId = 6 }
-        };
-
-        currentLie = silcoLies[0];
-        currentLieIndex = 0;
     }
 
     private async Task SetupSignalR()
@@ -594,99 +173,20 @@
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
 
-        hubConnection.On<string, string>("PlayerJoined", async (role, name) =>
+        // Minimal events: redirect + joined
+        hubConnection.On<string>("RedirectToNextScene", async (url) =>
         {
-            if (role == "A")
-            {
-                playerAName = name;
-            }
-            else
-            {
-                playerBName = name;
-            }
-            
-            if (!string.IsNullOrEmpty(playerAName) && playerAName != "Player A" &&
-                !string.IsNullOrEmpty(playerBName) && playerBName != "Player B")
-            {
-                isInGame = true;
-            }
-            
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(() => Navigation.NavigateTo(url, forceLoad: true));
         });
 
-        hubConnection.On<int>("PartnerSelectedFact", async (factId) =>
+        hubConnection.On<string>("RedirectToAct1", async (url) =>
         {
-            partnerFactId = factId;
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(() => Navigation.NavigateTo(url, forceLoad: true));
         });
 
-        hubConnection.On<int>("PartnerSelectedMemory", async (memoryId) =>
+        hubConnection.On<string, string>("PlayerJoined", (role, name) =>
         {
-            partnerMemoryId = memoryId;
-            await InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<bool, string>("PairingResult", async (success, message) =>
-        {
-            isCorrectMatch = success;
-            feedbackMessage = message;
-            
-            if (success)
-            {
-                matchedPairs.Add(selectedFactId);
-                matchedPairs.Add(selectedMemoryId);
-                
-                if (matchedPairs.Count >= totalPairs * 2)
-                {
-                    isPuzzleComplete = true;
-                    feedbackMessage = "All truths revealed! Silco's lies have been exposed!";
-                }
-                else
-                {
-                    currentLieIndex = matchedPairs.Count / 2;
-                    if (currentLieIndex < silcoLies.Count)
-                    {
-                        currentLie = silcoLies[currentLieIndex];
-                    }
-                }
-                
-                selectedFactId = 0;
-                selectedMemoryId = 0;
-                partnerFactId = 0;
-                partnerMemoryId = 0;
-            }
-            
-            await InvokeAsync(StateHasChanged);
-            
-            if (!string.IsNullOrEmpty(feedbackMessage))
-            {
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(3000);
-                    feedbackMessage = "";
-                    await InvokeAsync(StateHasChanged);
-                });
-            }
-        });
-
-        hubConnection.On("PuzzleCompleted", async () =>
-        {
-            isPuzzleComplete = true;
-            await InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On("ResetPuzzle", async () =>
-        {
-            matchedPairs.Clear();
-            selectedFactId = 0;
-            selectedMemoryId = 0;
-            partnerFactId = 0;
-            partnerMemoryId = 0;
-            currentLieIndex = 0;
-            currentLie = silcoLies[0];
-            feedbackMessage = "";
-            isPuzzleComplete = false;
-            await InvokeAsync(StateHasChanged);
+            // If both players needed, server validates; here we just ensure join state is acknowledged
         });
 
         try
@@ -696,37 +196,41 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error connecting to hub: {ex.Message}");
+            Console.WriteLine($"[FinalPuzzle] Hub start failed: {ex.Message}");
         }
     }
 
     private void ParseUrlParameters()
     {
-        var uri = new Uri(Navigation.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        
-        var codeParam = query["code"]; // optional legacy
-        var roleParam = query["role"]; // piltover/zaun
-        var avatar = query["avatar"]; // optional
-        var name = query["name"]; // display name
-        var squad = query["squad"]; // original squad
-        var story = query["story"]; // "true"
-        var transition = query["transition"]; // FromWarehouse
-        
-        if (!string.IsNullOrEmpty(roleParam)) preservedRole = roleParam;
-        if (!string.IsNullOrEmpty(avatar)) playerAvatar = avatar;
-        if (!string.IsNullOrEmpty(name)) playerNameFromUrl = Uri.UnescapeDataString(name);
-        if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
-        if (!string.IsNullOrEmpty(transition)) transitionSource = transition;
-        if (story == "true") isStoryMode = true;
-        
-        if (!string.IsNullOrEmpty(codeParam))
+        try
         {
-            gameCode = codeParam;
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+            var codeParam = query["code"]; // optional legacy/manual
+            preservedRole = query["role"] ?? preservedRole;
+            var name = query["name"];
+            var squad = query["squad"];
+            var story = query["story"];
+            transitionSource = query["transition"] ?? transitionSource;
+
+            if (!string.IsNullOrEmpty(name)) playerNameFromUrl = Uri.UnescapeDataString(name);
+            if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
+            isStoryMode = story == "true";
+
+            // Prefer explicit room code if provided; otherwise build unique room id (squad + transition)
+            if (!string.IsNullOrEmpty(codeParam))
+            {
+                gameCode = codeParam;
+            }
+            else if (isStoryMode && !string.IsNullOrEmpty(squadName))
+            {
+                gameCode = !string.IsNullOrEmpty(transitionSource) ? $"{squadName}_{transitionSource}" : squadName;
+            }
         }
-        else if (isStoryMode && !string.IsNullOrEmpty(squadName))
+        catch (Exception ex)
         {
-            gameCode = !string.IsNullOrEmpty(transitionSource) ? $"{squadName}_{transitionSource}" : squadName;
+            Console.WriteLine($"[FinalPuzzle] Error parsing URL: {ex.Message}");
         }
     }
 
@@ -734,159 +238,59 @@
     {
         if (!isConnected) return;
         await Task.Delay(300);
-        if (!string.IsNullOrEmpty(gameCode))
-        {
-            if (!string.IsNullOrEmpty(preservedRole))
-            {
-                // Prefer role-aware join; send name as well if hub supports it
-                await JoinGameWithRole(gameCode, preservedRole);
-            }
-            else
-            {
-                await JoinGame(gameCode);
-            }
-            isInGame = true; // hide any lobby overlays in story mode
-        }
-    }
+        if (string.IsNullOrEmpty(gameCode)) return;
 
-    private async Task CreateGame()
-    {
-        if (hubConnection is not null)
-        {
-            try
-            {
-                var result = await hubConnection.InvokeAsync<string>("CreateFinalPuzzle");
-                if (!string.IsNullOrEmpty(result))
-                {
-                    gameCode = result;
-                    playerRole = "A";
-                    playerAName = "You";
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error creating game: {ex.Message}");
-            }
-        }
-    }
+        // Use room-based lobby like other puzzles; store role/name for personalized redirects
+        var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
+        var canonicalRole = CanonicalizeRole(preservedRole);
 
-    private async Task JoinGame(string code)
-    {
-        if (hubConnection is not null)
-        {
-            try
-            {
-                var joined = await hubConnection.InvokeAsync<bool>("JoinFinalPuzzle", code);
-                if (joined)
-                {
-                    gameCode = code;
-                    playerRole = "B";
-                    playerBName = "You";
-                    isInGame = true;
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error joining game: {ex.Message}");
-            }
-        }
-    }
+        await hubConnection.SendAsync("JoinRoom", gameCode, displayName);
+        await hubConnection.SendAsync("UpdateLobbyPlayerInfo", gameCode, canonicalRole, "1", displayName);
 
-    private async Task JoinGameWithRole(string code, string role)
-    {
-        if (hubConnection is not null)
-        {
-            try
-            {
-                var joined = await hubConnection.InvokeAsync<bool>("JoinFinalPuzzleWithRole", code, role);
-                if (joined)
-                {
-                    gameCode = code;
-                    playerRole = role;
-                    
-                    if (role == "A" || role == "Piltover")
-                    {
-                        playerAName = string.IsNullOrEmpty(playerNameFromUrl) ? "You" : playerNameFromUrl;
-                    }
-                    else
-                    {
-                        playerBName = string.IsNullOrEmpty(playerNameFromUrl) ? "You" : playerNameFromUrl;
-                    }
-                    
-                    isInGame = true;
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error joining game with role: {ex.Message}");
-            }
-        }
-    }
-
-    private async Task SelectFact(int factId)
-    {
-        if ((playerRole == "A" || playerRole == "Piltover") && !matchedPairs.Contains(factId))
-        {
-            selectedFactId = factId;
-            if (hubConnection is not null)
-            {
-                await hubConnection.SendAsync("SelectFact", gameCode, factId);
-            }
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private async Task SelectMemory(int memoryId)
-    {
-        if ((playerRole == "B" || playerRole == "Zaun") && !matchedPairs.Contains(memoryId))
-        {
-            selectedMemoryId = memoryId;
-            if (hubConnection is not null)
-            {
-                await hubConnection.SendAsync("SelectMemory", gameCode, memoryId);
-            }
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private async Task SubmitPairing()
-    {
-        if (canSubmit && hubConnection is not null)
-        {
-            int factToSubmit = (playerRole == "A" || playerRole == "Piltover") ? selectedFactId : partnerFactId;
-            int memoryToSubmit = (playerRole == "B" || playerRole == "Zaun") ? selectedMemoryId : partnerMemoryId;
-            
-            await hubConnection.SendAsync("SubmitPairing", gameCode, factToSubmit, memoryToSubmit);
-        }
-    }
-
-    private async Task ResetSelection()
-    {
-        selectedFactId = 0;
-        selectedMemoryId = 0;
-        if (hubConnection is not null)
-        {
-            if (playerRole == "A" || playerRole == "Piltover")
-            {
-                await hubConnection.SendAsync("SelectFact", gameCode, 0);
-            }
-            else
-            {
-                await hubConnection.SendAsync("SelectMemory", gameCode, 0);
-            }
-        }
+        playerRole = canonicalRole;
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task ContinueStory()
     {
-        if (hubConnection is not null && isStoryMode)
+        if (hubConnection is null) return;
+        try
         {
-            await hubConnection.SendAsync("ContinueFromFinalPuzzle", gameCode, playerRole);
+            var originalRoomId = gameCode;
+            var originalSquad = string.IsNullOrEmpty(squadName)
+                ? (gameCode.Contains("_") ? gameCode.Substring(0, gameCode.IndexOf("_")) : gameCode)
+                : squadName;
+            var targetStoryLobby = $"{originalSquad}_FromFinalPuzzle";
+            var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
+            var canonicalRole = string.IsNullOrEmpty(playerRole) ? CanonicalizeRole(preservedRole) : playerRole;
+
+            // Scene 16 (truth_revealed) -> sceneIndex 22
+            await hubConnection.SendAsync(
+                "RedirectPlayersToAct1WithScene",
+                originalRoomId,
+                targetStoryLobby,
+                canonicalRole,
+                "1",
+                displayName,
+                22
+            );
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FinalPuzzle] ContinueStory error: {ex.Message}");
+        }
+    }
+
+    private static string CanonicalizeRole(string role)
+    {
+        return (role ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "piltover" => "piltover",
+            "a" => "piltover",
+            "zaun" => "zaun",
+            "b" => "zaun",
+            _ => "piltover"
+        };
     }
 
     public async ValueTask DisposeAsync()
