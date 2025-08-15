@@ -1109,6 +1109,55 @@ public class GameHub : Hub
         }
     }
 
+    public async Task ContinueStoryAfterRuneProtocol(string roomId)
+    {
+        try
+        {
+            if (!_runeProtocolGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("RuneProtocolInvalidAction", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("RuneProtocolInvalidAction", "Both players needed for story continuation");
+                return;
+            }
+
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromRuneProtocol";
+
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var view = game.GetPlayerView(connectionId);
+                var roleName = view.Role.ToLower();
+                var playerName = view.DisplayName;
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=17&transition=FromRuneProtocol";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            // Send redirects to both players
+            var tasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    tasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryAfterRuneProtocol: {ex.Message}");
+            await Clients.Caller.SendAsync("RuneProtocolInvalidAction", $"Error continuing story: {ex.Message}");
+        }
+    }
+
 
     public async Task AdvanceRuneProtocolLevel(string roomId)
     {
@@ -1467,6 +1516,55 @@ public class GameHub : Hub
             }
             
             await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+        }
+    }
+
+    public async Task ContinueStoryAfterWordForge(string roomId)
+    {
+        try
+        {
+            if (!_wordForgeGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("WordForgeInvalidAction", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("WordForgeInvalidAction", "Both players needed for story continuation");
+                return;
+            }
+
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromWordForge";
+
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var view = game.GetPlayerView(connectionId);
+                var roleName = view.Role.ToLower();
+                var playerName = view.DisplayName;
+                // After WordForge we go back to VN at the next scene index (bomb_defused + 1 => word_forge_transition already advanced; go to next VN scene index 18)
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=18&transition=FromWordForge";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+            }
+
+            var tasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    tasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryAfterWordForge: {ex.Message}");
+            await Clients.Caller.SendAsync("WordForgeInvalidAction", $"Error continuing story: {ex.Message}");
         }
     }
 
@@ -4213,6 +4311,7 @@ public class NavigationMazeGame
 public class RuneProtocolGame
 {
     public enum PlayerRole { Piltover, Zaunite }
+    private readonly object _gate = new();
     
     // Multi-level logic puzzle system with your specific puzzle
     private static readonly Arcane_Coop.Models.RuneProtocolLevel[] LevelBank = new[]
@@ -4302,61 +4401,68 @@ public class RuneProtocolGame
     
     public PlayerRole? AddPlayer(string connectionId, string playerName)
     {
-        if (Players.TryGetValue(connectionId, out var existingRole))
+        lock (_gate)
         {
-            return existingRole;
+            if (Players.TryGetValue(connectionId, out var existingRole))
+            {
+                return existingRole;
+            }
+            
+            if (Players.Count >= 2) return null;
+            
+            var piltoverTaken = Players.Values.Contains(PlayerRole.Piltover);
+            var role = piltoverTaken ? PlayerRole.Zaunite : PlayerRole.Piltover;
+            Players[connectionId] = role;
+            PlayerNames[connectionId] = playerName;
+            return role;
         }
-        
-        if (Players.Count >= 2) return null;
-        
-        var role = Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
-        Players[connectionId] = role;
-        PlayerNames[connectionId] = playerName;
-        return role;
     }
 
     // Overload that tries to honor a requested role if available
     public PlayerRole? AddPlayer(string connectionId, string playerName, PlayerRole requested)
     {
-        if (Players.TryGetValue(connectionId, out var existingRole))
+        lock (_gate)
         {
-            return existingRole;
+            if (Players.TryGetValue(connectionId, out var existingRole))
+            {
+                return existingRole;
+            }
+
+            if (Players.Count >= 2) return null;
+
+            bool piltoverTaken = Players.Values.Contains(PlayerRole.Piltover);
+            bool zaunTaken = Players.Values.Contains(PlayerRole.Zaunite);
+
+            PlayerRole? assigned = null;
+            if (requested == PlayerRole.Piltover && !piltoverTaken) assigned = PlayerRole.Piltover;
+            else if (requested == PlayerRole.Zaunite && !zaunTaken) assigned = PlayerRole.Zaunite;
+            else if (!piltoverTaken) assigned = PlayerRole.Piltover;
+            else if (!zaunTaken) assigned = PlayerRole.Zaunite;
+
+            if (assigned == null) return null;
+
+            Players[connectionId] = assigned.Value;
+            PlayerNames[connectionId] = playerName;
+            return assigned.Value;
         }
-
-        if (Players.Count >= 2) return null;
-
-        // Determine if requested role is already taken
-        bool piltoverTaken = Players.Values.Contains(PlayerRole.Piltover);
-        bool zaunTaken = Players.Values.Contains(PlayerRole.Zaunite);
-
-        PlayerRole assigned;
-        if (requested == PlayerRole.Piltover)
-        {
-            assigned = piltoverTaken ? (zaunTaken ? (PlayerRole?)null : PlayerRole.Zaunite) ?? (PlayerRole)PlayerRole.Zaunite : PlayerRole.Piltover;
-        }
-        else // requested Zaunite
-        {
-            assigned = zaunTaken ? (piltoverTaken ? (PlayerRole?)null : PlayerRole.Piltover) ?? (PlayerRole)PlayerRole.Piltover : PlayerRole.Zaunite;
-        }
-
-        // If both roles taken, cannot join
-        if (Players.Count >= 2) return null;
-
-        Players[connectionId] = assigned;
-        PlayerNames[connectionId] = playerName;
-        return assigned;
     }
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
-        return removed;
+        lock (_gate)
+        {
+            var removed = Players.Remove(connectionId);
+            PlayerNames.Remove(connectionId);
+            return removed;
+        }
     }
 
     public List<string> GetConnectedPlayers()
     {
-        return Players.Keys.ToList();
+        lock (_gate)
+        {
+            return Players.Keys.ToList();
+        }
     }
 
     public (bool Success, string Message) ToggleRune(string connectionId, int runeIndex)

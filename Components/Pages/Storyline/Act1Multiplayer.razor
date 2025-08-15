@@ -765,7 +765,7 @@
         Console.WriteLine($"[Act1Multiplayer] GetFallbackTransitionUrl called - Using stored scene index: {currentSceneIndex}");
         
         // Updated story progression - matches Act1MultiplayerGame.StoryProgression
-        var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition", "radio_decoded", "renni_apartment", "code_cracker_transition", "code_decoded", "shimmer_factory_entrance", "navigation_maze_transition", "empty_cells", "alchemy_lab_transition", "tracer_complete", "following_jinx_trail", "jayce_workshop_arrival", "bomb_discovery", "rune_protocol_transition" };
+        var storyProgression = new[] { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition", "radio_decoded", "renni_apartment", "code_cracker_transition", "code_decoded", "shimmer_factory_entrance", "navigation_maze_transition", "empty_cells", "alchemy_lab_transition", "tracer_complete", "following_jinx_trail", "jayce_workshop_arrival", "bomb_discovery", "rune_protocol_transition", "bomb_defused", "word_forge_transition", "gauntlets_complete" };
         
         if (nextSceneIndex < storyProgression.Length)
         {
@@ -780,6 +780,7 @@
                 "navigation_maze_transition" => $"/navigation-maze?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene6",
                 "alchemy_lab_transition" => $"/alchemy-lab?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromEmptyCells",
                 "rune_protocol_transition" => $"/rune-protocol?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromJayceWorkshop",
+                "word_forge_transition" => $"/word-forge?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromBombDefused",
                 _ => $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2" // Fallback to Picture Explanation as last resort
             };
             

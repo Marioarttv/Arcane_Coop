@@ -1,319 +1,108 @@
-Scene 15: Approaching the Warehouse
-Scene ID: warehouse_approach
+Scene 14: The Atlas Gauntlets Complete
+Scene ID: gauntlets_complete
 Layout: Dual Characters
-Theme: Zaun
-Location: Abandoned Warehouse District
-Return to the Past
-Vi (Stopping at entrance):
+Theme: Piltover
+Success
+[The gauntlets pulse with blue Hextech energy]
+Jayce (Triumphant):
 
-"This is it. Where everything went wrong seven years ago."
+"It worked! The calibration is perfect!"
 
-Caitlyn (Placing hand on Vi's shoulder):
+Vi (Putting them on):
 
-"Are you sure you're ready for this?"
+"They're... incredible. I can feel the power."
 
-Vi (Steeling herself):
+[Vi flexes her fingers, the gauntlets responding instantly]
+Caitlyn (Impressed):
 
-"I have to be. For Powder."
+"The way they move... it's like they're part of you."
 
-[Player A Name] (Looking around):
+[Player A Name] (Proud):
 
-"The place looks different. More run down, but... there are lights inside."
+"We did it. We actually did it."
 
-[Player B Name] (Noticing):
+[Player B Name] (Relieved):
 
-"Fresh shimmer tracks everywhere. Multiple sets. Jinx has been here a lot."
+"Now we have a fighting chance against Jinx's weapon."
 
-Voices Inside
-[They creep closer, hearing voices through broken windows]
-Jinx's Voice (Muffled but audible):
+The Moment of Truth
+Jayce (Serious):
 
-"It's ready, Silco! The weapon that'll make them pay for what they did to Vander!"
+"These gauntlets can absorb Hextech energy and redirect it. But Vi, you need to be careful."
 
-Silco's Voice (Calm):
+Vi (Testing them):
 
-"Excellent work, Jinx. With the scientists' cooperation, we finally have all the pieces."
+"They feel right. Like they were meant for me."
 
-Vi (Whispering, shocked):
+Jayce (Quietly):
 
-"Scientists' cooperation? But she thinks they're dead..."
+"Viktor would say... use them to protect, not just to punish. I hope he recovers in time to see them in action."
 
-Caitlyn (Whispering):
+Vi (Solemn):
 
-"Listen..."
+"I know what I have to do. Protect the family. Protect Powder, even from herself."
 
-The Fatal Slip
-Jinx's Voice (Confused):
+New Information
+[Player A's radio crackles urgently]
+Radio Voice:
 
-"Cooperation? But... you said they fled. You said they were gone."
+"All units... disturbance at warehouse district... reports of... Silco's men moving... large gathering..."
 
-Silco's Voice (Trying to recover):
+Caitlyn (Alert):
 
-"I meant their notes, their research—"
+"The warehouse district? That's where—"
 
-Jinx's Voice (Rising):
+Vi (Realizing):
 
-"You said they DISAPPEARED. That they were too scared to face justice. But cooperation means... where are they, Silco? WHERE ARE THEY?"
+"Where Vander died. Where it all went wrong."
 
-[Player A Name] (Whispering):
+[Player A Name] (Listening):
 
-"She's figuring it out."
+"They're saying something about a meeting. Silco and... someone else."
 
-[Player B Name] (Urgent):
+[Player B Name] (Worried):
 
-"We need to get in there."
+"You think it's Jinx?"
 
-Entering the Warehouse
-[Vi kicks open the door]
-Vi (Loud):
+The Final Push
+Vi (Determined):
 
-"Powder!"
+"It has to be. She's going back to where it all started."
 
-[Inside: Jinx spins around, weapon in hand. Silco stands near a table covered in papers]
-Jinx (Shocked, then angry):
+Caitlyn (Strategic):
 
-"Vi?! What are you doing here? And with... with THEM?"
+"This could be our chance. If we can get there before—"
 
-[Gestures at Caitlyn and the players]
-Silco (Composed but tense):
+Vi (Already moving):
 
-"Well. The prodigal sister returns."
+"Before she does something she can't take back. Let's go."
 
-The Standoff
-Caitlyn (Weapon raised):
+Jayce (Warning):
 
-"Put the weapon down, Jinx."
+"Be careful! The gauntlets are powerful but they're not invincible!"
 
-Jinx (Laughing manically):
+[Player A Name] (Following):
 
-"Jinx? JINX?! Even you're calling me that now, Vi?"
+"We're with you, Vi."
 
-Vi (Desperate):
+[Player B Name] (Determined):
 
-"Powder, please. You need to listen—"
+"All the way. Let's finish this."
 
-Jinx (Screaming):
+Vi (Looking at gauntlets):
 
-"DON'T call me that! Powder's DEAD! You left her to die!"
+"Hold on, Powder. I'm coming. This time, I won't let you down."
 
-Vi (Pleading):
 
-"I didn't leave you! I was taken! Marcus arrested me that night!"
-
-The Truth Begins
-Jinx (Faltering):
-
-"No... no, you abandoned me. You said I was a jinx and you LEFT!"
-
-Silco (Interjecting):
-
-"Jinx, don't listen to her. She's trying to confuse you—"
-
-[Player A Name] (Stepping forward):
-
-"We have proof! Evidence about what really happened that night!"
-
-[Player B Name] (Supporting):
-
-"About the warehouse, about the explosion. The real truth."
-
-Jinx (Conflicted):
-
-"Shut up! SHUT UP! Silco told me the truth! The scientists stored Hextech cores! They killed Vander!"
-
-Setting Up the Revelation
-Vi (Firm):
-
-"That's a lie, Powder. And we can prove it."
-
-Caitlyn (To players):
-
-"Show her. Show her everything we found."
-
-[Player A Name] (Determined):
-
-"We've collected evidence from all over the city."
-
-[Player B Name] (Ready):
-
-"Police reports, witness accounts, scientific records."
-
-Jinx (Wavering):
-
-"I don't... I don't want to hear this..."
-
-Vi (Gentle but urgent):
-
-"You need to. Please, Powder. Just look at the evidence."
-
-
-Detective Puzzle Setup
-Scene 16: The Truth About That Night
-Scene ID: truth_revealed
-Layout: Special Evidence Display
-Theme: Zaun
-Presenting the Evidence
-[Player A Name] (Showing first piece):
-
-"Enforcer report from that night: 'Hextech residue detected matches signature of crystals stolen from Jayce Talis apartment - no additional cores found.'"
-
-Jinx (Shaking):
-
-"That's... that's not possible..."
-
-[Player B Name] (Showing second piece):
-
-"Witness account: 'Blue-haired girl ran toward warehouse carrying a monkey toy with blue glow.'"
-
-Jinx (Defensive):
-
-"They're lying! They have to be lying!"
-
-More Evidence
-[Player A Name] (Continuing):
-
-"Jayce's testimony: 'The crystals they stole were more than enough to cause that explosion. Those were refined, concentrated Hextech.'"
-
-Silco (Trying to intervene):
-
-"Jinx, these are fabrications—"
-
-[Player B Name] (Showing ledger):
-
-"Silco's own ledger: 'Scientists acquired Days 3, 7, 12, 15 - Holding at secondary location - alive for questioning.'"
-
-Jinx (To Silco):
-
-"Alive? You said they were dead! You said they fled!"
-
-The Critical Evidence
-[Player A Name] (Final piece):
-
-"Heimerdinger's sealed records: 'All prototype cores from failed experiments destroyed six months prior to incident.'"
-
-[Player B Name] (Final revelation):
-
-"Renni's notes: 'We warned them about hex crystal instability with chemical compounds - they ignored us. We tried to prevent accidents like this.'"
-
-The Breaking Point
-Vi (Stepping closer):
-
-"Your bomb worked, Powder. The hex crystals you put in it... they were enough. More than enough."
-
-Jinx (Breaking down):
-
-"No... no, the crystals weren't strong enough... Silco said they weren't enough..."
-
-Silco (Desperate):
-
-"Jinx, they're lying. Your bomb was small, the crystals were just—"
-
-Jayce's Voice (If present via recording or Player A reading):
-
-"Those crystals could power an entire mining operation. In a bomb... I'm sorry."
-
-The Complete Breakdown
-Jinx (Dropping weapon, clutching head):
-
-"The voices said... Mylo said it wasn't... but it WAS! IT WAS ME!"
-
-[She sees hallucinations intensifying]
-Jinx (Screaming):
-
-"I put the crystals in! I made it work! I MADE IT WORK TOO WELL!"
-
-Vi (Reaching out):
-
-"Powder—"
-
-Jinx (Hysterical):
-
-"All this time... all these people... for nothing... for a LIE!"
-
-Confronting Silco
-Jinx (Whirling on Silco):
-
-"You KNEW! You let me believe—"
-
-Silco (Finally honest):
-
-"I was protecting you! The guilt would have destroyed you!"
-
-Jinx (Rage and pain):
-
-"So you let me destroy THEM instead?!"
-
-[Player A Name] (Urgent):
-
-"The scientists are still alive, Jinx. You can still save them."
-
-[Player B Name] (Hopeful):
-
-"It's not too late to make this right."
-
-The Choice
-Vi (Emotional):
-
-"Powder, I know the truth hurts. But you're not alone. You never were."
-
-Jinx (Sobbing):
-
-"I killed them... Mylo, Claggor, Vander... I killed them all..."
-
-Silco (Soft):
-
-"You're perfect, Jinx. Even now—"
-
-Jinx (Screaming):
-
-"STOP LYING TO ME!"
-
-[She grabs her weapon, pointing it wildly at everyone]
-Player Choice Moment
-Caitlyn (To players):
-
-"We need to help her. What do we do?"
-
-Choice for Player A:
-Text Options:
-
-"Help Silco escape - he knows where the scientists are"
-"Try to calm Jinx down with words"
-"Secure the weapon before she hurts someone"
-
-Choice for Player B:
-Text Options:
-
-"Get between Vi and Jinx to protect them both"
-"Find and free the scientists while everyone's distracted"
-"Call for enforcer backup"
-
-The Resolution
-Vi (Based on choices, either comforting or desperate):
-
-"Powder, please. Whatever happens next, know that I never stopped loving you. I never stopped looking for you."
-
-Jinx (Depending on player choices):
-
-"It's too late, Vi. Powder's gone. There's only Jinx now."
-
-[Or if players chose well]
-Jinx (Broken but listening):
-
-"Vi... I... I don't know who I am anymore..."
-
-
-Scene Transition
-Outcome Varies Based on Choices:
-
-Path A: Jinx flees, leaving weapon behind
-Path B: Jinx surrenders, accepting help
-Path C: Silco escapes with/without Jinx
-
+Transition to Final Act
+Scene Transition: Racing to the warehouse district
+Next Scene: The confrontation with Silco and Jinx
+Equipment: Vi now has Atlas Gauntlets
+Stakes: Maximum - the truth must be revealed
 Technical Notes
 
-Detective Puzzle Complete: Truth revealed about warehouse explosion
-Major Revelation: Jinx learns she was responsible
-Silco's Deception: Exposed and confronted
-Player Agency: Final choices affect ending
-Emotional Climax: Vi and Jinx's relationship at breaking point
+Rune Protocol Complete: Bomb successfully defused
+Word Forge Complete: Atlas Gauntlets calibrated and equipped
+Final Destination: Warehouse where Vander died
+Emotional Peak: Vi prepared to face her sister with new tools
+Players' Role: Proven themselves capable, ready for final challenge

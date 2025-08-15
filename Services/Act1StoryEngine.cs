@@ -17,6 +17,8 @@ namespace Arcane_Coop.Services
         VisualNovelScene CreateFollowingJinxTrailScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateJayceWorkshopArrivalScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateBombDiscoveryScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateBombDefusedScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateGauntletsCompleteScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -2825,6 +2827,163 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
+        public VisualNovelScene CreateBombDefusedScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "bomb_defused",
+                Name = "After the Crisis",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Piltover
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" }
+            });
+
+            scene.DialogueLines.AddRange(new List<DialogueLine>
+            {
+                // Relief and Realization
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 13: After the Crisis", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[The bomb powers down with a mechanical whir]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = "Oh thank the gods. I thought we were all dead.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "She could have killed us all. But she didn't.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "This was a demonstration. She's showing us what she's capable of.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "That was too close.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Is it really safe now?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "The mechanism's completely inactive. We did it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Next Problem
+                new DialogueLine { CharacterId = "narrator", Text = "The Next Problem", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "But she still has your notes. She can build her weapon.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "With my stabilization formulas and the old unstable cores? She could create something devastating.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Then we need to be ready to counter it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+            
+                // The Gauntlets
+                new DialogueLine { CharacterId = "narrator", Text = "The Gauntlets", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = "Wait... Viktor and I were developing something. The Atlas Gauntlets.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Gauntlets?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "They can absorb and redirect Hextech energy. In theory, they could counter Jinx's weapon.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Then let's use them!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "They're not calibrated! Viktor was supposed to help with the resonance frequencies, but he's too ill.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Vi's Decision
+                new DialogueLine { CharacterId = "narrator", Text = "Vi's Decision", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "I'll wear them.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Vi, untested Hextech could be dangerous…", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "vi", Text = "I don't care. If it gives me a chance to stop her... to save her... I'll take the risk.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "The calibration process is complex. I'll need help. I can't do it alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "Tell us what to do.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "We've come this far. We're not stopping now.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Setting Up the Forge
+                new DialogueLine { CharacterId = "narrator", Text = "Setting Up the Forge", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = "The gauntlets are here, in the prototype vault. They're almost complete, just need final calibration.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "[He retrieves massive metal gauntlets, humming with dormant energy]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "They're beautiful.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "But deadly if miscalibrated. We need to input the exact forging sequence.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "You two have been incredible so far. Can you handle this?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "Just tell me what to look for.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "I'm ready at the interface.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Calibration Process
+                new DialogueLine { CharacterId = "narrator", Text = "The Calibration Process", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = $"{piltoverPlayerName}, I'll give you the engineering specifications. You'll need to relay them.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = $"{zaunPlayerName}, you'll input the commands at the forge based on those specifications.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "How long will this take?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Not long if we do it right. Too long if we do it wrong and have to start over.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "You can do this. Both of you. I've seen what you're capable of.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                new DialogueLine { CharacterId = "narrator", Text = "Word Forge Puzzle", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Bomb Defused scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
+        public VisualNovelScene CreateGauntletsCompleteScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "gauntlets_complete",
+                Name = "The Atlas Gauntlets Complete",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Piltover
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
+
+            scene.DialogueLines.AddRange(new List<DialogueLine>
+            {
+                // Success
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 14: The Atlas Gauntlets Complete", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[The gauntlets pulse with blue Hextech energy]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = "It worked! The calibration is perfect!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "They're... incredible. I can feel the power.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "[Vi flexes her fingers, the gauntlets responding instantly]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "The way they move... it's like they're part of you.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "We did it. We actually did it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Now we have a fighting chance against Jinx's weapon.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Moment of Truth
+                new DialogueLine { CharacterId = "narrator", Text = "The Moment of Truth", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "jayce", Text = "These gauntlets can absorb Hextech energy and redirect it. But Vi, you need to be careful.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "They feel right. Like they were meant for me.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Viktor would say... use them to protect, not just to punish. I hope he recovers in time to see them in action.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "I know what I have to do. Protect the family. Protect Powder, even from herself.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // New Information
+                new DialogueLine { CharacterId = "narrator", Text = "[Player A's radio crackles urgently]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Radio Voice:", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "\"All units... disturbance at warehouse district... reports of... Silco's men moving... large gathering...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "The warehouse district? That's where—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Where Vander died. Where it all went wrong.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "They're saying something about a meeting. Silco and... someone else.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "You think it's Jinx?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Final Push
+                new DialogueLine { CharacterId = "narrator", Text = "The Final Push", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "It has to be. She's going back to where it all started.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "caitlyn", Text = "This could be our chance. If we can get there before—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Before she does something she can't take back. Let's go.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Be careful! The gauntlets are powerful but they're not invincible!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "We're with you, Vi.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "All the way. Let's finish this.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Hold on, Powder. I'm coming. This time, I won't let you down.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Transition
+                new DialogueLine { CharacterId = "narrator", Text = "Transition: Racing to the warehouse district", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Gauntlets Complete scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -3152,6 +3311,51 @@ namespace Arcane_Coop.Services
                         }
                         result.RedirectUrlsByPlayerId = runeUrls;
                         Console.WriteLine($"[Act1StoryEngine] Initiating transition to Rune Protocol");
+                        break;
+
+                    case "bomb_defused":
+                        // Move to Scene 13 (After the Crisis)
+                        game.CurrentScene = CreateBombDefusedScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Bomb Defused scene");
+                        break;
+
+                    case "word_forge_transition":
+                        // Transition to Word Forge puzzle (Gauntlet Calibration)
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Word Forge";
+
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+
+                        // Build per-player redirect URLs to Word Forge
+                        var wordForgeUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters =
+                                $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromBombDefused";
+                            wordForgeUrls[p.PlayerId] = $"/word-forge?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = wordForgeUrls;
+                        Console.WriteLine($"[Act1StoryEngine] Initiating transition to Word Forge");
+                        break;
+
+                    case "gauntlets_complete":
+                        // Move to Scene 14 (Gauntlets Complete)
+                        game.CurrentScene = CreateGauntletsCompleteScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Gauntlets Complete scene");
                         break;
                 }
             }

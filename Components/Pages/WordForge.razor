@@ -1,4 +1,5 @@
 @page "/word-forge"
+@page "/word-forge/{*parameters}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
@@ -22,7 +23,7 @@
         </span>
     </div>
 
-    @if (!inGame)
+    @if (!inGame && !isFromStory)
     {
         <div class="game-setup">
             <div class="setup-form">
@@ -352,9 +353,18 @@
                         </div>
                     </div>
                     
-                    <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
-                        🔄 Forge New Words
-                    </button>
+                    @if (isFromStory)
+                    {
+                        <button class="arcane-btn arcane-btn-success reset-btn" @onclick="ContinueStory">
+                            ➡️ Continue Story
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
+                            🔄 Forge New Words
+                        </button>
+                    }
                 </div>
             }
             else
@@ -377,6 +387,7 @@
 </div>
 
 @code {
+    [Parameter] public string? Parameters { get; set; }
     // Connection and SignalR
     private HubConnection? hubConnection;
     private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
@@ -384,6 +395,10 @@
     // Game state
     private string roomId = "";
     private string playerName = "";
+    private string playerRole = "";
+    private string playerAvatar = "";
+    private string squadName = "";
+    private bool isFromStory = false;
     private bool inRoom = false;
     private bool inGame = false;
     private WordForgePlayerView? playerView;
@@ -402,6 +417,7 @@
     
     protected override async Task OnInitializedAsync()
     {
+        ParseUrlParameters();
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
@@ -512,7 +528,53 @@
             });
         });
 
+        // Handle story redirects (server-triggered)
+        hubConnection.On<string>("RedirectToNextScene", (url) =>
+        {
+            Navigation.NavigateTo(url, forceLoad: true);
+        });
+
         await hubConnection.StartAsync();
+
+        // Auto-join for story mode
+        if (isFromStory && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+        {
+            await AutoConnect();
+        }
+    }
+
+    private void ParseUrlParameters()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var role = query["role"]; var avatar = query["avatar"]; var name = query["name"]; var squad = query["squad"]; var story = query["story"]; var transition = query["transition"]; // FromBombDefused
+            if (!string.IsNullOrEmpty(role)) playerRole = role;
+            if (!string.IsNullOrEmpty(avatar)) playerAvatar = avatar;
+            if (!string.IsNullOrEmpty(name)) playerName = Uri.UnescapeDataString(name);
+            if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
+            if (story == "true") isFromStory = true;
+            if (!string.IsNullOrEmpty(squadName)) roomId = isFromStory && !string.IsNullOrEmpty(transition) ? $"{squadName}_{transition}" : squadName;
+        }
+        catch { }
+    }
+
+    private async Task AutoConnect()
+    {
+        try
+        {
+            await Task.Delay(200);
+            if (IsConnected && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
+            {
+                await JoinRoom();
+                await Task.Delay(150);
+                await JoinGame();
+                inGame = true;
+                StateHasChanged();
+            }
+        }
+        catch { }
     }
 
     private async Task JoinRoom()
@@ -533,6 +595,8 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
+            // Use role-aware join similar to other puzzles; WordForge currently assigns roles on order
+            // We pass preferred mode and rely on room pairing to enforce distinct roles
             await hubConnection.SendAsync("JoinWordForgeGame", roomId, playerName, "Freeform");
         }
     }
@@ -551,6 +615,20 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
             await hubConnection.SendAsync("ForgeWordCombination", roomId);
+        }
+    }
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("ContinueStoryAfterWordForge", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error continuing story: {ex.Message}", "warning");
+            }
         }
     }
 

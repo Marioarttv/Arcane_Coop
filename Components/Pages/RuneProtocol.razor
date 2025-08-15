@@ -319,6 +319,12 @@
                             <h2>🏆 Master Protocol Engineer!</h2>
                             <p>All levels completed with excellence!</p>
                         </div>
+                        @if (isFromStory)
+                        {
+                            <button class="arcane-btn arcane-btn-success" @onclick="ContinueStory">
+                                ➡️ Continue Story
+                            </button>
+                        }
                     }
                 </div>
             }
@@ -636,6 +642,21 @@
         {
             await hubConnection.SendAsync("RestartRuneProtocolGame", roomId);
             ShowStatus("Protocol restarted", "info");
+        }
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            try
+            {
+                await hubConnection.SendAsync("ContinueStoryAfterRuneProtocol", roomId);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error continuing story: {ex.Message}", "danger");
+            }
         }
     }
 

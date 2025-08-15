@@ -280,6 +280,16 @@
                                         <span class="scene-name">Discovering the Bomb</span>
                                         <span class="scene-desc">Scene 12 - Bomb Discovery</span>
                                     </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(17)">
+                                        <span class="scene-icon">🧨</span>
+                                        <span class="scene-name">After the Crisis</span>
+                                        <span class="scene-desc">Scene 13 - Bomb Defused</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(19)">
+                                        <span class="scene-icon">🧤</span>
+                                        <span class="scene-name">Atlas Gauntlets Complete</span>
+                                        <span class="scene-desc">Scene 14 - After Word Forge</span>
+                                    </button>
                                 </div>
                                 
                                 <div class="scene-group">
@@ -308,6 +318,16 @@
                                         <span class="scene-icon">🧪</span>
                                         <span class="scene-name">Alchemy Lab</span>
                                         <span class="scene-desc">After Empty Holding Cells</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromRuneProtocol">
+                                        <span class="scene-icon">🔮</span>
+                                        <span class="scene-name">Rune Protocol</span>
+                                        <span class="scene-desc">After Discovering the Bomb</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromWordForge">
+                                        <span class="scene-icon">⚒️</span>
+                                        <span class="scene-name">Word Forge</span>
+                                        <span class="scene-desc">After After the Crisis</span>
                                     </button>
                                 </div>
                             </div>
@@ -1660,6 +1680,42 @@
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
             NavigationManager.NavigateTo($"/alchemy-lab?{parameters}");
+        }
+    }
+    
+    private async Task StartFromRuneProtocol()
+    {
+        if (!squadVerified) return;
+        
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "rune-protocol");
+        
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "rune-protocol");
+        }
+        else
+        {
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/rune-protocol?{parameters}");
+        }
+    }
+
+    private async Task StartFromWordForge()
+    {
+        if (!squadVerified) return;
+        
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "word-forge");
+        
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "word-forge");
+        }
+        else
+        {
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/word-forge?{parameters}");
         }
     }
     
