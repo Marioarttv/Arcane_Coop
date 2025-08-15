@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Arcane_Coop.Services;
 using System.Collections.Concurrent;
+using System;
 using System.Linq;
 using Arcane_Coop.Models;
 
@@ -24,6 +25,7 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
     private static readonly ConcurrentDictionary<string, VisualNovelMultiplayerGame> _visualNovelGames = new();
     private static readonly ConcurrentDictionary<string, Act1MultiplayerGame> _act1Games = new();
+    private static readonly ConcurrentDictionary<string, FinalPuzzleGame> _finalPuzzleGames = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
     // Track richer lobby player metadata per connection within a room (used for personalized redirects)
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, LobbyPlayerInfo>> _lobbyPlayers = new();
@@ -1430,6 +1432,44 @@ public class GameHub : Hub
         }
     }
 
+    public async Task JoinWordForgeGameWithRole(string roomId, string playerName, string requestedRole, string gameMode = "Assisted")
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        var game = _wordForgeGames.GetOrAdd(roomId, _ => new WordForgeGame());
+        var mode = Enum.Parse<GameMode>(gameMode, true);
+        game.Mode = mode;
+
+        // Normalize requestedRole
+        var req = (requestedRole ?? string.Empty).Trim().ToLowerInvariant();
+        var roleString = (req == "piltover" || req == "zaun" || req == "zaunite") ? req : string.Empty;
+
+        // Always set mode via property (overload requires mode)
+        game.Mode = mode;
+
+        string? assigned;
+        if (string.IsNullOrEmpty(roleString))
+        {
+            assigned = game.AddPlayer(Context.ConnectionId, playerName, mode);
+        }
+        else
+        {
+            // Respect requested role if possible by pre-assigning when empty, else fallback to opposite
+            var normalized = roleString == "zaunite" ? "zaun" : roleString;
+            // Temporarily add with mode using standard method, role calculation will occur in view until promotion refined
+            assigned = game.AddPlayer(Context.ConnectionId, playerName, mode);
+        }
+
+        if (!string.IsNullOrEmpty(assigned))
+        {
+            await Clients.Caller.SendAsync("WordForgeGameJoined", assigned, game.GetPlayerView(Context.ConnectionId));
+            await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("WordForgeGameFull");
+        }
+    }
+
     public async Task PlaceElementOnAnvil(string roomId, string elementId, string slotType)
     {
         if (_wordForgeGames.TryGetValue(roomId, out var game))
@@ -1546,8 +1586,8 @@ public class GameHub : Hub
                 var view = game.GetPlayerView(connectionId);
                 var roleName = view.Role.ToLower();
                 var playerName = view.DisplayName;
-                // After WordForge we go back to VN at the next scene index (bomb_defused + 1 => word_forge_transition already advanced; go to next VN scene index 18)
-                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=18&transition=FromWordForge";
+                // After WordForge, continue at Scene 14 -> 15 path: redirect to Scene 14's follow-up (Scene 15 comes next in VN). Start at gauntlets_complete (index 19)
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=19&transition=FromWordForge";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
 
@@ -2007,6 +2047,26 @@ public class GameHub : Hub
                     {
                         game.CurrentScene = _act1StoryEngine.CreateJayceWorkshopArrivalScene(originalSquadName, game);
                     }
+                    else if (currentPhase == "bomb_discovery")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "bomb_defused")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateBombDefusedScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "gauntlets_complete")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateGauntletsCompleteScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "warehouse_approach")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateWarehouseApproachScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "truth_revealed")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateTruthRevealedScene(originalSquadName, game);
+                    }
                     else
                     {
                         game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
@@ -2073,9 +2133,21 @@ public class GameHub : Hub
                 {
                     game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
                 }
-                else if (currentPhase == "bomb_discovery")
+                else if (currentPhase == "bomb_defused")
                 {
-                    game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
+                    game.CurrentScene = _act1StoryEngine.CreateBombDefusedScene(originalSquadName, game);
+                }
+                else if (currentPhase == "gauntlets_complete")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateGauntletsCompleteScene(originalSquadName, game);
+                }
+                else if (currentPhase == "warehouse_approach")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateWarehouseApproachScene(originalSquadName, game);
+                }
+                else if (currentPhase == "truth_revealed")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateTruthRevealedScene(originalSquadName, game);
                 }
                 else
                 {
@@ -2577,6 +2649,211 @@ public class GameHub : Hub
 
     // Content moved to IAct1StoryEngine
 
+    #region Final Puzzle Methods
+
+    public async Task<string> CreateFinalPuzzle()
+    {
+        var roomId = $"final_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+        var game = new FinalPuzzleGame { RoomId = roomId };
+        
+        if (_finalPuzzleGames.TryAdd(roomId, game))
+        {
+            game.TryAddPlayer(Context.ConnectionId, "Player A");
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            await Clients.Caller.SendAsync("FinalPuzzleCreated", roomId);
+            return roomId;
+        }
+        
+        return "";
+    }
+
+    public async Task<bool> JoinFinalPuzzle(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found");
+            return false;
+        }
+
+        if (game.IsFull)
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game is full");
+            return false;
+        }
+
+        if (game.TryAddPlayer(Context.ConnectionId, "Player B"))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            
+            foreach (var player in game.Players.Values)
+            {
+                await Clients.Group(roomId).SendAsync("PlayerJoined", player.Role, player.Name);
+            }
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task<bool> JoinFinalPuzzleWithRole(string roomId, string role)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            game = new FinalPuzzleGame { RoomId = roomId, IsFromStory = true };
+            if (!_finalPuzzleGames.TryAdd(roomId, game))
+            {
+                game = _finalPuzzleGames[roomId];
+            }
+        }
+
+        if (game.IsFull)
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game is full");
+            return false;
+        }
+
+        var playerName = role.ToLower().Contains("piltover") ? "Piltover Agent" : "Zaun Operative";
+        if (game.TryAddPlayerWithRole(Context.ConnectionId, playerName, role))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            
+            foreach (var player in game.Players.Values)
+            {
+                await Clients.Group(roomId).SendAsync("PlayerJoined", player.Role, player.Name);
+            }
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task SelectFact(string roomId, int factId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        if (!game.Players.TryGetValue(Context.ConnectionId, out var player))
+            return;
+
+        if (player.Role == "A" || player.Role == "Piltover")
+        {
+            game.GameState.SelectedFactId = factId;
+            await Clients.Group(roomId).SendAsync("PartnerSelectedFact", factId);
+        }
+    }
+
+    public async Task SelectMemory(string roomId, int memoryId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        if (!game.Players.TryGetValue(Context.ConnectionId, out var player))
+            return;
+
+        if (player.Role == "B" || player.Role == "Zaun")
+        {
+            game.GameState.SelectedMemoryId = memoryId;
+            await Clients.Group(roomId).SendAsync("PartnerSelectedMemory", memoryId);
+        }
+    }
+
+    public async Task SubmitPairing(string roomId, int factId, int memoryId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        if (!game.Players.TryGetValue(Context.ConnectionId, out var player))
+            return;
+
+        bool isCorrect = game.GameState.CheckPairing(factId, memoryId);
+        string message;
+
+        if (isCorrect)
+        {
+            game.GameState.RecordMatch(factId, memoryId);
+            
+            if (game.GameState.IsCompleted)
+            {
+                message = "All truths revealed! Silco's lies have been exposed!";
+                await Clients.Group(roomId).SendAsync("PuzzleCompleted");
+            }
+            else
+            {
+                message = $"Correct! Truth {game.GameState.CurrentLieIndex} revealed.";
+            }
+        }
+        else
+        {
+            message = "These pieces don't match. Try finding the connection between fact and memory.";
+        }
+
+        await Clients.Group(roomId).SendAsync("PairingResult", isCorrect, message);
+    }
+
+    public async Task ContinueFromFinalPuzzle(string roomId, string playerRole)
+    {
+        try
+        {
+            if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("FinalPuzzleError", "Both players needed for story continuation");
+                return;
+            }
+
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromFinalPuzzle";
+
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (game.Players.TryGetValue(connectionId, out var player))
+                {
+                    var roleName = player.Role.ToLower() == "a" ? "piltover" : "zaun";
+                    // After Final Puzzle, continue at Scene 16 (truth_revealed) index 22
+                    var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(player.Name)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=22&transition=FromFinalPuzzle";
+                    redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+                }
+            }
+
+            var tasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    tasks.Add(Clients.Client(connectionId).SendAsync("RedirectToNextScene", url));
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueFromFinalPuzzle: {ex.Message}");
+            await Clients.Caller.SendAsync("FinalPuzzleError", $"Error continuing story: {ex.Message}");
+        }
+    }
+
+    public async Task ResetFinalPuzzle(string roomId)
+    {
+        if (_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            game.GameState.Reset();
+            await Clients.Group(roomId).SendAsync("ResetPuzzle");
+        }
+    }
+
+    #endregion
+
+    // Content moved to IAct1StoryEngine
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Remove player from room tracking
@@ -2666,6 +2943,21 @@ public class GameHub : Hub
             if (kvp.Value.RemovePlayer(Context.ConnectionId))
             {
                 await Clients.Group(kvp.Key).SendAsync("WordForgeGameStateUpdated", kvp.Value.GetGameState());
+            }
+        }
+        
+        // Remove player from final puzzle games
+        foreach (var kvp in _finalPuzzleGames)
+        {
+            kvp.Value.RemovePlayer(Context.ConnectionId);
+            
+            if (kvp.Value.IsEmpty)
+            {
+                _finalPuzzleGames.TryRemove(kvp.Key, out _);
+            }
+            else
+            {
+                await Clients.Group(kvp.Key).SendAsync("PlayerDisconnected", Context.ConnectionId);
             }
         }
         

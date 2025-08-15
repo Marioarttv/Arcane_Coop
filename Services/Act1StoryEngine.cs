@@ -19,6 +19,9 @@ namespace Arcane_Coop.Services
         VisualNovelScene CreateBombDiscoveryScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateBombDefusedScene(string squadName, Act1MultiplayerGame game);
         VisualNovelScene CreateGauntletsCompleteScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateWarehouseApproachScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateTruthRevealedScene(string squadName, Act1MultiplayerGame game);
+        VisualNovelScene CreateFinalResolutionScene(string squadName, Act1MultiplayerGame game);
 
         // View builders
         Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId);
@@ -2984,6 +2987,286 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
+        public VisualNovelScene CreateWarehouseApproachScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "warehouse_approach",
+                Name = "Approaching the Warehouse",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
+
+            scene.DialogueLines.AddRange(new List<DialogueLine>
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 15: Approaching the Warehouse", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Location: Abandoned Warehouse District", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // Return to the Past
+                new DialogueLine { CharacterId = "vi", Text = "This is it. Where everything went wrong seven years ago.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Are you sure you're ready for this?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "I have to be. For Powder.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "The place looks different. More run down, but... there are lights inside.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Fresh shimmer tracks everywhere. Multiple sets. Jinx has been here a lot.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Voices Inside
+                new DialogueLine { CharacterId = "narrator", Text = "[They creep closer, hearing voices through broken windows]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx's Voice (Muffled but audible): \"It's ready, Silco! The weapon that'll make them pay for what they did to Vander!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco's Voice (Calm): \"Excellent work, Jinx. With the scientists' cooperation, we finally have all the pieces.\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Scientists' cooperation? But she thinks they're dead...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Listen...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Fatal Slip
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx's Voice (Confused): \"Cooperation? But... you said they fled. You said they were gone.\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco's Voice (Trying to recover): \"I meant their notes, their research—\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx's Voice (Rising): \"You said they DISAPPEARED. That they were too scared to face justice. But cooperation means... where are they, Silco? WHERE ARE THEY?\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "She's figuring it out.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "We need to get in there.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Entering the Warehouse
+                new DialogueLine { CharacterId = "narrator", Text = "[Vi kicks open the door]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Powder!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "[Inside: Jinx spins around, weapon in hand. Silco stands near a table covered in papers]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Shocked, then angry): \"Vi?! What are you doing here? And with... with THEM?\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco (Composed but tense): \"Well. The prodigal sister returns.\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // The Standoff
+                new DialogueLine { CharacterId = "caitlyn", Text = "Put the weapon down, Jinx.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Laughing manically): \"Jinx? JINX?! Even you're calling me that now, Vi?\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Powder, please. You need to listen—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Screaming): \"DON'T call me that! Powder's DEAD! You left her to die!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "I didn't leave you! I was taken! Marcus arrested me that night!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Truth Begins
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Faltering): \"No... no, you abandoned me. You said I was a jinx and you LEFT!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco (Interjecting): \"Jinx, don't listen to her. She's trying to confuse you—\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "We have proof! Evidence about what really happened that night!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "About the warehouse, about the explosion. The real truth.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Conflicted): \"Shut up! SHUT UP! Silco told me the truth! The scientists stored Hextech cores! They killed Vander!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // Setting Up the Revelation
+                new DialogueLine { CharacterId = "vi", Text = "That's a lie, Powder. And we can prove it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Show her. Show her everything we found.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "We've collected evidence from all over the city.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Police reports, witness accounts, scientific records.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Wavering): \"I don't... I don't want to hear this...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "You need to. Please, Powder. Just look at the evidence.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                new DialogueLine { CharacterId = "narrator", Text = "Detective Puzzle Setup", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Warehouse Approach scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
+        public VisualNovelScene CreateTruthRevealedScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayerName = game.Players.FirstOrDefault(p => p.PlayerRole == "piltover")?.PlayerName ?? "Piltover Agent";
+            var zaunPlayerName = game.Players.FirstOrDefault(p => p.PlayerRole == "zaun")?.PlayerName ?? "Zaun Operative";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "truth_revealed",
+                Name = "The Truth Revealed",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "jinx", Name = "Jinx", DisplayName = "Jinx", ImagePath = "/images/jinx.png", Position = CharacterPosition.Center, ThemeColor = "#ff00ff" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_operative.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "silco", Name = "Silco", DisplayName = "Silco", ImagePath = "/images/silco.png", Position = CharacterPosition.Center, ThemeColor = "#800080" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
+
+            scene.DialogueLines.AddRange(new[]
+            {
+                // After completing the Final Puzzle
+                new DialogueLine { CharacterId = "narrator", Text = "Evidence Revealed", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[The truth has been laid bare through the evidence you've assembled]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                
+                // Jinx's Realization
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Shaking, holding the evidence): \"No... no, this can't be...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Powder, your bomb worked. The hex crystals you put in it... they were enough.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Breaking down): \"The crystals weren't strong enough... Silco said they weren't enough...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco (Desperate): \"Jinx, they're lying. Your bomb was small, the crystals were just—\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                
+                // The Complete Breakdown
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Dropping weapon, clutching head): \"The voices said... Mylo said it wasn't... but it WAS! IT WAS ME!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[She sees hallucinations intensifying]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Screaming): \"I put the crystals in! I made it work! I MADE IT WORK TOO WELL!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Powder—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Hysterical): \"All this time... all these people... for nothing... for a LIE!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                
+                // Confronting Silco
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Whirling on Silco): \"You KNEW! You let me believe—\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco (Finally honest): \"I was protecting you! The guilt would have destroyed you!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Rage and pain): \"So you let me destroy THEM instead?!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "The scientists are still alive, Jinx. You can still save them.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "It's not too late to make this right.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                
+                // The Choice
+                new DialogueLine { CharacterId = "vi", Text = "Powder, I know the truth hurts. But you're not alone. You never were.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Sobbing): \"I killed them... Mylo, Claggor, Vander... I killed them all...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Silco (Soft): \"You're perfect, Jinx. Even now—\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Screaming): \"STOP LYING TO ME!\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[She grabs her weapon, pointing it wildly at everyone]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "We need to help her. What do we do?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                
+                // Player Choice Moment
+                new DialogueLine 
+                { 
+                    CharacterId = "narrator", 
+                    Text = "Critical Decision", 
+                    AnimationType = TextAnimationType.FadeIn, 
+                    TypewriterSpeed = 30,
+                    Choices = new List<DialogueChoice>
+                    {
+                        new DialogueChoice 
+                        { 
+                            Id = "help_silco", 
+                            Text = "Help Silco escape - he knows where the scientists are", 
+                            RequiredRole = "piltover"
+                        },
+                        new DialogueChoice 
+                        { 
+                            Id = "calm_jinx", 
+                            Text = "Try to calm Jinx down with words", 
+                            RequiredRole = "piltover"
+                        },
+                        new DialogueChoice 
+                        { 
+                            Id = "protect_vi", 
+                            Text = "Get between Vi and Jinx to protect them both", 
+                            RequiredRole = "zaun"
+                        },
+                        new DialogueChoice 
+                        { 
+                            Id = "find_scientists", 
+                            Text = "Find and free the scientists while everyone's distracted", 
+                            RequiredRole = "zaun"
+                        }
+                    }
+                },
+                
+                // Resolution (varies based on choices)
+                new DialogueLine { CharacterId = "vi", Text = "Powder, please. Whatever happens next, know that I never stopped loving you. I never stopped looking for you.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (Broken but listening): \"Vi... I... I don't know who I am anymore...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "[The warehouse falls silent except for Jinx's quiet sobs. The truth has finally been revealed, but at what cost?]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                
+                new DialogueLine { CharacterId = "narrator", Text = "To Be Continued...", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Truth Revealed scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
+        public VisualNovelScene CreateFinalResolutionScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+
+            var scene = new VisualNovelScene
+            {
+                Id = "final_resolution",
+                Name = "Resolution",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
+
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
+
+            scene.DialogueLines.AddRange(new List<DialogueLine>
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 17: Resolution — Warehouse, After the Confrontation", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // Immediate Aftermath – Path A/B merged into coherent flow
+                new DialogueLine { CharacterId = "narrator", Text = "[The dust settles. The truth hangs heavy in the air]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "No. You can't undo what's done. But you can choose what happens next.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "The scientists are still alive. Tell us where they are.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (weakly): \"Shimmer factory... underwater level... Silco's private cells...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // The Scientists' Location
+                new DialogueLine { CharacterId = "vi", Text = "Can you get to them? Caitlyn and I will handle things here.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "We're on it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Those people have been through enough. Let's go.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Be careful. There might still be guards.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Intercut while players are gone
+                new DialogueLine { CharacterId = "vi", Text = "Powder... Jinx... whoever you are now. I'm sorry.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (bitter laugh): \"You're sorry? I killed them, Vi. I killed our family.\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "And I wasn't there to help you through it. We both carry that weight.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Players return
+                new DialogueLine { CharacterId = "playerA", Text = "We found them! The scientists — they're alive but weak.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Medical teams are on the way. They're going to be okay.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Jinx (surprised): \"They're... alive? I didn't... I didn't kill them too?\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "No. You scared them, hurt them maybe, but they're alive.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // The Decision
+                new DialogueLine { CharacterId = "vi", Text = "You have a choice now. Come with us. Face what you've done. Try to heal.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Or get help. Real help. The things you've been through... no one should face that alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "The scientists want to speak for you. They know you were manipulated.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Renni especially. She says you're a victim too.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Silco's fate (light touch)
+                new DialogueLine { CharacterId = "narrator", Text = "[Enforcers close in on Silco — whether he is arrested or slips away depends on earlier choices]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+
+                // The Goodbye
+                new DialogueLine { CharacterId = "jinx", Text = "I can't go with you. Not yet. Maybe... maybe not ever.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "I'm not giving up on you. Not ever.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jinx", Text = "I'm not Powder anymore. But... maybe I'm not just Jinx either.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Epilogue — The Last Drop
+                new DialogueLine { CharacterId = "narrator", Text = "[A few days later, at the Last Drop]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = $"I wanted to thank you both. Without you, we never would have uncovered the truth.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "You two make quite a team. Piltover and Zaun, working together.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "We just did what needed to be done.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "Besides, someone had to keep you two from killing each other at the start.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "The Council approved real aid for Zaun. The scientists are pardoned.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "We'll keep working — together — and keep an eye out if a certain blue-haired girl needs help.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "She'll come back when she's ready. And when she does... we'll be ready to help her, not fight her.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+
+                // Closing narration
+                new DialogueLine { CharacterId = "narrator", Text = "The truth has a way of finding the light, even in the darkest corners of our cities.", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Sometimes the hardest battles aren't against our enemies, but against the lies we tell ourselves.", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "With courage and trust, even the deepest wounds can begin to heal.", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
+            });
+
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Final Resolution scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
+
         public Act1PlayerView CreatePlayerView(Act1MultiplayerGame game, string playerId)
         {
             var player = game.GetPlayer(playerId);
@@ -3356,6 +3639,62 @@ namespace Arcane_Coop.Services
                         game.TextAnimationStartTime = DateTime.UtcNow;
                         game.RecordAction();
                         Console.WriteLine($"[Act1StoryEngine] Progressed to Gauntlets Complete scene");
+                        break;
+
+                    case "warehouse_approach":
+                        // Move to Scene 15 (Approaching the Warehouse)
+                        game.CurrentScene = CreateWarehouseApproachScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Warehouse Approach scene");
+                        break;
+
+                    case "final_puzzle_transition":
+                        // Transition to Final Puzzle - Truth Echo
+                        game.Status = Act1GameStatus.SceneTransition;
+                        game.ShowTransition = true;
+                        game.NextGameName = "Truth Echo - Final Confrontation";
+                        
+                        result.TransitionStarted = true;
+                        result.NextGameName = game.NextGameName;
+                        
+                        var finalPuzzleUrls = new Dictionary<string, string>();
+                        foreach (var p in game.Players)
+                        {
+                            var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromWarehouse";
+                            finalPuzzleUrls[p.PlayerId] = $"/finalpuzzle?{parameters}";
+                        }
+                        result.RedirectUrlsByPlayerId = finalPuzzleUrls;
+                        
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Transitioning to Final Puzzle");
+                        break;
+
+                    case "truth_revealed":
+                        // Move to Scene 16 (Truth Revealed)
+                        game.CurrentScene = CreateTruthRevealedScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Truth Revealed scene");
+                        break;
+                    case "final_resolution":
+                        // Move to Scene 17 (Resolution)
+                        game.CurrentScene = CreateFinalResolutionScene(originalSquadName, game);
+                        game.GameState.CurrentSceneId = game.CurrentScene.Id;
+                        game.GameState.CurrentDialogueIndex = 0;
+                        game.GameState.IsTextFullyDisplayed = false;
+                        game.IsTextAnimating = true;
+                        game.TextAnimationStartTime = DateTime.UtcNow;
+                        game.RecordAction();
+                        Console.WriteLine($"[Act1StoryEngine] Progressed to Final Resolution scene");
                         break;
                 }
             }

@@ -595,9 +595,14 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId) && !string.IsNullOrEmpty(playerName))
         {
-            // Use role-aware join similar to other puzzles; WordForge currently assigns roles on order
-            // We pass preferred mode and rely on room pairing to enforce distinct roles
-            await hubConnection.SendAsync("JoinWordForgeGame", roomId, playerName, "Freeform");
+            if (!string.IsNullOrEmpty(playerRole))
+            {
+                await hubConnection.SendAsync("JoinWordForgeGameWithRole", roomId, playerName, playerRole, "Freeform");
+            }
+            else
+            {
+                await hubConnection.SendAsync("JoinWordForgeGame", roomId, playerName, "Freeform");
+            }
         }
     }
 

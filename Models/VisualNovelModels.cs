@@ -231,7 +231,7 @@ namespace Arcane_Coop.Models
         public bool IsTextAnimating { get; set; } = false;
         public DateTime TextAnimationStartTime { get; set; } = DateTime.UtcNow;
         public int CurrentSceneIndex { get; set; } = 0;
-        public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition", "radio_decoded", "renni_apartment", "code_cracker_transition", "code_decoded", "shimmer_factory_entrance", "navigation_maze_transition", "empty_cells", "alchemy_lab_transition", "tracer_complete", "following_jinx_trail", "jayce_workshop_arrival", "bomb_discovery", "rune_protocol_transition", "bomb_defused", "word_forge_transition", "gauntlets_complete" };
+        public List<string> StoryProgression { get; set; } = new() { "emergency_briefing", "picture_explanation_transition", "database_revelation", "signal_decoder_transition", "radio_decoded", "renni_apartment", "code_cracker_transition", "code_decoded", "shimmer_factory_entrance", "navigation_maze_transition", "empty_cells", "alchemy_lab_transition", "tracer_complete", "following_jinx_trail", "jayce_workshop_arrival", "bomb_discovery", "rune_protocol_transition", "bomb_defused", "word_forge_transition", "gauntlets_complete", "warehouse_approach", "final_puzzle_transition", "truth_revealed", "final_resolution" };
         public string NextGameName { get; set; } = "";
         public bool ShowTransition { get; set; } = false;
         public List<string> ChoiceHistory { get; set; } = new(); // Track all choices made

@@ -1,169 +1,319 @@
-Scene 16: The Truth About That Night
-Scene ID: truth_revealed
-Layout: Special Evidence Display
+Scene 17: Resolution
+Scene ID: final_resolution
+Layout: Dual Characters
 Theme: Zaun
-Presenting the Evidence
-[Player A Name] (Showing first piece):
+Location: Warehouse - After the Confrontation
+Immediate Aftermath
+[Based on player choices, the scene begins differently]
+Path A: If Players Chose to Help Jinx
+Jinx (Collapsed, sobbing):
 
-"Enforcer report from that night: 'Hextech residue detected matches signature of crystals stolen from Jayce Talis apartment - no additional cores found.'"
+"I can't... I can't undo what I did..."
 
-Jinx (Shaking):
+Vi (Kneeling beside her):
 
-"That's... that's not possible..."
+"No. But you can choose what happens next."
 
-[Player B Name] (Showing second piece):
+Silco (If still present):
 
-"Witness account: 'Blue-haired girl ran toward warehouse carrying a monkey toy with blue glow.'"
+"Jinx, we need to leave. Now."
 
-Jinx (Defensive):
+Jinx (Looking at Silco):
 
-"They're lying! They have to be lying!"
+"No. No more running. No more lies."
 
-More Evidence
-[Player A Name] (Continuing):
+[Player A Name] (Supportive):
 
-"Jayce's testimony: 'The crystals they stole were more than enough to cause that explosion. Those were refined, concentrated Hextech.'"
+"The scientists are still alive. Tell us where they are."
 
-Silco (Trying to intervene):
+Jinx (Weak):
 
-"Jinx, these are fabrications—"
+"Shimmer factory... underwater level... Silco's private cells..."
 
-[Player B Name] (Showing ledger):
+Path B: If Players Chose to Stop Silco
+Silco (Captured/Cornered):
 
-"Silco's own ledger: 'Scientists acquired Days 3, 7, 12, 15 - Holding at secondary location - alive for questioning.'"
+"You're making a mistake. Without me, Zaun will fall apart."
 
-Jinx (To Silco):
+Caitlyn (Firm):
 
-"Alive? You said they were dead! You said they fled!"
+"Zaun will find its own way. Without your poison."
 
-The Critical Evidence
-[Player A Name] (Final piece):
+[Player B Name] (Demanding):
 
-"Heimerdinger's sealed records: 'All prototype cores from failed experiments destroyed six months prior to incident.'"
+"Where are the scientists?"
 
-[Player B Name] (Final revelation):
+Silco (Defiant):
 
-"Renni's notes: 'We warned them about hex crystal instability with chemical compounds - they ignored us. We tried to prevent accidents like this.'"
+"Gone. You'll never—"
 
-The Breaking Point
-Vi (Stepping closer):
+Jinx (Interrupting):
 
-"Your bomb worked, Powder. The hex crystals you put in it... they were enough. More than enough."
+"Underwater level. Shimmer factory. I... I heard him talking about it."
 
-Jinx (Breaking down):
+The Scientists' Location
+Vi (To players):
 
-"No... no, the crystals weren't strong enough... Silco said they weren't enough..."
+"Can you get to them? Caitlyn and I need to handle things here."
+
+[Player A Name] (Determined):
+
+"We're on it."
+
+[Player B Name] (Already moving):
+
+"Those people have been through enough. Let's go."
+
+Caitlyn (Grateful):
+
+"Be careful. There might still be guards."
+
+While Players Are Gone (Intercut)
+Vi (To Jinx):
+
+"Powder... Jinx... whoever you are now. I'm sorry."
+
+Jinx (Bitter laugh):
+
+"You're sorry? I killed them, Vi. I killed our family."
+
+Vi (Emotional):
+
+"And I wasn't there to help you through it. We both carry that weight."
+
+Silco (If conscious):
+
+"She doesn't need your pity."
+
+Vi (Fierce):
+
+"She needs the truth. Something you never gave her."
+
+Players Return
+[Player A Name] (Returning, out of breath):
+
+"We found them! The scientists - they're alive but weak."
+
+[Player B Name] (Relief):
+
+"Medical teams are on the way. They're going to be okay."
+
+Jinx (Surprised):
+
+"They're... alive? I didn't... I didn't kill them too?"
+
+Caitlyn (Gentle):
+
+"No. You scared them, hurt them maybe, but they're alive."
+
+The Decision
+Vi (To Jinx):
+
+"You have a choice now. Come with us. Face what you've done. Try to heal."
+
+Jinx (Lost):
+
+"Or what? Go back to prison? Be executed?"
+
+Caitlyn (Intervening):
+
+"Or get help. Real help. The things you've been through... no one should face that alone."
+
+[Player A Name] (Adding):
+
+"The scientists... they want to speak for you. They know you were manipulated."
+
+[Player B Name] (Supportive):
+
+"Renni especially. She says you're a victim too."
+
+Silco's Fate
+[If Silco is still present]
+Silco (To Jinx):
+
+"You're going to leave me? After everything I've done for you?"
+
+Jinx (Finally strong):
+
+"You lied to me. You used me. You... you loved me, in your way. But it was poison."
 
 Silco (Desperate):
 
-"Jinx, they're lying. Your bomb was small, the crystals were just—"
+"I saved you when she abandoned you!"
 
-Jayce's Voice (If present via recording or Player A reading):
+Vi (Firm):
 
-"Those crystals could power an entire mining operation. In a bomb... I'm sorry."
+"I never abandoned her. And now I'm here to save her from you."
 
-The Complete Breakdown
-Jinx (Dropping weapon, clutching head):
+[Enforcers arrive to arrest Silco, or he escapes depending on earlier choices]
+The Goodbye
+Jinx (To Vi):
 
-"The voices said... Mylo said it wasn't... but it WAS! IT WAS ME!"
+"I can't go with you. Not yet. Maybe... maybe not ever."
 
-[She sees hallucinations intensifying]
-Jinx (Screaming):
-
-"I put the crystals in! I made it work! I MADE IT WORK TOO WELL!"
-
-Vi (Reaching out):
+Vi (Tearful):
 
 "Powder—"
 
-Jinx (Hysterical):
+Jinx (Soft):
 
-"All this time... all these people... for nothing... for a LIE!"
+"I'm not Powder anymore. But... maybe I'm not just Jinx either."
 
-Confronting Silco
-Jinx (Whirling on Silco):
+[She starts to leave]
+Vi (Calling out):
 
-"You KNEW! You let me believe—"
+"Where will you go?"
 
-Silco (Finally honest):
+Jinx (Pausing):
 
-"I was protecting you! The guilt would have destroyed you!"
+"To figure out who I am. When I'm not being someone else's weapon."
 
-Jinx (Rage and pain):
+[She looks at the players]
+Jinx (To players):
 
-"So you let me destroy THEM instead?!"
+"Thank you. For showing me the truth. Even if it hurts."
 
-[Player A Name] (Urgent):
+Final Resolution
+[After Jinx leaves]
+Caitlyn (Comforting Vi):
 
-"The scientists are still alive, Jinx. You can still save them."
+"She'll be back. When she's ready."
 
-[Player B Name] (Hopeful):
+Vi (Watching Jinx disappear):
 
-"It's not too late to make this right."
+"I know. And I'll be waiting."
 
-The Choice
-Vi (Emotional):
+[Player A Name] (Hopeful):
 
-"Powder, I know the truth hurts. But you're not alone. You never were."
+"The scientists are safe. The weapon's been secured. That's a win."
 
-Jinx (Sobbing):
+[Player B Name] (Realistic):
 
-"I killed them... Mylo, Claggor, Vander... I killed them all..."
+"And Zaun? What happens now without Silco?"
 
-Silco (Soft):
+Vi (Determined):
 
-"You're perfect, Jinx. Even now—"
+"We help them rebuild. The right way this time."
 
-Jinx (Screaming):
+Epilogue - Back at the Last Drop
+[Scene transition to a few days later]
+Vi (To players):
 
-"STOP LYING TO ME!"
+"I wanted to thank you both. Without you, we never would have uncovered the truth."
 
-[She grabs her weapon, pointing it wildly at everyone]
-Player Choice Moment
+Caitlyn (Agreeing):
+
+"You two make quite a team. Piltover and Zaun, working together."
+
+[Player A Name] (Modest):
+
+"We just did what needed to be done."
+
+[Player B Name] (Smiling):
+
+"Besides, someone had to keep you two from killing each other at the start."
+
+[They all laugh]
+Vi (Serious):
+
+"The Council's approved aid for Zaun. Real aid, not just enforcement."
+
+Caitlyn (Adding):
+
+"And they're pardoning the scientists. They'll be able to continue their research safely."
+
+The Future
+[Player A Name] (Curious):
+
+"What about you two? What's next?"
+
+Vi (Looking at Caitlyn):
+
+"We keep working. Together. Bridging the gap between our cities."
+
+Caitlyn (Smiling):
+
+"And keeping an eye out for a certain blue-haired girl who might need our help again."
+
+[Player B Name] (Thoughtful):
+
+"You think she'll really come back?"
+
+Vi (Confident):
+
+"She will. When she's ready. And when she does..."
+
+[Vi looks at her Atlas Gauntlets, now powered down]
+Vi (Continued):
+
+"We'll be ready too. To help her, not fight her."
+
+Final Words
 Caitlyn (To players):
 
-"We need to help her. What do we do?"
+"You should be proud. You helped save lives today."
 
-Choice for Player A:
-Text Options:
+Vi (Grateful):
 
-"Help Silco escape - he knows where the scientists are"
-"Try to calm Jinx down with words"
-"Secure the weapon before she hurts someone"
+"And maybe... maybe you helped save my sister too. Even if it doesn't feel like it yet."
 
-Choice for Player B:
-Text Options:
+[Player A Name] (Determined):
 
-"Get between Vi and Jinx to protect them both"
-"Find and free the scientists while everyone's distracted"
-"Call for enforcer backup"
+"If you ever need us again..."
 
-The Resolution
-Vi (Based on choices, either comforting or desperate):
+[Player B Name] (Finishing):
 
-"Powder, please. Whatever happens next, know that I never stopped loving you. I never stopped looking for you."
+"Just light a flare. We'll find you."
 
-Jinx (Depending on player choices):
+[Vi smiles, pulling out the old flare she gave Powder years ago]
+Vi (Emotional):
 
-"It's too late, Vi. Powder's gone. There's only Jinx now."
+"I'll remember that. Thank you. Both of you."
 
-[Or if players chose well]
-Jinx (Broken but listening):
+Caitlyn (Final toast):
 
-"Vi... I... I don't know who I am anymore..."
+"To bridges built and walls torn down."
+
+All Together:
+
+"To Piltover and Zaun."
 
 
-Scene Transition
-Outcome Varies Based on Choices:
+Final Scene: Credits Setup
+Scene ID: credits_scene
+Closing Narration
+Narrator (Caitlyn's Voice):
 
-Path A: Jinx flees, leaving weapon behind
-Path B: Jinx surrenders, accepting help
-Path C: Silco escapes with/without Jinx
+"The truth has a way of finding the light, even in the darkest corners of our cities."
+
+Narrator (Vi's Voice):
+
+"Sometimes the hardest battles aren't against our enemies, but against the lies we tell ourselves."
+
+Narrator (Both):
+
+"But with courage, cooperation, and trust in each other, even the deepest wounds can begin to heal."
+
+[Final image: The sun rising over both Piltover and Zaun, the two cities connected by bridges both literal and metaphorical]
+
+Game Complete Screen
+Final Statistics Display:
+
+Scientists Saved: 4/4
+Truth Revealed: Complete
+Jinx's Path: Redemption Started
+Partnership: Piltover-Zaun Alliance Strengthened
+
+Message to Players:
+
+"Thank you for bridging the divide. Your choices shaped this story."
+
 
 Technical Notes
 
-Detective Puzzle Complete: Truth revealed about warehouse explosion
-Major Revelation: Jinx learns she was responsible
-Silco's Deception: Exposed and confronted
-Player Agency: Final choices affect ending
-Emotional Climax: Vi and Jinx's relationship at breaking point
+Multiple Endings: Based on player choices throughout
+Emotional Resolution: Vi and Jinx's relationship addressed but not fully resolved
+Future Teased: Sets up potential sequels
+Player Recognition: Acknowledges their crucial role
+Theme Completion: Bridge between cities, truth vs lies, redemption
+Replayability: Hints at different outcomes possible

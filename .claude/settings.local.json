@@ -21,6 +21,7 @@
       "Bash(TestDialogueFlow.exe)",
       "Bash(rg:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

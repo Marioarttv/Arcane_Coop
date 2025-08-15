@@ -224,72 +224,152 @@
                             <p>Select where you want to start your story campaign:</p>
                             <div class="scene-selection-grid">
                                 <div class="scene-group">
-                                    <h5>📖 Visual Novel Scenes</h5>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(0)">
-                                        <span class="scene-icon">🚨</span>
-                                        <span class="scene-name">Emergency Briefing</span>
-                                        <span class="scene-desc">Scenes 1 & 2 - Story Start</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(2)">
-                                        <span class="scene-icon">🗄️</span>
-                                        <span class="scene-name">Database Revelation</span>
-                                        <span class="scene-desc">Scene 3 - After Picture Puzzle</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(4)">
-                                        <span class="scene-icon">📻</span>
-                                        <span class="scene-name">Radio Decoded</span>
-                                        <span class="scene-desc">Scene 4 - After Signal Decoder</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(5)">
-                                        <span class="scene-icon">🏠</span>
-                                        <span class="scene-name">Renni's Apartment</span>
-                                        <span class="scene-desc">Scene 5 - After Radio Decoded</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(7)">
-                                        <span class="scene-icon">💥</span>
-                                        <span class="scene-name">Code Decoded</span>
-                                        <span class="scene-desc">Scene 6 - After Code Cracker</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(8)">
-                                        <span class="scene-icon">🏭</span>
-                                        <span class="scene-name">Shimmer Factory Entrance</span>
-                                        <span class="scene-desc">Scene 7 - After Code Decoded</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(10)">
-                                        <span class="scene-icon">🧪</span>
-                                        <span class="scene-name">Empty Holding Cells</span>
-                                        <span class="scene-desc">Scene 8 - After Navigation Maze</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(12)">
-                                        <span class="scene-icon">🔍</span>
-                                        <span class="scene-name">Tracer Revealed</span>
-                                        <span class="scene-desc">Scene 9 - After Alchemy Lab</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(13)">
-                                        <span class="scene-icon">👣</span>
-                                        <span class="scene-name">Following the Trail</span>
-                                        <span class="scene-desc">Scene 10 - After Tracer Revealed</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(14)">
-                                        <span class="scene-icon">🏛️</span>
-                                        <span class="scene-name">The Workshop Entrance</span>
-                                        <span class="scene-desc">Scene 11 - Jayce's Workshop</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(15)">
-                                        <span class="scene-icon">💣</span>
-                                        <span class="scene-name">Discovering the Bomb</span>
-                                        <span class="scene-desc">Scene 12 - Bomb Discovery</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(17)">
-                                        <span class="scene-icon">🧨</span>
-                                        <span class="scene-name">After the Crisis</span>
-                                        <span class="scene-desc">Scene 13 - Bomb Defused</span>
-                                    </button>
-                                    <button class="scene-btn scene-btn-story @GetRoleClass()" @onclick="() => StartFromScene(19)">
-                                        <span class="scene-icon">🧤</span>
-                                        <span class="scene-name">Atlas Gauntlets Complete</span>
-                                        <span class="scene-desc">Scene 14 - After Word Forge</span>
-                                    </button>
+                                    <h5>📖 Story Timeline</h5>
+                                    <div class="timeline-row">
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(0)">
+                                            <div class="node-icon">🚨</div>
+                                            <div class="node-label">Emergency Briefing</div>
+                                            <div class="node-sub">Scenes 1–2</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromPictureExplanation">
+                                            <div class="node-icon">🖼️</div>
+                                            <div class="node-label">Picture Explanation</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(2)">
+                                            <div class="node-icon">🗄️</div>
+                                            <div class="node-label">Database Revelation</div>
+                                            <div class="node-sub">Scene 3</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromSignalDecoder">
+                                            <div class="node-icon">📡</div>
+                                            <div class="node-label">Signal Decoder</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(4)">
+                                            <div class="node-icon">📻</div>
+                                            <div class="node-label">Radio Decoded</div>
+                                            <div class="node-sub">Scene 4</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(5)">
+                                            <div class="node-icon">🏠</div>
+                                            <div class="node-label">Renni's Apartment</div>
+                                            <div class="node-sub">Scene 5</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromCodeCracker">
+                                            <div class="node-icon">🔓</div>
+                                            <div class="node-label">Code Cracker</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(7)">
+                                            <div class="node-icon">💥</div>
+                                            <div class="node-label">Code Decoded</div>
+                                            <div class="node-sub">Scene 6</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(8)">
+                                            <div class="node-icon">🏭</div>
+                                            <div class="node-label">Shimmer Factory</div>
+                                            <div class="node-sub">Scene 7</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromNavigationMaze">
+                                            <div class="node-icon">🗺️</div>
+                                            <div class="node-label">Navigation Maze</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(10)">
+                                            <div class="node-icon">🧪</div>
+                                            <div class="node-label">Empty Cells</div>
+                                            <div class="node-sub">Scene 8</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromAlchemyLab">
+                                            <div class="node-icon">🧪</div>
+                                            <div class="node-label">Alchemy Lab</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(12)">
+                                            <div class="node-icon">🔍</div>
+                                            <div class="node-label">Tracer Revealed</div>
+                                            <div class="node-sub">Scene 9</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(13)">
+                                            <div class="node-icon">👣</div>
+                                            <div class="node-label">Following the Trail</div>
+                                            <div class="node-sub">Scene 10</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(14)">
+                                            <div class="node-icon">🏛️</div>
+                                            <div class="node-label">Workshop Entrance</div>
+                                            <div class="node-sub">Scene 11</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(15)">
+                                            <div class="node-icon">💣</div>
+                                            <div class="node-label">Bomb Discovery</div>
+                                            <div class="node-sub">Scene 12</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromRuneProtocol">
+                                            <div class="node-icon">🔮</div>
+                                            <div class="node-label">Rune Protocol</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(17)">
+                                            <div class="node-icon">🧨</div>
+                                            <div class="node-label">After the Crisis</div>
+                                            <div class="node-sub">Scene 13</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromWordForge">
+                                            <div class="node-icon">⚒️</div>
+                                            <div class="node-label">Word Forge</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(19)">
+                                            <div class="node-icon">🧤</div>
+                                            <div class="node-label">Gauntlets Complete</div>
+                                            <div class="node-sub">Scene 14</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(20)">
+                                            <div class="node-icon">🏚️</div>
+                                            <div class="node-label">Warehouse Approach</div>
+                                            <div class="node-sub">Scene 15</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node puzzle @GetRoleClass()" @onclick="StartFromFinalPuzzle">
+                                            <div class="node-icon">🧠</div>
+                                            <div class="node-label">Final Puzzle</div>
+                                            <div class="node-sub">Puzzle</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(22)">
+                                            <div class="node-icon">🧩</div>
+                                            <div class="node-label">Truth Revealed</div>
+                                            <div class="node-sub">Scene 16</div>
+                                        </div>
+                                        <div class="timeline-connector"></div>
+                                        <div class="timeline-node scene @GetRoleClass()" @onclick="() => StartFromScene(23)">
+                                            <div class="node-icon">🏁</div>
+                                            <div class="node-label">Resolution</div>
+                                            <div class="node-sub">Scene 17</div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="scene-group">
@@ -323,6 +403,11 @@
                                         <span class="scene-icon">🔮</span>
                                         <span class="scene-name">Rune Protocol</span>
                                         <span class="scene-desc">After Discovering the Bomb</span>
+                                    </button>
+                                    <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromFinalPuzzle">
+                                        <span class="scene-icon">🧠</span>
+                                        <span class="scene-name">Final Puzzle (Truth Echo)</span>
+                                        <span class="scene-desc">After Approaching the Warehouse</span>
                                     </button>
                                     <button class="scene-btn scene-btn-puzzle @GetRoleClass()" @onclick="StartFromWordForge">
                                         <span class="scene-icon">⚒️</span>
@@ -1175,6 +1260,45 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.story-timeline .timeline-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 1.25rem 0;
+}
+
+.timeline-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    padding: 0.75rem 0.75rem;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    text-align: center;
+}
+
+.timeline-node.scene { border-color: #4a90e2; }
+.timeline-node.puzzle { border-color: #e67e22; }
+
+.timeline-node:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
+
+.timeline-connector {
+    width: 40px;
+    height: 2px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 1px;
+}
+
+.node-icon { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.node-label { font-weight: 700; font-size: 0.95rem; }
+.node-sub { font-size: 0.8rem; opacity: 0.8; }
 </style>
 
 @code {
@@ -1716,6 +1840,24 @@
         {
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
             NavigationManager.NavigateTo($"/word-forge?{parameters}");
+        }
+    }
+
+    private async Task StartFromFinalPuzzle()
+    {
+        if (!squadVerified) return;
+        
+        var testRoomName = GenerateSharedTestLobbyName(squadName, "finalpuzzle");
+        
+        if (lobbyConnection?.State == HubConnectionState.Connected)
+        {
+            await lobbyConnection.SendAsync("UpdateLobbyPlayerInfo", squadName, selectedRole, selectedAvatar.ToString(), characterName);
+            await lobbyConnection.SendAsync("RedirectPlayersToPuzzle", squadName, testRoomName, selectedRole, selectedAvatar.ToString(), characterName, "finalpuzzle");
+        }
+        else
+        {
+            var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            NavigationManager.NavigateTo($"/finalpuzzle?{parameters}");
         }
     }
     
