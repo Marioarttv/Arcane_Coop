@@ -88,11 +88,11 @@ namespace Arcane_Coop.Services
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Surprised, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Caitlyn/cait_surprised.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" }
                     }
                 },
                 new VisualNovelCharacter
