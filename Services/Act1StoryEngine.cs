@@ -65,17 +65,17 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Happy, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
-                        { CharacterExpression.Surprised, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Happy, "/images/Characters/Vi/vi_happy.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -83,7 +83,7 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
@@ -100,14 +100,14 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -115,14 +115,14 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Serious, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -130,14 +130,14 @@ namespace Arcane_Coop.Services
                     Id = "stanton",
                     Name = "Deputy Stanton",
                     DisplayName = "Deputy Stanton",
-                    ImagePath = "/images/stanton.png",
+                    ImagePath = "/images/Characters/Stanton/stanton_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/stanton.png" },
-                        { CharacterExpression.Angry, "/images/stanton.png" },
-                        { CharacterExpression.Surprised, "/images/stanton.png" }
+                        { CharacterExpression.Default, "/images/Characters/Stanton/stanton_default.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -757,17 +757,17 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Confused, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Surprised, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -775,16 +775,16 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Surprised, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Caitlyn/cait_surprised.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -792,15 +792,15 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Surprised, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -808,15 +808,15 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Confused, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Confused, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1121,17 +1121,17 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
-                        { CharacterExpression.Surprised, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1139,16 +1139,16 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Angry, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1156,15 +1156,15 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1172,15 +1172,15 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1421,17 +1421,17 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
-                        { CharacterExpression.Surprised, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1439,16 +1439,16 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Angry, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1456,15 +1456,15 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1472,15 +1472,15 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1488,14 +1488,14 @@ namespace Arcane_Coop.Services
                     Id = "kira",
                     Name = "Kira",
                     DisplayName = "Kira",
-                    ImagePath = "/images/kira.png",
+                    ImagePath = "/images/Characters/Kira/kira_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/kira.png" },
-                        { CharacterExpression.Worried, "/images/kira.png" },
-                        { CharacterExpression.Determined, "/images/kira.png" }
+                        { CharacterExpression.Default, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Kira/kira_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1892,21 +1892,21 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
-                        { CharacterExpression.Surprised, "/images/vi.jpeg" },
-                        { CharacterExpression.Sad, "/images/vi.jpeg" },
-                        { CharacterExpression.Happy, "/images/vi.jpeg" },
-                        { CharacterExpression.Confused, "/images/vi.jpeg" },
-                        { CharacterExpression.Smug, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" },
+                        { CharacterExpression.Sad, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Happy, "/images/Characters/Vi/vi_happy.png" },
+                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Smug, "/images/Characters/Vi/vi_neutral.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1914,18 +1914,18 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" },
-                        { CharacterExpression.Happy, "/images/cait.jpeg" },
-                        { CharacterExpression.Surprised, "/images/cait.jpeg" },
-                        { CharacterExpression.Angry, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" },
+                        { CharacterExpression.Happy, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Caitlyn/cait_surprised.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Caitlyn/cait_serious.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1933,16 +1933,16 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" },
-                        { CharacterExpression.Happy, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Happy, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1950,18 +1950,18 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Surprised, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Happy, "/images/zaun_friend.png" },
-                        { CharacterExpression.Serious, "/images/zaun_friend.png" },
-                        { CharacterExpression.Angry, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Happy, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Angry, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -1969,18 +1969,18 @@ namespace Arcane_Coop.Services
                     Id = "kira",
                     Name = "Kira",
                     DisplayName = "Kira",
-                    ImagePath = "/images/kira.png",
+                    ImagePath = "/images/Characters/Kira/kira_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/kira.png" },
-                        { CharacterExpression.Confused, "/images/kira.png" },
-                        { CharacterExpression.Surprised, "/images/kira.png" },
-                        { CharacterExpression.Sad, "/images/kira.png" },
-                        { CharacterExpression.Serious, "/images/kira.png" },
-                        { CharacterExpression.Worried, "/images/kira.png" },
-                        { CharacterExpression.Determined, "/images/kira.png" }
+                        { CharacterExpression.Default, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Confused, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Sad, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Kira/kira_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Kira/kira_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2297,16 +2297,16 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" },
-                        { CharacterExpression.Angry, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2314,15 +2314,15 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" },
-                        { CharacterExpression.Determined, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Caitlyn/cait_determined.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2330,15 +2330,15 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" },
-                        { CharacterExpression.Determined, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2346,14 +2346,14 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2430,15 +2430,15 @@ namespace Arcane_Coop.Services
                     Id = "vi",
                     Name = "Vi",
                     DisplayName = "Vi",
-                    ImagePath = "/images/vi.jpeg",
+                    ImagePath = "/images/Characters/Vi/vi_neutral.png",
                     Position = CharacterPosition.Left,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/vi.jpeg" },
-                        { CharacterExpression.Worried, "/images/vi.jpeg" },
-                        { CharacterExpression.Determined, "/images/vi.jpeg" },
-                        { CharacterExpression.Serious, "/images/vi.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2446,14 +2446,14 @@ namespace Arcane_Coop.Services
                     Id = "caitlyn",
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
-                    ImagePath = "/images/cait.jpeg",
+                    ImagePath = "/images/Characters/Caitlyn/cait_default.png",
                     Position = CharacterPosition.Right,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/cait.jpeg" },
-                        { CharacterExpression.Serious, "/images/cait.jpeg" },
-                        { CharacterExpression.Worried, "/images/cait.jpeg" }
+                        { CharacterExpression.Default, "/images/Characters/Caitlyn/cait_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Caitlyn/cait_serious.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Caitlyn/cait_worried.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2461,14 +2461,14 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/enforcer.png",
+                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/enforcer.png" },
-                        { CharacterExpression.Worried, "/images/enforcer.png" },
-                        { CharacterExpression.Serious, "/images/enforcer.png" }
+                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2476,14 +2476,14 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/zaun_friend.png",
+                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/zaun_friend.png" },
-                        { CharacterExpression.Worried, "/images/zaun_friend.png" },
-                        { CharacterExpression.Determined, "/images/zaun_friend.png" }
+                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
+                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2555,10 +2555,10 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2619,10 +2619,10 @@ namespace Arcane_Coop.Services
 
 			scene.Characters.AddRange(new[]
 			{
-				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
 				new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
 			});
 
@@ -2723,11 +2723,11 @@ namespace Arcane_Coop.Services
 
 			scene.Characters.AddRange(new[]
 			{
-				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
 				new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
 			});
 
@@ -2791,11 +2791,11 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2847,11 +2847,11 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" }
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" }
             });
 
             scene.DialogueLines.AddRange(new List<DialogueLine>
@@ -2932,11 +2932,11 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Jayce.jpeg", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -3004,10 +3004,10 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -3089,12 +3089,12 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "jinx", Name = "Jinx", DisplayName = "Jinx", ImagePath = "/images/jinx.png", Position = CharacterPosition.Center, ThemeColor = "#ff00ff" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_operative.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "silco", Name = "Silco", DisplayName = "Silco", ImagePath = "/images/silco.png", Position = CharacterPosition.Center, ThemeColor = "#800080" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "jinx", Name = "Jinx", DisplayName = "Jinx", ImagePath = "/images/Characters/Jinx/jinx_default.png", Position = CharacterPosition.Center, ThemeColor = "#ff00ff" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunOperative/zaun_operative_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "silco", Name = "Silco", DisplayName = "Silco", ImagePath = "/images/Characters/Silco/silco_default.png", Position = CharacterPosition.Center, ThemeColor = "#800080" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -3198,10 +3198,10 @@ namespace Arcane_Coop.Services
 
             scene.Characters.AddRange(new[]
             {
-                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Vi.jpeg", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Cait.jpeg", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/enforcer.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/zaun_friend.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
