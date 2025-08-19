@@ -80,6 +80,16 @@ namespace Arcane_Coop.Models
         public CharacterExpression? ResultExpression { get; set; } // Expression after choice is made
     }
 
+    public enum BackgroundTransitionType
+    {
+        None,
+        Fade,
+        CrossFade,
+        SlideLeft,
+        SlideRight,
+        Instant
+    }
+
     public class DialogueLine
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -92,6 +102,11 @@ namespace Arcane_Coop.Models
         public string? BackgroundMusic { get; set; }
         public string? SoundEffect { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new();
+        
+        // Background support - allows changing background on specific dialogue lines
+        public string? BackgroundImage { get; set; } // If set, changes background to this image
+        public BackgroundTransitionType BackgroundTransition { get; set; } = BackgroundTransitionType.Fade;
+        public int BackgroundTransitionDuration { get; set; } = 1000; // milliseconds
         
         // Expression support - allows setting character expressions for this dialogue line
         public CharacterExpression? SpeakerExpression { get; set; } = null;

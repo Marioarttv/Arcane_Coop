@@ -797,6 +797,141 @@ Testing Flow:     Character Select → Scene Selection → Direct Scene 3 Access
 1. **Always test with two players**: Testing system preserves multiplayer mechanics
 2. **Verify role assignments**: Check that Piltover/Zaun roles remain consistent
 3. **Test full transitions**: Use "Continue Story" buttons to verify end-to-end flow
+
+## Lobby Management and Transition System (Updated Dec 19, 2024)
+
+### Key Improvements
+
+#### **Player Name-Based Instance Management**
+The system now automatically handles reconnections and duplicate connections:
+- When a player with the same name joins a lobby, the old instance is kicked out
+- This prevents "lobby full" errors when players refresh or reconnect
+- Enables seamless recovery from connection drops
+
+#### **Thread-Safe Collections**
+All game classes now use `ConcurrentDictionary` for player management:
+- Prevents concurrent modification exceptions during simultaneous joins
+- Ensures thread safety during transitions
+- Eliminates race conditions
+
+#### **Room ID Strategy**
+Room IDs follow a predictable pattern for transitions:
+```
+Format: {SquadName}_{TransitionContext}
+Examples:
+- SquadAlpha_FromScene1and2 (going to PictureExplanation)
+- SquadAlpha_FromPicturePuzzle (returning to Act1)
+- SquadAlpha_FromScene3 (going to SignalDecoder)
+```
+
+### Implementation Details
+
+#### **Player Kick Logic (GameHub.cs)**
+```csharp
+// Check if a player with the same name exists and kick them out
+var existingPlayerWithSameName = game.Players.FirstOrDefault(p => p.PlayerName == playerName && p.PlayerId != Context.ConnectionId);
+if (existingPlayerWithSameName != null)
+{
+    // Remove old player
+    game.Players.Remove(existingPlayerWithSameName);
+    // Notify old connection
+    await Clients.Client(existingPlayerWithSameName.PlayerId).SendAsync("Act1Error", "You have been disconnected - another player with the same name has joined");
+    // Remove from SignalR group
+    await Groups.RemoveFromGroupAsync(existingPlayerWithSameName.PlayerId, roomId);
+}
+```
+
+#### **Thread-Safe Operations**
+```csharp
+// Before (unsafe)
+public Dictionary<string, PlayerRole> Players = new();
+Players.Remove(connectionId);
+
+// After (thread-safe)
+public ConcurrentDictionary<string, PlayerRole> Players = new();
+Players.TryRemove(connectionId, out _);
+```
+
+### Affected Components
+
+1. **Act1 Multiplayer Games**
+   - JoinAct1GameAtScene method updated
+   - Disconnected player cleanup added
+   - Player kick logic implemented
+
+2. **PictureExplanation Games**
+   - Both join methods updated
+   - AddPlayer methods include kick logic
+   - PlayerNames made public for access
+
+3. **SignalDecoder Games**
+   - Collections changed to ConcurrentDictionary
+   - AddPlayer/AddPlayerWithRole updated
+   - RemovePlayer uses TryRemove
+
+### Benefits
+
+1. **Reconnection Resilience**: Players can refresh without blocking lobby
+2. **Thread Safety**: No concurrent modification exceptions
+3. **Clean State**: Automatic cleanup of stale players
+4. **Better UX**: Clear error messages and seamless transitions
+
+### Testing Recommendations
+
+1. **Transition Testing**
+   - Test rapid transitions between components
+   - Test simultaneous player joins
+   - Test delayed joins (one player waits)
+
+2. **Reconnection Testing**
+   - Browser refresh during game
+   - One player disconnect/reconnect
+   - Both players refresh simultaneously
+
+3. **Error Conditions**
+   - Attempt 3+ player joins
+   - Network interruptions
+   - Mid-game browser close and rejoin
+
+### Known Limitations
+
+- Players must use consistent names throughout session
+- Two different players cannot use same name
+- Room IDs are deterministic (same squad = same room)
+
+### Recent Improvements (December 19, 2024)
+
+#### Comprehensive Thread Safety and Player Management
+All puzzle games now implement:
+- **ConcurrentDictionary** for thread-safe player collections
+- **Player kick logic** to handle reconnections gracefully
+- **Consistent pattern** across all 8 puzzle types:
+  - CodeCracker
+  - NavigationMaze
+  - AlchemyLab
+  - RuneProtocol
+  - WordForge
+  - PictureExplanation
+  - SignalDecoder
+  - Act1 Multiplayer
+
+```csharp
+// Universal pattern now used across all games:
+var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+{
+    Players.TryRemove(existingPlayerEntry.Key, out _);
+    PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+    Console.WriteLine($"[GameType] Removed old instance of player {playerName}");
+}
+```
+
+### Future Improvements
+
+- Add unique session IDs for concurrent games
+- Implement authentication tokens instead of names
+- Add Redis for distributed state management
+- Implement proper session timeout and cleanup
 4. **Use shared rooms**: Ensure both players join same testing room for synchronized experience
 
 This testing system dramatically improves development velocity by providing instant access to any story content while maintaining the full multiplayer experience and role preservation mechanics.
@@ -1018,6 +1153,44 @@ Extending to more Acts:
 - Group management: Standard SignalR patterns throughout
 
 This centralized architecture allows for consistent multiplayer experiences across all puzzle types while maintaining clear separation of concerns for each game system.
+
+## Recent Bug Fixes and Improvements (December 2024)
+
+### 🐛 Scene 1 Initialization Bug - FIXED (December 19, 2024)
+
+**Issue**: Scene 1 (Emergency Briefing) displayed no text, backgrounds, or characters when starting a new game from the beginning.
+
+**Root Cause**: The scene initialization logic in `GameHub.cs` was missing explicit handling for the "emergency_briefing" phase. When `currentPhase == "emergency_briefing"`, the code relied on an else clause fallback, but the phase wasn't explicitly checked in the if-else chain.
+
+**Solution**: 
+1. Added explicit "emergency_briefing" phase checks in both first and second player logic
+2. Implemented null-safe scene ID access to prevent potential crashes
+3. Added debug logging for scene creation tracking
+
+```csharp
+// Added to GameHub.cs:2050-2057
+if (currentPhase == "emergency_briefing")
+{
+    game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+}
+else if (currentPhase == "database_revelation")
+{
+    // ... rest of the checks
+}
+
+// Null-safe scene ID access
+game.GameState = new VisualNovelState 
+{ 
+    CurrentSceneId = game.CurrentScene?.Id ?? "emergency_briefing",
+    CurrentDialogueIndex = 0,
+    IsTextFullyDisplayed = false
+};
+```
+
+**Files Modified**:
+- `Hubs/GameHub.cs:2050-2220` - Scene initialization logic with explicit phase handling
+
+**Impact**: Scene 1 now correctly displays all content (text, backgrounds, characters) when starting a new game.
 
 ## Recent Bug Fixes and Improvements (August 2025)
 

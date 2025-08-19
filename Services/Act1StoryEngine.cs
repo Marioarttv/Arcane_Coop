@@ -54,7 +54,8 @@ namespace Arcane_Coop.Services
                 Id = "council_antechamber",
                 Name = "Council Chamber Antechamber - After the Meeting",
                 Layout = SceneLayout.DualCharacters,
-                Theme = NovelTheme.Piltover
+                Theme = NovelTheme.Piltover,
+                BackgroundImage = "/images/Backgrounds/Scene1.png"
             };
 
             // Characters
@@ -220,7 +221,10 @@ namespace Arcane_Coop.Services
                     Text = "It's about the blue-haired girl. Someone down in Zaun claims they saw her. Recently. Like, yesterday recently.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    BackgroundImage = "/images/Backgrounds/HouseBackground.jpg",
+                    BackgroundTransition = BackgroundTransitionType.Fade,
+                    BackgroundTransitionDuration = 1500
                 },
                 new DialogueLine
                 {

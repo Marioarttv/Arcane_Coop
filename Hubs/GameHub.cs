@@ -1230,6 +1230,15 @@ public class GameHub : Hub
         
         var game = _pictureExplanationGames.GetOrAdd(roomId, _ => new PictureExplanationGame());
         
+        // Check if we need to kick an old instance with the same name
+        var existingPlayerEntry = game.PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != Context.ConnectionId);
+        if (existingPlayerEntry.Key != null)
+        {
+            Console.WriteLine($"[GameHub] Kicking old instance of player {playerName} (connection: {existingPlayerEntry.Key}) from PictureExplanation room {roomId}");
+            await Clients.Client(existingPlayerEntry.Key).SendAsync("PictureExplanationInvalidAction", "You have been disconnected - another player with the same name has joined");
+            await Groups.RemoveFromGroupAsync(existingPlayerEntry.Key, roomId);
+        }
+        
         try
         {
             var role = game.AddPlayer(Context.ConnectionId, playerName);
@@ -1263,6 +1272,16 @@ public class GameHub : Hub
         Console.WriteLine($"[GameHub] JoinPictureExplanationGameWithRole - Room: {roomId}, Player: {playerName}, RequestedRole: {requestedRole}");
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         var game = _pictureExplanationGames.GetOrAdd(roomId, _ => new PictureExplanationGame());
+        
+        // Check if we need to kick an old instance with the same name
+        var existingPlayerEntry = game.PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != Context.ConnectionId);
+        if (existingPlayerEntry.Key != null)
+        {
+            Console.WriteLine($"[GameHub] Kicking old instance of player {playerName} (connection: {existingPlayerEntry.Key}) from PictureExplanation room {roomId}");
+            await Clients.Client(existingPlayerEntry.Key).SendAsync("PictureExplanationInvalidAction", "You have been disconnected - another player with the same name has joined");
+            await Groups.RemoveFromGroupAsync(existingPlayerEntry.Key, roomId);
+        }
+        
         Console.WriteLine($"[GameHub] PictureExplanation game state - Room: {roomId}, Current players: {game.GetConnectedPlayers().Count}");
         try
         {
@@ -1631,7 +1650,7 @@ public class GameHub : Hub
                 game.CurrentScene = CreateDefaultVisualNovelScene(playerRole == VisualNovelPlayerRole.Piltover ? NovelTheme.Piltover : NovelTheme.Zaun);
                 game.GameState = new VisualNovelState 
                 { 
-                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentSceneId = game.CurrentScene?.Id ?? "emergency_briefing",
                     CurrentDialogueIndex = 0,
                     IsTextFullyDisplayed = false
                 };
@@ -1956,29 +1975,64 @@ public class GameHub : Hub
             
             var game = _act1Games.GetOrAdd(roomId, _ => new Act1MultiplayerGame { RoomId = roomId });
             
+            // First check if a player with the same name exists and kick them out
+            var existingPlayerWithSameName = game.Players.FirstOrDefault(p => p.PlayerName == playerName && p.PlayerId != Context.ConnectionId);
+            if (existingPlayerWithSameName != null)
+            {
+                Console.WriteLine($"[GameHub] Kicking old instance of player {playerName} (connection: {existingPlayerWithSameName.PlayerId}) from Act1 room {roomId}");
+                
+                // Remove the old player from the game
+                game.Players.Remove(existingPlayerWithSameName);
+                
+                // Notify the old connection that they've been replaced
+                await Clients.Client(existingPlayerWithSameName.PlayerId).SendAsync("Act1Error", "You have been disconnected - another player with the same name has joined");
+                
+                // Remove old connection from the group
+                await Groups.RemoveFromGroupAsync(existingPlayerWithSameName.PlayerId, roomId);
+            }
+            
+            // Clean up other disconnected players
+            var disconnectedPlayers = game.Players.Where(p => !p.IsConnected && p.PlayerId != Context.ConnectionId).ToList();
+            foreach (var disconnectedPlayer in disconnectedPlayers)
+            {
+                game.Players.Remove(disconnectedPlayer);
+                Console.WriteLine($"[GameHub] Removed disconnected player {disconnectedPlayer.PlayerName} from Act1 room {roomId}");
+            }
+            
+            // Check if current connection is already in the room (reconnection)
+            var existingPlayer = game.Players.FirstOrDefault(p => p.PlayerId == Context.ConnectionId);
+            if (existingPlayer != null)
+            {
+                existingPlayer.IsConnected = true;
+                existingPlayer.JoinedAt = DateTime.UtcNow;
+                Console.WriteLine($"[GameHub] Player {playerName} reconnected to Act1 room {roomId}");
+            }
             // Check if room is full (max 2 players)
-            if (game.Players.Count >= 2)
+            else if (game.Players.Count >= 2)
             {
                 Console.WriteLine($"[GameHub] Act1 room full - Room: {roomId}, Players in room: {string.Join(", ", game.Players.Select(p => p.PlayerName))}, Attempting to join: {playerName}");
                 await Clients.Caller.SendAsync("Act1GameFull");
                 return;
             }
-            
-            var playerId = Context.ConnectionId;
-            
-            var player = new Act1Player
+            else
             {
-                PlayerId = playerId,
-                PlayerName = playerName,
-                OriginalSquadName = originalSquadName,
-                SquadName = roomId, // Full room ID with modifiers
-                PlayerRole = role,
-                PlayerAvatar = avatar,
-                IsConnected = true,
-                JoinedAt = DateTime.UtcNow
-            };
-            
-            game.Players.Add(player);
+                // Create new player only if not reconnecting
+                var playerId = Context.ConnectionId;
+                
+                var player = new Act1Player
+                {
+                    PlayerId = playerId,
+                    PlayerName = playerName,
+                    OriginalSquadName = originalSquadName,
+                    SquadName = roomId, // Full room ID with modifiers
+                    PlayerRole = role,
+                    PlayerAvatar = avatar,
+                    IsConnected = true,
+                    JoinedAt = DateTime.UtcNow
+                };
+                
+                game.Players.Add(player);
+            }
             
             // Initialize game scene - handle both first player and scene updates
             if (game.Players.Count == 1)
@@ -1993,7 +2047,11 @@ public class GameHub : Hub
                         : "emergency_briefing";
                     Console.WriteLine($"[GameHub] Current phase at index {game.CurrentSceneIndex}: '{currentPhase}'");
                     
-                    if (currentPhase == "database_revelation")
+                    if (currentPhase == "emergency_briefing")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "database_revelation")
                     {
                         game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
                     }
@@ -2056,12 +2114,14 @@ public class GameHub : Hub
                 }
                 else
                 {
+                    Console.WriteLine($"[GameHub] Creating emergency briefing scene for first player (no startAtSceneIndex)");
                     game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                    Console.WriteLine($"[GameHub] Scene created: {game.CurrentScene?.Name ?? "NULL"}, DialogueLines: {game.CurrentScene?.DialogueLines?.Count ?? 0}, Characters: {game.CurrentScene?.Characters?.Count ?? 0}");
                 }
                 
                 game.GameState = new VisualNovelState 
                 { 
-                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentSceneId = game.CurrentScene?.Id ?? "emergency_briefing",
                     CurrentDialogueIndex = 0,
                     IsTextFullyDisplayed = false
                 };
@@ -2075,7 +2135,11 @@ public class GameHub : Hub
                     ? game.StoryProgression[game.CurrentSceneIndex] 
                     : "emergency_briefing";
                 
-                if (currentPhase == "database_revelation")
+                if (currentPhase == "emergency_briefing")
+                {
+                    game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                }
+                else if (currentPhase == "database_revelation")
                 {
                     game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
                 }
@@ -2138,7 +2202,7 @@ public class GameHub : Hub
                 
                 game.GameState = new VisualNovelState 
                 { 
-                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentSceneId = game.CurrentScene?.Id ?? "emergency_briefing",
                     CurrentDialogueIndex = 0,
                     IsTextFullyDisplayed = false
                 };
@@ -2149,7 +2213,7 @@ public class GameHub : Hub
                 game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
                 game.GameState = new VisualNovelState 
                 { 
-                    CurrentSceneId = game.CurrentScene.Id,
+                    CurrentSceneId = game.CurrentScene?.Id ?? "emergency_briefing",
                     CurrentDialogueIndex = 0,
                     IsTextFullyDisplayed = false
                 };
@@ -2167,7 +2231,7 @@ public class GameHub : Hub
             // Send game state to all players
             await BroadcastAct1GameState(roomId);
             
-            await Clients.Caller.SendAsync("Act1GameJoined", CreateAct1PlayerView(game, playerId));
+            await Clients.Caller.SendAsync("Act1GameJoined", CreateAct1PlayerView(game, Context.ConnectionId));
         }
         catch (Exception ex)
         {
@@ -3052,8 +3116,8 @@ public class AlchemyGame
         }
     };
     
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public List<AlchemyIngredient> AvailableIngredients { get; set; } = new();
     public List<AlchemyIngredient> CauldronContents { get; set; } = new();
     public bool IsCompleted { get; set; } = false;
@@ -3080,6 +3144,15 @@ public class AlchemyGame
     
     public PlayerRole? AddPlayer(string connectionId, string playerName)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[AlchemyGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
             return existingRole;
@@ -3095,6 +3168,15 @@ public class AlchemyGame
     
     public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[AlchemyGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
             return existingRole;
@@ -3124,8 +3206,8 @@ public class AlchemyGame
     
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         return removed;
     }
     
@@ -3435,8 +3517,8 @@ public class TicTacToeGame
     public bool GameOver { get; set; } = false;
     public string? Winner { get; set; }
     public int[]? WinningLine { get; set; }
-    public Dictionary<string, string> Players { get; set; } = new(); // ConnectionId -> Symbol
-    public Dictionary<string, string> PlayerNames { get; set; } = new(); // ConnectionId -> Name
+    public ConcurrentDictionary<string, string> Players { get; set; } = new(); // ConnectionId -> Symbol
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new(); // ConnectionId -> Name
 
     public string? AddPlayer(string connectionId, string playerName)
     {
@@ -3450,8 +3532,8 @@ public class TicTacToeGame
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         
         if (removed)
         {
@@ -3552,8 +3634,8 @@ public class CodeCrackerGame
         new WordPuzzle("secret", "something kept hidden", "Geheimnis", "confidential", "s_cr_t")
     };
 
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public int CurrentWordIndex { get; set; } = 0;
     public bool IsCompleted { get; set; } = false;
     public int Score { get; set; } = 0;
@@ -3580,6 +3662,15 @@ public class CodeCrackerGame
     
     public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[CodeCrackerGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         // If player is already in the game, return their existing role
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
@@ -3593,6 +3684,7 @@ public class CodeCrackerGame
         {
             "piltover" => PlayerRole.Piltover,
             "zaunite" => PlayerRole.Zaunite,
+            "zaun" => PlayerRole.Zaunite,
             _ => Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
         };
         
@@ -3609,8 +3701,8 @@ public class CodeCrackerGame
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         return removed;
     }
 
@@ -3821,8 +3913,8 @@ public class SimpleSignalDecoderGame
         }
     };
 
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public List<string> GuessedWords { get; set; } = new();
     public List<string> AttemptHistory { get; set; } = new();
     public bool IsCompleted { get; set; } = false;
@@ -3836,6 +3928,15 @@ public class SimpleSignalDecoderGame
     
     public PlayerRole? AddPlayer(string connectionId, string playerName)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[SimpleSignalDecoderGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
             return existingRole;
@@ -3851,6 +3952,15 @@ public class SimpleSignalDecoderGame
     
     public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[SimpleSignalDecoderGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
             return existingRole;
@@ -3880,8 +3990,8 @@ public class SimpleSignalDecoderGame
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         return removed;
     }
 
@@ -4111,8 +4221,8 @@ public class NavigationMazeGame
         }
     };
     
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public int CurrentLocationId { get; set; } = 0;
     public bool IsCompleted { get; set; } = false;
     public bool IsGameOver { get; set; } = false;
@@ -4138,6 +4248,15 @@ public class NavigationMazeGame
     
     public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[NavigationMazeGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
             return existingRole;
@@ -4178,8 +4297,8 @@ public class NavigationMazeGame
     
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         return removed;
     }
     
@@ -4446,8 +4565,8 @@ public class RuneProtocolGame
         }
     };
     
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public bool[] RuneStates { get; set; } = new bool[8]; // R1-R8 states
     public int CurrentLevel { get; set; } = 0;
     public bool IsCompleted { get; set; } = false;
@@ -4483,6 +4602,15 @@ public class RuneProtocolGame
     {
         lock (_gate)
         {
+            // Check if a player with the same name exists and remove them
+            var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+            if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+            {
+                Players.TryRemove(existingPlayerEntry.Key, out _);
+                PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+                Console.WriteLine($"[RuneProtocolGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+            }
+            
             if (Players.TryGetValue(connectionId, out var existingRole))
             {
                 return existingRole;
@@ -4511,8 +4639,8 @@ public class RuneProtocolGame
     {
         lock (_gate)
         {
-            var removed = Players.Remove(connectionId);
-            PlayerNames.Remove(connectionId);
+            var removed = Players.TryRemove(connectionId, out _);
+            PlayerNames.TryRemove(connectionId, out _);
             return removed;
         }
     }
@@ -4958,8 +5086,8 @@ public class PictureExplanationGame
         return femaleImages.OrderBy(x => random.Next()).Take(count).ToList();
     }
 
-    private readonly Dictionary<string, PlayerRole> Players = new();
-    private readonly Dictionary<string, string> PlayerNames = new();
+    private readonly ConcurrentDictionary<string, PlayerRole> Players = new();
+    public readonly ConcurrentDictionary<string, string> PlayerNames = new();
     
     public int CurrentRound { get; private set; } = 1;
     public int TotalRounds { get; private set; } = 4;
@@ -4984,6 +5112,15 @@ public class PictureExplanationGame
 
     public string AddPlayer(string connectionId, string playerName)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (existingPlayerEntry.Key != null)
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[PictureExplanationGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.Count >= 2)
             return "";
 
@@ -5001,6 +5138,15 @@ public class PictureExplanationGame
 
     public string AddPlayer(string connectionId, string playerName, string? requestedRole)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (existingPlayerEntry.Key != null)
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[PictureExplanationGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         if (Players.Count >= 2)
             return "";
 
@@ -5046,8 +5192,8 @@ public class PictureExplanationGame
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
-        PlayerNames.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
+        PlayerNames.TryRemove(connectionId, out _);
         return removed;
     }
 
@@ -5301,8 +5447,8 @@ public class WordForgeGame
         new WordCombination { Id = "unreadable", RootId = "read", AffixId = "un", ResultWord = "unreadable", Definition = "not able to be read", Order = 5 }
     };
 
-    public Dictionary<string, PlayerRole> Players { get; set; } = new();
-    public Dictionary<string, string> PlayerNames { get; set; } = new();
+    public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
+    public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
     public List<WordCombination> CompletedCombinations { get; set; } = new();
     public AnvilSlot CurrentAnvil { get; set; } = new();
     public GameMode Mode { get; set; } = GameMode.Assisted;
@@ -5328,6 +5474,20 @@ public class WordForgeGame
 
     public string? AddPlayer(string connectionId, string playerName, GameMode mode)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[WordForgeGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
+        if (Players.TryGetValue(connectionId, out var existingRole))
+        {
+            return existingRole.ToString();
+        }
+        
         if (Players.Count >= 2)
             return null;
 
@@ -5341,6 +5501,15 @@ public class WordForgeGame
     
     public PlayerRole? AddPlayerWithRole(string connectionId, string playerName, string requestedRole, GameMode mode)
     {
+        // Check if a player with the same name exists and remove them
+        var existingPlayerEntry = PlayerNames.FirstOrDefault(kvp => kvp.Value == playerName && kvp.Key != connectionId);
+        if (!string.IsNullOrEmpty(existingPlayerEntry.Key))
+        {
+            Players.TryRemove(existingPlayerEntry.Key, out _);
+            PlayerNames.TryRemove(existingPlayerEntry.Key, out _);
+            Console.WriteLine($"[WordForgeGame] Removed old instance of player {playerName} (connection: {existingPlayerEntry.Key})");
+        }
+        
         // If player is already in the game, return their existing role
         if (Players.TryGetValue(connectionId, out var existingRole))
         {
@@ -5538,10 +5707,10 @@ public class WordForgeGame
 
     public bool RemovePlayer(string connectionId)
     {
-        var removed = Players.Remove(connectionId);
+        var removed = Players.TryRemove(connectionId, out _);
         if (removed)
         {
-            PlayerNames.Remove(connectionId);
+            PlayerNames.TryRemove(connectionId, out _);
             if (Players.Count == 0)
             {
                 Reset(); // Reset game if no players left

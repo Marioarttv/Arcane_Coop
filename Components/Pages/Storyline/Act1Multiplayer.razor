@@ -8,6 +8,17 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+<script>
+    window.preloadImage = function(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+            img.src = src;
+        });
+    };
+</script>
+
 <div class="act1-multiplayer-container @GetThemeClass()">
     @if (!IsConnected)
     {
@@ -90,9 +101,9 @@
         <div class="story-scene @GetThemeClass()">
             <!-- Background -->
             <div class="scene-background @GetBackgroundClass()">
-                @if (!string.IsNullOrEmpty(playerView.CurrentScene.BackgroundImage))
+                @if (!string.IsNullOrEmpty(GetCurrentBackgroundImage()))
                 {
-                    <img src="@playerView.CurrentScene.BackgroundImage" alt="Scene background" class="background-image" />
+                    <img src="@GetCurrentBackgroundImage()" alt="Scene background" class="background-image" />
                 }
                 <div class="background-overlay"></div>
                 <div class="atmospheric-effects"></div>
@@ -359,8 +370,15 @@
         {
             await InvokeAsync(() =>
             {
+                // Check if scene changed - reset persistent background
+                if (view?.CurrentScene?.Id != lastSceneId)
+                {
+                    persistentBackgroundImage = null;
+                    lastSceneId = view?.CurrentScene?.Id;
+                }
+                
                 playerView = view;
-                connectedPlayersCount = view.ConnectedPlayers.Count;
+                connectedPlayersCount = view?.ConnectedPlayers?.Count ?? 0;
                 UpdateCurrentDialogue();
                 StateHasChanged();
                 if (playerView?.ShowTransition == true)
@@ -901,6 +919,26 @@
                 Console.WriteLine($"[Act1Multiplayer] DEBUG: Error skipping to end: {ex.Message}");
             }
         }
+    }
+
+    // Background management helper method with persistence
+    private string? persistentBackgroundImage = null;
+    private string? lastSceneId = null;
+    
+    private string GetCurrentBackgroundImage()
+    {
+        if (playerView?.CurrentScene == null) return "";
+        
+        // Check if current dialogue has a background override
+        if (currentDialogue?.BackgroundImage != null)
+        {
+            // Update persistent background when a new one is set
+            persistentBackgroundImage = currentDialogue.BackgroundImage;
+            return currentDialogue.BackgroundImage;
+        }
+            
+        // Use persistent background if we have one, otherwise fall back to scene background
+        return persistentBackgroundImage ?? playerView.CurrentScene.BackgroundImage ?? "";
     }
 }
 
@@ -2054,5 +2092,55 @@
         padding: 0.8rem 1rem;
         font-size: 1rem;
     }
+}
+
+/********************************************
+ * Background Transitions (Act1)
+ ********************************************/
+.scene-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.8);
+    transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.atmospheric-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.background-piltover .atmospheric-effects {
+    background: radial-gradient(circle at 20% 50%, rgba(200, 170, 110, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+}
+
+.background-zaun .atmospheric-effects {
+    background: radial-gradient(circle at 30% 70%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(0, 255, 200, 0.05) 0%, transparent 50%);
 }
 </style>
