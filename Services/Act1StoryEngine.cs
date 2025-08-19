@@ -1,5 +1,8 @@
 using Arcane_Coop.Models;
+using System;
+using System.Diagnostics.Metrics;
 using System.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Arcane_Coop.Services
 {
@@ -45,10 +48,10 @@ namespace Arcane_Coop.Services
             // Get player names for dynamic character naming
             var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
             var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
-            
+
             var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Enforcer Recruit";
             var zaunPlayerName = zaunPlayer?.PlayerName ?? "Vi's Old Friend";
-            
+
             var scene = new VisualNovelScene
             {
                 Id = "council_antechamber",
@@ -137,8 +140,8 @@ namespace Arcane_Coop.Services
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Stanton/stanton_default.png" },
-                        { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_default.png" }
+                        { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_angryt.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_surprisedf.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -159,563 +162,577 @@ namespace Arcane_Coop.Services
             // Dialogue
             scene.DialogueLines.AddRange(new[]
             {
-                // Opening Scene
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "Council Chamber Antechamber - Moments after the meeting",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "A blockade. A bloody BLOCKADE! While Silco sits comfortable and Jinx... Powder is out there with him.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Vi, the Council needs time to—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Time? How much more time do they need? Every second we waste, she slips further away!",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                // Player Introduction - simplified
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "Footsteps echo in the marble hallway...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "Caitlyn! Thank the gears I found you. I know you're not supposed to be on active cases, but... this couldn't wait.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "What is it? If Stanton finds out you're—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "It's about the blue-haired girl. Someone down in Zaun claims they saw her. Recently. Like, yesterday recently.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined,
-                    BackgroundImage = "/images/Backgrounds/HouseBackground.jpg",
-                    BackgroundTransition = BackgroundTransitionType.Fade,
-                    BackgroundTransitionDuration = 1500
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Who? Who saw her?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = $"That's the thing... they'll only talk to someone they trust. Said they knew you from before, Vi. Goes by the name {zaunPlayerName}.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "A voice emerges from the shadows...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Still grabbing people when you're excited, eh Vi?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Default
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "No way... is that really you? I thought you were—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Dead? Locked up? Nah, just keeping my head down since... since that night. But when I saw what I saw, I knew I had to find you.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "How did you two even connect?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "Pure chance. I was following up on witness reports near the docks when they approached ME. Said they had information but would only share it with Vi present.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Default
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = $"And I wasn't about to trust some random enforcer with this. But when {piltoverPlayerName} mentioned working with you, Caitlyn, and that Vi was actually alive and out of Stillwater... I took the risk.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "You really saw her? Powder?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Not here. Too many ears. But yeah, Vi. I saw her. And there's more - something about files with red marks, people being hunted. It's all connected to that night at the warehouse.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Do you trust them?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "They knew things... details about Vi that checked out. And they seemed genuinely scared about what they'd seen.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Forget the Council and their blockade. This is our lead.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "We do this together. All four of us.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "We'll need to be careful. If Stanton finds out we're investigating without authorization... he's been paranoid since taking over from Marcus.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Then we better not let him find out. Come on, there was a break-in last night. That's where this all starts. Someone dropped something that'll interest you.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Then what are we waiting for?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "The group heads into the night, leaving Piltover's gleaming towers for Zaun's shadowed alleys...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
+                // Opening Scene - Council Chamber Antechamber
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "Council Chamber Antechamber - The grand doors slam shut behind them",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Negotiate. They want to NEGOTIATE with him. After everything he's done.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Vi, please. The Council is trying to prevent a war—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "War? We're already at war! People are dying down there every day from his Shimmer. And Powder... Jinx is with him.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Which is exactly why we need to be smart about this. If we can get to Silco diplomatically—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "You really think you can talk to him? He hates everything Piltover stands for. He'll never back down.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+
+// Player Introduction
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "Hurried footsteps echo through the marble hallway...",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "Caitlyn! Officer Kiramman! Wait!",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Not now, recruit. This isn't a good—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "I know, I know I shouldn't interrupt, but there's someone here who says they know Vi. Says it's urgent—about the blue-haired girl. Jinx.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "What? Who?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = $"Someone from Zaun. Said their name was {zaunPlayerName}. They're waiting by the service entrance—didn't want to come through the main doors.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = $"{zaunPlayerName}? That's... no way. I thought they were dead.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "You know this person?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "From before. Before Stillwater. If it's really them...",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+
+// Service Entrance - Player B Introduction
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "They hurry to the service entrance, where a figure waits in the shadows...",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Vi? Is it really you? Damn, you look... different. Cleaner.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Default
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "I could say the same about you being alive. I heard you got caught in the raid after... after that night.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Almost did. Been keeping my head down ever since. But when I saw her—Jinx—I knew I had to find you.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "You saw Powder? When? Where?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Last night. She was breaking into some old records storage in Zaun. But Vi... there's more. She dropped something—files with photos. People marked with red X's.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Marked targets? She's planning something.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Whatever it is, it's happening soon. The way she was moving, the supplies she had... this wasn't reconnaissance. It was preparation.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Forget the Council and their negotiations. This is our chance to find her before she does something she can't take back.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Vi, we can't just—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Can't what? The Council wants to talk while my sister is out there planning to kill people. You heard them in there—oil and water, right? Well, maybe it's time we stop pretending otherwise.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "That's not... Vi, please. We can do this together. All of us.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Look, I don't care about your topside politics. But those files I saw? Whatever she's planning, it's happening soon. Tonight, maybe.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "Then we need to move fast. Stanton's already mobilizing enforcers after the bridge incident. If they find her first...",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "They'll shoot first. I know. That's why we do this our way.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Alright. But we do this smart. No charging in without a plan.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "The break-in site's still fresh. Enforcers haven't found it yet—too busy up here cleaning up after the bridge. We should start there.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Then let's go. Every second we waste arguing is another second closer to disaster.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "The unlikely group heads into the depths of Zaun, leaving the Council's politics behind for a more personal mission...",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
                 
                 // === SCENE 2: THE CRIME SCENE ===
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "The Crime Scene - Dark alleyway in Zaun",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                // Investigation Begins
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "This is it. Saw the whole thing from my window last night - explosion around 2 AM, then someone bolting from that door.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "These burn patterns... definitely Jinx's work. She always did like her powder bombs.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Forced entry, but sophisticated. She picked the lock first, then blew it when that didn't work fast enough. She was looking for something specific.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "This was a records storage facility. Why would she—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Because she's not random anymore. Silco's turned her into his weapon. Everything has a purpose now, even if it's twisted.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                // The Discovery
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Guys... there's something over here.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "These files... they've got photos. Four people, all marked with red crosses. And look at this stamp - 'PROJECT SAFEGUARD - CLASSIFIED'.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Let me see those. These are personnel files, but old ones. These scientists worked on early Hextech prototypes before Jayce's breakthrough.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Why would Powder care about old scientists?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "Maybe she doesn't. Maybe Silco does.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                // Stanton's Interruption
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "Heavy enforcer boots echo down the alley...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "Well, well. Kiramman. I should have known you'd show up where you don't belong.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Deputy Stanton. We're investigating—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "You're interfering with an active crime scene is what you're doing. Those files... where did you get those?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "They were on the ground. The suspect must have dropped—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "These are... these were in Marcus's private— I mean, these are classified enforcer documents!",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Marcus's private files? How would Jinx know about those?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "That's none of your concern! This is evidence in an ongoing investigation. Way above your clearance, Kiramman.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Deputy, if this is connected to the attacks—",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "The only thing connected here is you to a violation of protocol! Get out of here before I report this to the Council. Sheriff Marcus may have tolerated your meddling, but I won't.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "He's sweating. He knows something.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "What was that, recruit? You want to join your friend in Stillwater?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "Oh yes, I know all about you. One word from me and you're back in that cell.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Try it.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Vi, don't. We're leaving.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "This isn't over, Deputy.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "stanton",
-                    Text = "It is if you know what's good for you. Now GET OUT!",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
-                },
-                // After Leaving
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "After leaving the crime scene...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "He's dirty. Did you see his face when he mentioned Marcus's files?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Those weren't just classified documents. They were personal files Marcus kept hidden. But how did Jinx know they existed?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "And why these four scientists specifically? What connects them?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "We need to find out who those people in the photos were. If Jinx marked them...",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Then they're either already dead, or about to be. We need to move fast.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "The enforcer database. I can get us in, but we'll have to be careful. Stanton will be watching for us now.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "The Piltover Enforcer HQ? You sure about this?",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "No choice. Those people don't know what's coming for them. And neither does Powder if Silco's pulling her strings.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = $"We'll split up once we're inside. {zaunPlayerName}, you'll need to describe what you remember from those photos to {piltoverPlayerName}, who can search the database.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "I got a good look at them. I can do this.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "And I know my way around the enforcer systems. We'll find them.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Then let's go. Every second counts.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                
-                // Transition to Picture Explanation Puzzle
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "The team heads to Piltover Enforcer HQ to identify the four scientists from the marked photos...",
-                    AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
-                },
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "Zaun - Abandoned Records Storage Facility",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "This is it. Whole place shook when she blew the door. Classic Jinx—why pick a lock when you can make it disappear?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "These scorch marks... she's using more powerful explosives. The monkey bombs were just toys compared to this.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Look at the precision though. She only destroyed what she needed to. This wasn't random destruction—she was after something specific.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "Old enforcer records? What would Jinx want with—wait, these filing cabinets. They're from the old administration. Pre-Marcus.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Or Marcus's private stash. He was dirty—working with Silco. Maybe she's cleaning up loose ends.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Over here—these are the files I saw her drop.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Personnel files... scientists? These are old Hextech researchers. They worked on the early prototypes before the technology was regulated.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "'PROJECT SAFEGUARD - CLASSIFIED.' And look—four photos, all marked with red X's. These are hit targets.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Why would she be hunting old scientists? What does Silco want with—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+
+// Stanton's Interruption
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "Heavy enforcer boots echo down the alley. Deputy Stanton appears with two officers.",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "Kiramman! What the hell are you doing here? This is a restricted crime scene!",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Deputy Stanton. We received intelligence about—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "Intelligence? From who? The Council just voted to pursue diplomatic channels, and here you are playing vigilante with... is that the Zaunite prisoner?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "I'm not a prisoner anymore, badge boy.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "Those files—give them here. NOW.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "They were just lying here. The bomber must have—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "These are... how did she even know about—These were supposed to be destroyed! Marcus said he burned all of—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Surprised
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Marcus's files? Deputy, what aren't you telling us?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "That's classified! Way above your pay grade, Kiramman. You're already on thin ice after that stunt on the bridge.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "You're scared. What was Marcus hiding? What do these scientists know?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "Enough! You're interfering with an official investigation. Get out before I have you all arrested for obstruction!",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "Deputy, if Jinx is targeting these people—",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "stanton",
+    Text = "The situation is under control! We have protocols in place. Now LEAVE!",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Angry
+},
+
+// After Leaving
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "The group retreats from the scene, regrouping in a nearby alley...",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "He knows something. Marcus was keeping secrets, and now Stanton's trying to bury them.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Those weren't just classified documents. They were personal files—Marcus's off-the-books operations. But how would Jinx know about them?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Silco. Had to be. Marcus was in his pocket for years. Maybe Silco kept copies as insurance.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = "We need to identify those scientists before Jinx finds them. If they're still alive...",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "They won't be for long. Not if she's hunting them.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "The enforcer database. I still have access, despite Stanton's threats. We can search for those faces.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Breaking into enforcer HQ? That's your plan?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Worried
+},
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Not breaking in. I'm still technically an officer. But we'll need to be careful—Stanton will have eyes everywhere now.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Serious
+},
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "Then we better move fast. If the Council gets their way, they'll try to negotiate while Jinx picks off targets one by one.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "playerA",
+    Text = $"I can get us into the records room. {zaunPlayerName}, you saw the photos clearly?",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "playerB",
+    Text = "Burned into my memory. Four faces, four targets. Let's find them before she does.",
+    AnimationType = TextAnimationType.Typewriter,
+    TypewriterSpeed = 40,
+    SpeakerExpression = CharacterExpression.Determined
+},
+new DialogueLine
+{
+    CharacterId = "narrator",
+    Text = "The team heads toward Piltover Enforcer HQ, knowing they're racing against time—and against Jinx...",
+    AnimationType = TextAnimationType.FadeIn,
+    TypewriterSpeed = 30
+},
             });
 
             // Mark the end of main content - all dialogue is now linear without branches
@@ -741,10 +758,10 @@ namespace Arcane_Coop.Services
             // Get player names for dynamic character naming
             var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
             var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
-            
+
             var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
             var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
-            
+
             var scene = new VisualNovelScene
             {
                 Id = "database_revelation",
@@ -1105,10 +1122,10 @@ namespace Arcane_Coop.Services
             // Get player names for dynamic character naming
             var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
             var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
-            
+
             var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
             var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
-            
+
             var scene = new VisualNovelScene
             {
                 Id = "radio_decoded",
@@ -1405,10 +1422,10 @@ namespace Arcane_Coop.Services
             // Get player names for dynamic character naming
             var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
             var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
-            
+
             var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
             var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
-            
+
             var scene = new VisualNovelScene
             {
                 Id = "renni_apartment",
@@ -1876,10 +1893,10 @@ namespace Arcane_Coop.Services
             // Get player names for dynamic character naming
             var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
             var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
-            
+
             var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
             var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
-            
+
             var scene = new VisualNovelScene
             {
                 Id = "code_decoded",
@@ -2605,177 +2622,177 @@ namespace Arcane_Coop.Services
             return scene;
         }
 
-		public VisualNovelScene CreateFollowingJinxTrailScene(string squadName, Act1MultiplayerGame game)
-		{
-			var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
-			var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+        public VisualNovelScene CreateFollowingJinxTrailScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
 
-			var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
-			var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
 
-			var scene = new VisualNovelScene
-			{
-				Id = "following_jinx_trail",
-				Name = "Following the Trail",
-				Layout = SceneLayout.DualCharacters,
-				Theme = NovelTheme.Zaun
-			};
+            var scene = new VisualNovelScene
+            {
+                Id = "following_jinx_trail",
+                Name = "Following the Trail",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Zaun
+            };
 
-			scene.Characters.AddRange(new[]
-			{
-				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
-			});
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
 
-			scene.DialogueLines.AddRange(new[]
-			{
-				new DialogueLine { CharacterId = "narrator", Text = "Scene 10: Following the Trail", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "narrator", Text = "Approaching the Hideout — Abandoned Arcade District", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "vi", Text = "I know this place. We used to come here as kids. Before everything went wrong.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "It's completely abandoned now. Been that way for years.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "The footprints are everywhere here. She comes and goes frequently.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "Look — they converge on that old arcade. 'Jericho's Games.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Powder loved that place. She'd spend hours trying to beat the high scores.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 10: Following the Trail", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Approaching the Hideout — Abandoned Arcade District", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "I know this place. We used to come here as kids. Before everything went wrong.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "It's completely abandoned now. Been that way for years.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "The footprints are everywhere here. She comes and goes frequently.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "Look — they converge on that old arcade. 'Jericho's Games.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Powder loved that place. She'd spend hours trying to beat the high scores.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Entering the Arcade", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerB", Text = "It's quiet. Too quiet.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "She's not here. But this is definitely her space.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "My god... look at this place.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Entering the Arcade", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerB", Text = "It's quiet. Too quiet.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "She's not here. But this is definitely her space.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "My god... look at this place.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Discovering the Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "The walls... they're covered in drawings. Equations. Schematics.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "And these mannequins... they're dressed like people. Is that one supposed to be you, Vi?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "She made a whole fake family. Look — there's Mylo, Claggor... even Vander.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "Vi, I'm sorry. This must be—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Look at the workbench. Those are bombs. Lots of them.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Discovering the Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "The walls... they're covered in drawings. Equations. Schematics.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "And these mannequins... they're dressed like people. Is that one supposed to be you, Vi?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "She made a whole fake family. Look — there's Mylo, Claggor... even Vander.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Vi, I'm sorry. This must be—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Look at the workbench. Those are bombs. Lots of them.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Finding the Evidence", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "Guys, you need to see this. There are photos here.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "The four scientists. All marked with 'MURDERERS' in red paint.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "And these documents... 'Proof of Hextech cores stored in Vander's warehouse.' But these are forgeries.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Silco. He made her believe the explosion wasn't her fault.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Finding the Evidence", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "Guys, you need to see this. There are photos here.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "The four scientists. All marked with 'MURDERERS' in red paint.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "And these documents... 'Proof of Hextech cores stored in Vander's warehouse.' But these are forgeries.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Silco. He made her believe the explosion wasn't her fault.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The False Evidence", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "Listen to this: 'The scientists stored illegal Hextech cores in civilian buildings. When exposed to crude explosives, caused catastrophic chain reaction.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "But that's not what happened, right?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "No. It was Powder's bomb. The hex crystals she put in it from Jayce's apartment. They caused the explosion.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "Silco convinced her otherwise. Made her think these scientists were responsible for Vander's death.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The False Evidence", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "Listen to this: 'The scientists stored illegal Hextech cores in civilian buildings. When exposed to crude explosives, caused catastrophic chain reaction.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "But that's not what happened, right?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "No. It was Powder's bomb. The hex crystals she put in it from Jayce's apartment. They caused the explosion.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Silco convinced her otherwise. Made her think these scientists were responsible for Vander's death.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Finding the Plans", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "There's more. Look at these schematics.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "She's planning something big. Combining old Hextech cores with... 'J's stabilization matrix?'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "Jayce's stabilization notes. She's planning to steal from his workshop.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Here — 'Topsider working alone now - partner sick - perfect timing.' She knows Viktor is ill.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Finding the Plans", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "There's more. Look at these schematics.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "She's planning something big. Combining old Hextech cores with... 'J's stabilization matrix?'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Jayce's stabilization notes. She's planning to steal from his workshop.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Here — 'Topsider working alone now - partner sick - perfect timing.' She knows Viktor is ill.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The Timeline", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "According to this, she's planning the raid... tonight? No, wait — tomorrow night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "That doesn't give us much time.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "We need to warn Jayce immediately.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Look at this drawing. It's all of us — me, Powder, Mylo, Claggor, Vander. But Vander's face is circled in red.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The Timeline", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "According to this, she's planning the raid... tonight? No, wait — tomorrow night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "That doesn't give us much time.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "We need to warn Jayce immediately.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Look at this drawing. It's all of us — me, Powder, Mylo, Claggor, Vander. But Vander's face is circled in red.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The Painful Truth", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerB", Text = "'I'll make them pay for you.' She really believes she's avenging him.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "She doesn't know. After all these years, she doesn't know the truth.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "Silco protected her from the guilt. In his twisted way, he was trying to help her.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "There's a journal here. Listen: 'Silco says I'm perfect. Says the voices are just trying to make me weak. But they won't stop screaming.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Voices? She's hearing voices?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "'Mylo says I'm still a jinx. Claggor says Vi will never forgive me. But Silco says they're lying. Says Vi abandoned me because she was weak.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "No... no, I didn't abandon her. I was taken. Marcus arrested me that night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "She doesn't know that either. She thinks you chose to leave.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "This entry is from yesterday: 'Saw Vi on the bridge with an enforcer. She replaced me. Found a new sister. Silco was right — she never loved me.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "We have to find her. I have to explain—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The Painful Truth", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerB", Text = "'I'll make them pay for you.' She really believes she's avenging him.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "She doesn't know. After all these years, she doesn't know the truth.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Silco protected her from the guilt. In his twisted way, he was trying to help her.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "There's a journal here. Listen: 'Silco says I'm perfect. Says the voices are just trying to make me weak. But they won't stop screaming.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Voices? She's hearing voices?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "'Mylo says I'm still a jinx. Claggor says Vi will never forgive me. But Silco says they're lying. Says Vi abandoned me because she was weak.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "No... no, I didn't abandon her. I was taken. Marcus arrested me that night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "She doesn't know that either. She thinks you chose to leave.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "This entry is from yesterday: 'Saw Vi on the bridge with an enforcer. She replaced me. Found a new sister. Silco was right — she never loved me.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "We have to find her. I have to explain—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The Urgency", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "First we stop her from stealing Jayce's notes. If she builds this weapon...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "It would be devastating. Combine the instability of old cores with modern stabilization?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "She could level a city block. Maybe more.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "Then we go to Jayce. Now. Before she has everything she needs.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The Urgency", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "First we stop her from stealing Jayce's notes. If she builds this weapon...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "It would be devastating. Combine the instability of old cores with modern stabilization?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "She could level a city block. Maybe more.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "Then we go to Jayce. Now. Before she has everything she needs.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Leaving the Lair", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "vi", Text = "She kept this.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "narrator", Text = "[Vi holds up a small bunny toy]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "vi", Text = "I gave this to her when she was five. Told her it would protect her from monsters.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "She still has it. That means something, Vi.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "We should go. If Jinx comes back...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "Right. Jayce's workshop. We need to move.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "We'll save you, Powder. I promise. This time I won't fail you.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-			});
+                new DialogueLine { CharacterId = "narrator", Text = "Leaving the Lair", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "She kept this.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "[Vi holds up a small bunny toy]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "I gave this to her when she was five. Told her it would protect her from monsters.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "She still has it. That means something, Vi.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "We should go. If Jinx comes back...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "Right. Jayce's workshop. We need to move.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "We'll save you, Powder. I promise. This time I won't fail you.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+            });
 
-			scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
-			Console.WriteLine($"[Act1StoryEngine] Following Jinx Trail scene created with {scene.DialogueLines.Count} dialogues");
-			return scene;
-		}
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Following Jinx Trail scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
 
-		public VisualNovelScene CreateJayceWorkshopArrivalScene(string squadName, Act1MultiplayerGame game)
-		{
-			var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
-			var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+        public VisualNovelScene CreateJayceWorkshopArrivalScene(string squadName, Act1MultiplayerGame game)
+        {
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
 
-			var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
-			var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Player A";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Player B";
 
-			var scene = new VisualNovelScene
-			{
-				Id = "jayce_workshop_arrival",
-				Name = "The Workshop Entrance",
-				Layout = SceneLayout.DualCharacters,
-				Theme = NovelTheme.Piltover
-			};
+            var scene = new VisualNovelScene
+            {
+                Id = "jayce_workshop_arrival",
+                Name = "The Workshop Entrance",
+                Layout = SceneLayout.DualCharacters,
+                Theme = NovelTheme.Piltover
+            };
 
-			scene.Characters.AddRange(new[]
-			{
-				new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-				new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-				new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
-			});
+            scene.Characters.AddRange(new[]
+            {
+                new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
+            });
 
-			scene.DialogueLines.AddRange(new[]
-			{
-				new DialogueLine { CharacterId = "narrator", Text = "Scene 11: The Workshop Entrance — Academy District, Jayce's Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "The Academy should be just ahead!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "The lights are still on in Jayce's workshop. Good, he's there.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "But it's too quiet. The Academy's usually bustling even at night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "The door to the workshop... it's ajar.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "No. We're too late.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+            scene.DialogueLines.AddRange(new[]
+            {
+                new DialogueLine { CharacterId = "narrator", Text = "Scene 11: The Workshop Entrance — Academy District, Jayce's Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "The Academy should be just ahead!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "The lights are still on in Jayce's workshop. Good, he's there.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "But it's too quiet. The Academy's usually bustling even at night.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "The door to the workshop... it's ajar.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "No. We're too late.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Entering the Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "vi", Text = "Jayce! JAYCE!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "Vi? Caitlyn? Thank the gods you're here!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "You're alive! We thought—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "She was here! The blue-haired girl! She took everything!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "Entering the Workshop", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Jayce! JAYCE!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Vi? Caitlyn? Thank the gods you're here!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "You're alive! We thought—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "She was here! The blue-haired girl! She took everything!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The Theft", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "playerA", Text = "The place is ransacked.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "My stabilization notes, the frequency calibrations, even the prototype crystals - all gone!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "How long ago?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "Maybe an hour? I was in the back room when I heard the explosion. By the time I got here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "vi", Text = "The footprints. They're fresh. She's been all over this room.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The Theft", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "playerA", Text = "The place is ransacked.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "My stabilization notes, the frequency calibrations, even the prototype crystals - all gone!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "How long ago?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Maybe an hour? I was in the back room when I heard the explosion. By the time I got here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "vi", Text = "The footprints. They're fresh. She's been all over this room.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "The Discovery", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "Jayce, where's Viktor? Shouldn't he be here?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "He's been bedridden for days. His illness... it's getting worse. I've been trying to finish our work alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerA", Text = "That's why Jinx struck now. She knew you'd be alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "Wait... look at the floor. What's that glow?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "playerB", Text = "The shimmer trail! It leads... behind the main forge?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "The Discovery", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "Jayce, where's Viktor? Shouldn't he be here?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "He's been bedridden for days. His illness... it's getting worse. I've been trying to finish our work alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerA", Text = "That's why Jinx struck now. She knew you'd be alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Wait... look at the floor. What's that glow?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "playerB", Text = "The shimmer trail! It leads... behind the main forge?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
 
-				new DialogueLine { CharacterId = "narrator", Text = "Finding the Bomb", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "vi", Text = "Everyone stay back. Let me check—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "Oh gods. Is that...?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "narrator", Text = "[Behind the forge - a complex device with Jinx's monkey symbol]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-				new DialogueLine { CharacterId = "caitlyn", Text = "It's a bomb. Everyone out, NOW!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-				new DialogueLine { CharacterId = "jayce", Text = "No! Wait! If that detonates here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
-			});
+                new DialogueLine { CharacterId = "narrator", Text = "Finding the Bomb", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "vi", Text = "Everyone stay back. Let me check—", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "Oh gods. Is that...?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "narrator", Text = "[Behind the forge - a complex device with Jinx's monkey symbol]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "caitlyn", Text = "It's a bomb. Everyone out, NOW!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+                new DialogueLine { CharacterId = "jayce", Text = "No! Wait! If that detonates here...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
+            });
 
-			scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
-			Console.WriteLine($"[Act1StoryEngine] Jayce Workshop Arrival scene created with {scene.DialogueLines.Count} dialogues");
-			return scene;
-		}
+            scene.MainContentEndIndex = scene.DialogueLines.Count - 1;
+            Console.WriteLine($"[Act1StoryEngine] Jayce Workshop Arrival scene created with {scene.DialogueLines.Count} dialogues");
+            return scene;
+        }
 
         public VisualNovelScene CreateBombDiscoveryScene(string squadName, Act1MultiplayerGame game)
         {
@@ -3137,36 +3154,36 @@ namespace Arcane_Coop.Services
                 new DialogueLine { CharacterId = "caitlyn", Text = "We need to help her. What do we do?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
                 
                 // Player Choice Moment
-                new DialogueLine 
-                { 
-                    CharacterId = "narrator", 
-                    Text = "Critical Decision", 
-                    AnimationType = TextAnimationType.FadeIn, 
+                new DialogueLine
+                {
+                    CharacterId = "narrator",
+                    Text = "Critical Decision",
+                    AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30,
                     Choices = new List<DialogueChoice>
                     {
-                        new DialogueChoice 
-                        { 
-                            Id = "help_silco", 
-                            Text = "Help Silco escape - he knows where the scientists are", 
+                        new DialogueChoice
+                        {
+                            Id = "help_silco",
+                            Text = "Help Silco escape - he knows where the scientists are",
                             RequiredRole = "piltover"
                         },
-                        new DialogueChoice 
-                        { 
-                            Id = "calm_jinx", 
-                            Text = "Try to calm Jinx down with words", 
+                        new DialogueChoice
+                        {
+                            Id = "calm_jinx",
+                            Text = "Try to calm Jinx down with words",
                             RequiredRole = "piltover"
                         },
-                        new DialogueChoice 
-                        { 
-                            Id = "protect_vi", 
-                            Text = "Get between Vi and Jinx to protect them both", 
+                        new DialogueChoice
+                        {
+                            Id = "protect_vi",
+                            Text = "Get between Vi and Jinx to protect them both",
                             RequiredRole = "zaun"
                         },
-                        new DialogueChoice 
-                        { 
-                            Id = "find_scientists", 
-                            Text = "Find and free the scientists while everyone's distracted", 
+                        new DialogueChoice
+                        {
+                            Id = "find_scientists",
+                            Text = "Find and free the scientists while everyone's distracted",
                             RequiredRole = "zaun"
                         }
                     }
@@ -3176,7 +3193,7 @@ namespace Arcane_Coop.Services
                 new DialogueLine { CharacterId = "vi", Text = "Powder, please. Whatever happens next, know that I never stopped loving you. I never stopped looking for you.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40 },
                 new DialogueLine { CharacterId = "narrator", Text = "Jinx (Broken but listening): \"Vi... I... I don't know who I am anymore...\"", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
                 new DialogueLine { CharacterId = "narrator", Text = "[The warehouse falls silent except for Jinx's quiet sobs. The truth has finally been revealed, but at what cost?]", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-                
+
                 new DialogueLine { CharacterId = "narrator", Text = "To Be Continued...", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 }
             });
 
@@ -3662,10 +3679,10 @@ namespace Arcane_Coop.Services
                         game.Status = Act1GameStatus.SceneTransition;
                         game.ShowTransition = true;
                         game.NextGameName = "Truth Echo - Final Confrontation";
-                        
+
                         result.TransitionStarted = true;
                         result.NextGameName = game.NextGameName;
-                        
+
                         var finalPuzzleUrls = new Dictionary<string, string>();
                         foreach (var p in game.Players)
                         {
@@ -3673,7 +3690,7 @@ namespace Arcane_Coop.Services
                             finalPuzzleUrls[p.PlayerId] = $"/finalpuzzle?{parameters}";
                         }
                         result.RedirectUrlsByPlayerId = finalPuzzleUrls;
-                        
+
                         game.RecordAction();
                         Console.WriteLine($"[Act1StoryEngine] Transitioning to Final Puzzle");
                         break;
