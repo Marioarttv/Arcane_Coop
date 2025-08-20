@@ -172,9 +172,15 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 ### 7. VisualNovel (/visual-novel)
 **Purpose**: Narrative delivery and story immersion
 **Players**: Single or dual player story experience
-**Mechanics**: Text animation, character expressions, thematic presentation
+**Mechanics**: Text animation, character expressions, thematic presentation, advanced multi-character layouts
 **Education**: Reading comprehension, cultural context
 **Documentation**: [VisualNovel.md](./VisualNovel.md)
+
+**Advanced Features Available:**
+- **Multi-Character Layouts**: Support for 4-character and 5-character scenes with automatic sizing
+- **Dynamic Character Positioning**: Per-dialogue repositioning for dramatic scene choreography
+- **Character Visibility Control**: Hide/show characters with manual control and automatic first-line appearances
+- **Enhanced Expression System**: Complex emotion management across multiple characters with automatic behavior
 
 ## Technical Architecture
 

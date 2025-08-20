@@ -32,12 +32,14 @@ The Visual Novel System is a sophisticated narrative engine designed specificall
 
 #### 👥 Advanced Character System
 - **Dynamic Portraits**: Character images with smooth transitions and expression changes
-- **Multi-layout Support**: Single center, dual character, and narrator modes
+- **Multi-layout Support**: Single center, dual character, and narrator modes, now including 4-character and 5-character layouts
 - **Character State Management**: Active/inactive highlighting system with enhanced visual feedback
-- **Flexible Positioning**: Left, right, center character placement
+- **Flexible Positioning**: Left, right, center character placement with expanded position options for larger layouts
 - **Theme-aware Styling**: Character-specific color schemes and effects
 - **Expression System**: 10 different character expressions (Default, Happy, Sad, Angry, Surprised, Worried, Determined, Smug, Confused, Serious)
 - **Per-Dialogue Expressions**: Dynamic expression changes on a line-by-line basis
+- **Character Visibility Control**: Hide/show characters dynamically with HiddenUntilFirstLine and manual visibility control
+- **Per-Dialogue Position Changes**: Dynamically reposition characters on any dialogue line
 - **Structured Asset Organization**: `/images/Characters/{CharacterName}/{CharacterName}_{expression}.png`
 
 #### 🎮 Enhanced Interactive Controls
@@ -181,22 +183,23 @@ Notes and future flexibility:
 ### Basic Implementation
 
 ```csharp
-// Create a scene
+// Create a scene with new layout options
 var scene = new VisualNovelScene
 {
     Name = "My Scene",
-    Layout = SceneLayout.DualCharacters,
+    Layout = SceneLayout.FiveCharacters, // New layout options: FourCharacters, FiveCharacters
     Theme = NovelTheme.Piltover
 };
 
-// Add characters with expression support
+// Add characters with expression support and visibility control
 scene.Characters.Add(new VisualNovelCharacter
 {
     Id = "jayce",
     Name = "Jayce",
     DisplayName = "Jayce Talis",
     ImagePath = "/images/Characters/Jayce/Jayce_default.png",
-    Position = CharacterPosition.Left,
+    Position = CharacterPosition.Left_5Characters, // New position options for 5-character layout
+    HiddenUntilFirstLine = true, // Character starts hidden
     ExpressionPaths = new Dictionary<CharacterExpression, string>
     {
         { CharacterExpression.Default, "/images/Characters/Jayce/Jayce_default.png" },
@@ -205,14 +208,23 @@ scene.Characters.Add(new VisualNovelCharacter
     }
 });
 
-// Add dialogue with expressions
+// Add dialogue with expressions, position changes, and visibility control
 scene.DialogueLines.Add(new DialogueLine
 {
     CharacterId = "jayce",
     Text = "Welcome to the world of Hextech innovation!",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Happy
+    SpeakerExpression = CharacterExpression.Happy,
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "vi", CharacterPosition.Rightmost_5Characters }, // Move Vi to rightmost position
+        { "caitlyn", CharacterPosition.Center_5Characters } // Move Caitlyn to center
+    },
+    CharacterVisibility = new Dictionary<string, bool>
+    {
+        { "viktor", false } // Hide Viktor during this line
+    }
 });
 ```
 
@@ -1022,6 +1034,452 @@ new DialogueLine
 ```
 
 ## Advanced Features
+
+### 4-Character and 5-Character Layout Support
+
+The Visual Novel system now supports scenes with up to 5 characters displayed simultaneously, providing more flexibility for complex narrative scenes.
+
+#### New Scene Layout Options
+
+```csharp
+public enum SceneLayout
+{
+    SingleCharacterCenter,
+    DualCharacters,
+    NarratorOnly,
+    FourCharacters,    // NEW: Display 4 characters
+    FiveCharacters     // NEW: Display 5 characters
+}
+```
+
+#### Character Position Options
+
+**For 4-Character Layout:**
+```csharp
+CharacterPosition.Leftmost_4Characters   // Far left position
+CharacterPosition.Left_4Characters       // Left-center position
+CharacterPosition.Right_4Characters      // Right-center position
+CharacterPosition.Rightmost_4Characters  // Far right position
+```
+
+**For 5-Character Layout:**
+```csharp
+CharacterPosition.Leftmost_5Characters   // Far left position
+CharacterPosition.Left_5Characters       // Left-center position
+CharacterPosition.Center_5Characters     // Center position
+CharacterPosition.Right_5Characters      // Right-center position
+CharacterPosition.Rightmost_5Characters  // Far right position
+```
+
+#### CSS Layout Adjustments
+
+The system automatically adjusts character sizes and spacing based on the number of characters:
+
+- **4-Character Layout**: Characters are sized to fit 4 portraits comfortably
+- **5-Character Layout**: Characters are automatically scaled smaller to accommodate all 5 characters
+- **Responsive Spacing**: Character spacing adjusts dynamically to prevent overlap
+
+#### Usage Example
+
+```csharp
+// Create a dramatic 5-character scene
+var scene = new VisualNovelScene
+{
+    Name = "Council Assembly",
+    Layout = SceneLayout.FiveCharacters,
+    Theme = NovelTheme.Piltover
+};
+
+// Position characters across the scene
+scene.Characters.AddRange(new[]
+{
+    new VisualNovelCharacter
+    {
+        Id = "jayce",
+        Position = CharacterPosition.Leftmost_5Characters
+    },
+    new VisualNovelCharacter
+    {
+        Id = "viktor",
+        Position = CharacterPosition.Left_5Characters
+    },
+    new VisualNovelCharacter
+    {
+        Id = "mel",
+        Position = CharacterPosition.Center_5Characters
+    },
+    new VisualNovelCharacter
+    {
+        Id = "caitlyn",
+        Position = CharacterPosition.Right_5Characters
+    },
+    new VisualNovelCharacter
+    {
+        Id = "vi",
+        Position = CharacterPosition.Rightmost_5Characters
+    }
+});
+```
+
+### Per-Dialogue Character Position Changes
+
+Characters can be dynamically repositioned during any dialogue line, enabling fluid scene choreography and dramatic positioning changes.
+
+#### CharacterPositions Dictionary
+
+The `CharacterPositions` property allows you to move specific characters to new positions on any dialogue line:
+
+```csharp
+new DialogueLine
+{
+    CharacterId = "mel",
+    Text = "The Council must hear all perspectives on this matter.",
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "jayce", CharacterPosition.Left_5Characters },      // Move Jayce from leftmost to left-center
+        { "viktor", CharacterPosition.Rightmost_5Characters }, // Move Viktor to far right
+        { "caitlyn", CharacterPosition.Center_5Characters }    // Move Caitlyn to center stage
+    }
+}
+```
+
+#### Dramatic Scene Examples
+
+**Confrontation Scene:**
+```csharp
+// Initial positioning: characters spread across scene
+new DialogueLine
+{
+    CharacterId = "jayce",
+    Text = "We've always disagreed, but this time it's different.",
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "jayce", CharacterPosition.Left_4Characters },
+        { "viktor", CharacterPosition.Right_4Characters },
+        { "mel", CharacterPosition.Leftmost_4Characters },
+        { "caitlyn", CharacterPosition.Rightmost_4Characters }
+    }
+},
+
+// Dramatic repositioning: opposing sides
+new DialogueLine
+{
+    CharacterId = "viktor",
+    Text = "Then perhaps it's time we stopped pretending we're on the same side.",
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "jayce", CharacterPosition.Leftmost_4Characters },  // Jayce moves to far left
+        { "mel", CharacterPosition.Left_4Characters },        // Mel joins Jayce's side
+        { "viktor", CharacterPosition.Rightmost_4Characters }, // Viktor moves to far right
+        { "caitlyn", CharacterPosition.Right_4Characters }     // Caitlyn joins Viktor's side
+    }
+}
+```
+
+**Gathering Around a Central Figure:**
+```csharp
+new DialogueLine
+{
+    CharacterId = "council_speaker",
+    Text = "The decision affects all of us. Come closer so we can discuss this properly.",
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "jayce", CharacterPosition.Left_5Characters },
+        { "viktor", CharacterPosition.Right_5Characters },
+        { "mel", CharacterPosition.Center_5Characters },
+        { "caitlyn", CharacterPosition.Leftmost_5Characters },
+        { "vi", CharacterPosition.Rightmost_5Characters }
+    }
+}
+```
+
+### Character Visibility Control
+
+The system provides sophisticated visibility control for creating dramatic entrances, exits, and scene management.
+
+#### HiddenUntilFirstLine Property
+
+Characters can be configured to start hidden and automatically appear when they first speak:
+
+```csharp
+new VisualNovelCharacter
+{
+    Id = "mysterious_figure",
+    Name = "???",
+    DisplayName = "Mysterious Figure",
+    Position = CharacterPosition.Center_5Characters,
+    HiddenUntilFirstLine = true, // Character starts invisible
+    ExpressionPaths = new Dictionary<CharacterExpression, string>
+    {
+        { CharacterExpression.Default, "/images/Characters/Mysterious/Mysterious_default.png" }
+    }
+};
+
+// Character automatically becomes visible when they first speak
+new DialogueLine
+{
+    CharacterId = "mysterious_figure", // Character appears with this line
+    Text = "You didn't expect to see me here, did you?",
+    SpeakerExpression = CharacterExpression.Smug
+}
+```
+
+#### Manual Visibility Control
+
+Use the `CharacterVisibility` dictionary to manually control character visibility on any dialogue line:
+
+```csharp
+// Hide character during dialogue
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Where did Viktor go? He was just here a moment ago.",
+    CharacterVisibility = new Dictionary<string, bool>
+    {
+        { "viktor", false } // Viktor becomes invisible
+    }
+},
+
+// Bring character back
+new DialogueLine
+{
+    CharacterId = "viktor",
+    Text = "I'm still here, Caitlyn. Just... changed.",
+    CharacterVisibility = new Dictionary<string, bool>
+    {
+        { "viktor", true } // Viktor reappears
+    }
+}
+```
+
+#### IsVisible Property
+
+The system tracks current visibility state through the `IsVisible` property:
+
+```csharp
+// Check character visibility state
+if (character.IsVisible)
+{
+    // Character is currently visible
+}
+else
+{
+    // Character is currently hidden
+}
+```
+
+#### Dramatic Scene Examples with Visibility
+
+**Dramatic Entrance:**
+```csharp
+// Scene starts with main characters
+new DialogueLine
+{
+    CharacterId = "jayce",
+    Text = "The meeting is about to begin. Are we missing anyone?"
+},
+
+// Mysterious character appears
+new DialogueLine
+{
+    CharacterId = "silco", // Character with HiddenUntilFirstLine = true
+    Text = "You're missing someone very important indeed.",
+    SpeakerExpression = CharacterExpression.Smug,
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "silco", CharacterPosition.Center_5Characters } // Appears in center stage
+    }
+}
+```
+
+**Character Exit:**
+```csharp
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "I've heard enough. I'm leaving.",
+    SpeakerExpression = CharacterExpression.Angry,
+    CharacterVisibility = new Dictionary<string, bool>
+    {
+        { "vi", false } // Vi disappears after speaking
+    }
+},
+
+new DialogueLine
+{
+    CharacterId = "caitlyn",
+    Text = "Vi, wait!" // Vi is no longer visible
+}
+```
+
+### Expression Behavior with Multiple Characters
+
+When working with multiple characters, the expression system follows these behavior patterns:
+
+#### Active Speaker Behavior
+- **Active Speaker**: Shows their specified expression (`SpeakerExpression`)
+- **Inactive Characters**: Automatically revert to their default expression
+- **Manual Expression Override**: Use `CharacterExpressions` to set specific expressions for non-speaking characters
+
+#### Example with Expression Management
+
+```csharp
+// Setup: 5 characters in a tense council meeting
+new DialogueLine
+{
+    CharacterId = "mel",
+    Text = "The situation in the Undercity is deteriorating rapidly.",
+    SpeakerExpression = CharacterExpression.Worried,
+    CharacterExpressions = new Dictionary<string, CharacterExpression>
+    {
+        { "jayce", CharacterExpression.Serious },    // Jayce looks serious
+        { "viktor", CharacterExpression.Confused },  // Viktor looks puzzled
+        { "caitlyn", CharacterExpression.Determined }, // Caitlyn looks resolved
+        { "vi", CharacterExpression.Angry }          // Vi looks angry
+    }
+},
+
+// Next speaker - others revert to default unless specified
+new DialogueLine
+{
+    CharacterId = "vi",
+    Text = "That's because the Council refuses to listen!",
+    SpeakerExpression = CharacterExpression.Angry,
+    // Other characters automatically revert to Default expression
+    // unless overridden in CharacterExpressions
+}
+```
+
+### Complex Scene Choreography Example
+
+Here's a comprehensive example showing all new features working together:
+
+```csharp
+// Create a dramatic 5-character council scene
+var councilScene = new VisualNovelScene
+{
+    Name = "The Critical Vote",
+    Layout = SceneLayout.FiveCharacters,
+    Theme = NovelTheme.Piltover
+};
+
+// Setup characters with strategic positioning and visibility
+councilScene.Characters.AddRange(new[]
+{
+    new VisualNovelCharacter
+    {
+        Id = "mel",
+        Position = CharacterPosition.Center_5Characters,
+        DisplayName = "Councilor Medarda"
+    },
+    new VisualNovelCharacter
+    {
+        Id = "jayce",
+        Position = CharacterPosition.Left_5Characters,
+        DisplayName = "Councilor Talis"
+    },
+    new VisualNovelCharacter
+    {
+        Id = "viktor",
+        Position = CharacterPosition.Right_5Characters,
+        DisplayName = "Viktor"
+    },
+    new VisualNovelCharacter
+    {
+        Id = "caitlyn",
+        Position = CharacterPosition.Leftmost_5Characters,
+        DisplayName = "Sheriff Kiramman"
+    },
+    new VisualNovelCharacter
+    {
+        Id = "silco",
+        Position = CharacterPosition.Rightmost_5Characters,
+        HiddenUntilFirstLine = true, // Dramatic entrance
+        DisplayName = "???"
+    }
+});
+
+// Dialogue sequence with full feature usage
+councilScene.DialogueLines.AddRange(new[]
+{
+    new DialogueLine
+    {
+        CharacterId = "mel",
+        Text = "The Council is now in session. We must address the growing tensions.",
+        SpeakerExpression = CharacterExpression.Serious
+    },
+    
+    new DialogueLine
+    {
+        CharacterId = "jayce",
+        Text = "The situation requires immediate action, not more debate.",
+        SpeakerExpression = CharacterExpression.Determined,
+        CharacterPositions = new Dictionary<string, CharacterPosition>
+        {
+            { "jayce", CharacterPosition.Left_5Characters }, // Jayce steps forward
+        }
+    },
+    
+    new DialogueLine
+    {
+        CharacterId = "viktor",
+        Text = "Perhaps... there is another perspective to consider.",
+        SpeakerExpression = CharacterExpression.Worried,
+        CharacterExpressions = new Dictionary<string, CharacterExpression>
+        {
+            { "jayce", CharacterExpression.Surprised } // Jayce reacts
+        }
+    },
+    
+    new DialogueLine
+    {
+        CharacterId = "silco", // Dramatic entrance - character appears
+        Text = "Indeed there is. One that none of you have considered.",
+        SpeakerExpression = CharacterExpression.Smug,
+        CharacterPositions = new Dictionary<string, CharacterPosition>
+        {
+            { "silco", CharacterPosition.Center_5Characters }, // Takes center stage
+            { "mel", CharacterPosition.Right_5Characters }     // Mel moves aside
+        },
+        CharacterExpressions = new Dictionary<string, CharacterExpression>
+        {
+            { "mel", CharacterExpression.Surprised },
+            { "jayce", CharacterExpression.Angry },
+            { "viktor", CharacterExpression.Confused },
+            { "caitlyn", CharacterExpression.Worried }
+        }
+    },
+    
+    new DialogueLine
+    {
+        CharacterId = "caitlyn",
+        Text = "Security! How did you get in here?",
+        SpeakerExpression = CharacterExpression.Angry,
+        CharacterPositions = new Dictionary<string, CharacterPosition>
+        {
+            { "caitlyn", CharacterPosition.Left_5Characters } // Caitlyn moves to confront
+        }
+    },
+    
+    new DialogueLine
+    {
+        CharacterId = "silco",
+        Text = "I have my ways, Sheriff. The question is: are you ready to hear the truth?",
+        SpeakerExpression = CharacterExpression.Serious,
+        CharacterVisibility = new Dictionary<string, bool>
+        {
+            { "viktor", false } // Viktor mysteriously disappears
+        }
+    }
+});
+```
+
+This example demonstrates:
+- **5-character layout** with strategic positioning
+- **Dynamic repositioning** during dialogue for dramatic effect
+- **Character visibility control** with dramatic entrance and mysterious exit
+- **Complex expression management** showing multiple character reactions
+- **Coordinated scene choreography** that tells a story through positioning
 
 ### Enhanced Character Expression System
 

@@ -2657,9 +2657,12 @@ public class GameHub : Hub
     {
         if (game.CurrentScene == null || currentDialogue == null) return;
 
-        // Reset all characters to inactive
+        // Reset all characters to inactive and default expression
         foreach (var character in game.CurrentScene.Characters)
+        {
             character.IsActive = false;
+            character.CurrentExpression = CharacterExpression.Default;
+        }
 
         // Set current speaker as active
         var speaker = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
@@ -2679,7 +2682,7 @@ public class GameHub : Hub
                 speaker.CurrentExpression = currentDialogue.SpeakerExpression.Value;
         }
 
-        // Update expressions for other characters if specified
+        // Update expressions for other characters if specified (these override the default)
         foreach (var expressionChange in currentDialogue.CharacterExpressions)
         {
             var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == expressionChange.Key);
@@ -2693,6 +2696,24 @@ public class GameHub : Hub
             var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == positionChange.Key);
             if (character != null)
                 character.Position = positionChange.Value;
+        }
+        
+        // Update visibility for characters if specified
+        foreach (var visibilityChange in currentDialogue.CharacterVisibility)
+        {
+            var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == visibilityChange.Key);
+            if (character != null)
+            {
+                var wasVisible = character.IsVisible;
+                character.IsVisible = visibilityChange.Value;
+                
+                // Log visibility changes for debugging
+                if (wasVisible != character.IsVisible)
+                {
+                    var action = character.IsVisible ? "SHOWN" : "HIDDEN";
+                    Console.WriteLine($"[Act1GameHub] CHARACTER {action}: {character.DisplayName}");
+                }
+            }
         }
     }
 

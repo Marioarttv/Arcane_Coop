@@ -128,6 +128,9 @@ namespace Arcane_Coop.Models
         // Position support - allows changing character positions for this dialogue line
         public Dictionary<string, CharacterPosition> CharacterPositions { get; set; } = new();
         
+        // Visibility support - allows showing/hiding characters for this dialogue line
+        public Dictionary<string, bool> CharacterVisibility { get; set; } = new();
+        
         // Player choice support
         public bool IsPlayerChoice { get; set; } = false;
         public string? ChoiceOwnerRole { get; set; } // Which player makes this choice ("piltover" or "zaun")

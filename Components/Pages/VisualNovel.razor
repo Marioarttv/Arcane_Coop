@@ -415,9 +415,12 @@
     {
         if (currentScene == null || currentDialogue == null) return;
 
-        // Reset all characters to inactive
+        // Reset all characters to inactive and default expression
         foreach (var character in currentScene.Characters)
+        {
             character.IsActive = false;
+            character.CurrentExpression = CharacterExpression.Default;
+        }
 
         // Set current speaker as active
         var speaker = currentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
@@ -436,7 +439,7 @@
                 speaker.CurrentExpression = currentDialogue.SpeakerExpression.Value;
         }
 
-        // Update expressions for other characters if specified
+        // Update expressions for other characters if specified (these override the default)
         foreach (var expressionChange in currentDialogue.CharacterExpressions)
         {
             var character = currentScene.Characters.FirstOrDefault(c => c.Id == expressionChange.Key);
@@ -450,6 +453,16 @@
             var character = currentScene.Characters.FirstOrDefault(c => c.Id == positionChange.Key);
             if (character != null)
                 character.Position = positionChange.Value;
+        }
+        
+        // Update visibility for characters if specified
+        foreach (var visibilityChange in currentDialogue.CharacterVisibility)
+        {
+            var character = currentScene.Characters.FirstOrDefault(c => c.Id == visibilityChange.Key);
+            if (character != null)
+            {
+                character.IsVisible = visibilityChange.Value;
+            }
         }
     }
 

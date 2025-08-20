@@ -143,7 +143,7 @@ namespace Arcane_Coop.Services
                     {
                         { CharacterExpression.Default, "/images/Characters/Stanton/stanton_default.png" },
                         { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_angry.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_surprisedf.png" }
+                        { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_surprised.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -649,11 +649,18 @@ new DialogueLine
     Text = "The group retreats from the scene, regrouping in a nearby alley...",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
-    // Return characters to original positions after Stanton leaves
+    // Return characters to original positions and hide Stanton
     CharacterPositions = new Dictionary<string, CharacterPosition>
     {
         { "caitlyn", CharacterPosition.Left },
-        { "vi", CharacterPosition.Right }
+        { "vi", CharacterPosition.Right },
+        { "playerA", CharacterPosition.Center },
+        { "playerB", CharacterPosition.Center }
+    },
+    // Hide Stanton after he leaves
+    CharacterVisibility = new Dictionary<string, bool>
+    {
+        { "stanton", false }  // Hide Stanton
     }
 },
 new DialogueLine
