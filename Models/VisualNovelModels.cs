@@ -63,6 +63,8 @@ namespace Arcane_Coop.Models
         public string ThemeColor { get; set; } = "#ffffff";
         public bool IsActive { get; set; } = false;
         public CharacterPosition Position { get; set; } = CharacterPosition.Center;
+        public bool HiddenUntilFirstLine { get; set; } = false;  // If true, character won't appear until they speak
+        public bool IsVisible { get; set; } = true;  // Current visibility state
         
         // Expression support
         public CharacterExpression CurrentExpression { get; set; } = CharacterExpression.Default;

@@ -2368,6 +2368,9 @@ public class GameHub : Hub
             var dialogueId = !string.IsNullOrEmpty(currentDialogue.Id) ? $" (ID: {currentDialogue.Id})" : "";
             Console.WriteLine($"[Act1GameHub] CONTINUE: Dialogue #{oldIndex} → #{game.GameState.CurrentDialogueIndex}: {speaker}{dialogueId}{choiceInfo} - \"{currentDialogue.Text}\"");
             
+            // Update character states including visibility
+            UpdateCharacterStatesForDialogue(game, currentDialogue);
+            
             game.GameState.IsTextFullyDisplayed = false;
             game.IsTextAnimating = true;
             game.TextAnimationStartTime = DateTime.UtcNow;
@@ -2648,6 +2651,49 @@ public class GameHub : Hub
     private Act1PlayerView CreateAct1PlayerView(Act1MultiplayerGame game, string playerId)
     {
         return _act1StoryEngine.CreatePlayerView(game, playerId);
+    }
+    
+    private void UpdateCharacterStatesForDialogue(Act1MultiplayerGame game, DialogueLine currentDialogue)
+    {
+        if (game.CurrentScene == null || currentDialogue == null) return;
+
+        // Reset all characters to inactive
+        foreach (var character in game.CurrentScene.Characters)
+            character.IsActive = false;
+
+        // Set current speaker as active
+        var speaker = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == currentDialogue.CharacterId);
+        if (speaker != null)
+        {
+            speaker.IsActive = true;
+            
+            // Reveal character if they were hidden until first line
+            if (speaker.HiddenUntilFirstLine && !speaker.IsVisible)
+            {
+                speaker.IsVisible = true;
+                Console.WriteLine($"[Act1GameHub] CHARACTER REVEAL: {speaker.DisplayName} is now visible");
+            }
+            
+            // Update speaker expression if specified
+            if (currentDialogue.SpeakerExpression.HasValue)
+                speaker.CurrentExpression = currentDialogue.SpeakerExpression.Value;
+        }
+
+        // Update expressions for other characters if specified
+        foreach (var expressionChange in currentDialogue.CharacterExpressions)
+        {
+            var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == expressionChange.Key);
+            if (character != null)
+                character.CurrentExpression = expressionChange.Value;
+        }
+        
+        // Update positions for characters if specified
+        foreach (var positionChange in currentDialogue.CharacterPositions)
+        {
+            var character = game.CurrentScene.Characters.FirstOrDefault(c => c.Id == positionChange.Key);
+            if (character != null)
+                character.Position = positionChange.Value;
+        }
     }
 
     public async Task DebugSkipToDialogue(string roomId, int targetDialogueIndex)

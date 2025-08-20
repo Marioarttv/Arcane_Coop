@@ -135,12 +135,14 @@ namespace Arcane_Coop.Services
                     Name = "Deputy Stanton",
                     DisplayName = "Deputy Stanton",
                     ImagePath = "/images/Characters/Stanton/stanton_default.png",
-                    Position = CharacterPosition.Center,
+                    Position = CharacterPosition.Rightmost_5Characters,  // Position him on the far right
                     ThemeColor = "#c8aa6e",
+                    HiddenUntilFirstLine = true,  // He won't appear until he speaks
+                    IsVisible = false,  // Initially hidden
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Stanton/stanton_default.png" },
-                        { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_angryt.png" },
+                        { CharacterExpression.Angry, "/images/Characters/Stanton/stanton_angry.png" },
                         { CharacterExpression.Surprised, "/images/Characters/Stanton/stanton_surprisedf.png" }
                     }
                 },
@@ -524,14 +526,14 @@ new DialogueLine
     Text = "Heavy enforcer boots echo down the alley. Deputy Stanton appears with two officers.",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
-    // Position all 5 characters when Stanton appears
+    // Rearrange characters to prepare for Stanton's entrance
     CharacterPositions = new Dictionary<string, CharacterPosition>
     {
         { "caitlyn", CharacterPosition.Leftmost_5Characters },
         { "vi", CharacterPosition.Left_5Characters },
         { "playerA", CharacterPosition.Center_5Characters },
-        { "playerB", CharacterPosition.Right_5Characters },
-        { "stanton", CharacterPosition.Rightmost_5Characters }
+        { "playerB", CharacterPosition.Right_5Characters }
+        // Stanton will appear on Rightmost_5Characters when he speaks
     }
 },
 new DialogueLine

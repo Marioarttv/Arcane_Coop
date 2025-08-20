@@ -46,7 +46,7 @@
             }
             else if (currentScene.Layout == SceneLayout.DualCharacters)
             {
-                @foreach (var character in currentScene.Characters.Take(2))
+                @foreach (var character in currentScene.Characters.Take(2).Where(c => c.IsVisible))
                 {
                     <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
                         <div class="character-portrait">
@@ -58,7 +58,7 @@
             }
             else if (currentScene.Layout == SceneLayout.FourCharacters)
             {
-                @foreach (var character in currentScene.Characters.Take(4))
+                @foreach (var character in currentScene.Characters.Take(4).Where(c => c.IsVisible))
                 {
                     <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
                         <div class="character-portrait">
@@ -70,7 +70,7 @@
             }
             else if (currentScene.Layout == SceneLayout.FiveCharacters)
             {
-                @foreach (var character in currentScene.Characters.Take(5))
+                @foreach (var character in currentScene.Characters.Take(5).Where(c => c.IsVisible))
                 {
                     <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
                         <div class="character-portrait">
@@ -424,6 +424,12 @@
         if (speaker != null)
         {
             speaker.IsActive = true;
+            
+            // Reveal character if they were hidden until first line
+            if (speaker.HiddenUntilFirstLine && !speaker.IsVisible)
+            {
+                speaker.IsVisible = true;
+            }
             
             // Update speaker expression if specified
             if (currentDialogue.SpeakerExpression.HasValue)
