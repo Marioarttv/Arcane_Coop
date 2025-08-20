@@ -56,6 +56,30 @@
                     </div>
                 }
             }
+            else if (currentScene.Layout == SceneLayout.FourCharacters)
+            {
+                @foreach (var character in currentScene.Characters.Take(4))
+                {
+                    <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-portrait">
+                            <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
+                            <div class="character-glow"></div>
+                        </div>
+                    </div>
+                }
+            }
+            else if (currentScene.Layout == SceneLayout.FiveCharacters)
+            {
+                @foreach (var character in currentScene.Characters.Take(5))
+                {
+                    <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-portrait">
+                            <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
+                            <div class="character-glow"></div>
+                        </div>
+                    </div>
+                }
+            }
         </div>
 
         <!-- Dialogue Box -->
@@ -413,6 +437,14 @@
             if (character != null)
                 character.CurrentExpression = expressionChange.Value;
         }
+        
+        // Update positions for characters if specified
+        foreach (var positionChange in currentDialogue.CharacterPositions)
+        {
+            var character = currentScene.Characters.FirstOrDefault(c => c.Id == positionChange.Key);
+            if (character != null)
+                character.Position = positionChange.Value;
+        }
     }
 
     private VisualNovelCharacter? GetCurrentSpeaker()
@@ -450,7 +482,25 @@
     
     private string GetCharacterPositionClass(VisualNovelCharacter character)
     {
-        return character.Position.ToString().ToLower() + "-character";
+        // Convert enum to CSS class name, handling underscores
+        var position = character.Position.ToString();
+        
+        // Handle the 5-character layout positions
+        if (position.Contains("_5Characters"))
+        {
+            // Convert "Leftmost_5Characters" to "leftmost-5characters-character"
+            return position.Replace("_5Characters", "-5characters").ToLower() + "-character";
+        }
+        
+        // Handle the 4-character layout positions
+        if (position.Contains("_4Characters"))
+        {
+            // Convert "Leftmost_4Characters" to "leftmost-4characters-character"
+            return position.Replace("_4Characters", "-4characters").ToLower() + "-character";
+        }
+        
+        // Handle standard positions
+        return position.ToLower() + "-character";
     }
 
     private VisualNovelScene CreateDemoScene()
@@ -990,6 +1040,91 @@
 
 .center-character {
     align-self: flex-end;
+}
+
+/* 4-Character Layout Positions */
+.leftmost-4characters-character {
+    align-self: flex-end;
+    transform: translateX(-10%);
+}
+
+.left-4characters-character {
+    align-self: flex-end;
+    transform: translateX(-5%);
+}
+
+.right-4characters-character {
+    align-self: flex-end;
+    transform: translateX(5%);
+}
+
+.rightmost-4characters-character {
+    align-self: flex-end;
+    transform: translateX(10%);
+}
+
+/* Adjust character sizing for 4-character layout */
+.layout-fourcharacters .character-container .portrait-image {
+    max-height: 60vh;
+    max-width: 300px;
+}
+
+.layout-fourcharacters .character-container {
+    bottom: 20%;
+    transform: scale(0.85) translateY(10px);
+}
+
+.layout-fourcharacters .character-container.active {
+    transform: scale(0.95) translateY(0px);
+}
+
+.layout-fourcharacters .character-container.inactive {
+    transform: scale(0.78) translateY(15px);
+}
+
+/* 5-Character Layout Positions */
+.leftmost-5characters-character {
+    align-self: flex-end;
+    transform: translateX(-15%);
+}
+
+.left-5characters-character {
+    align-self: flex-end;
+    transform: translateX(-7.5%);
+}
+
+.center-5characters-character {
+    align-self: flex-end;
+    transform: translateX(0%);
+}
+
+.right-5characters-character {
+    align-self: flex-end;
+    transform: translateX(7.5%);
+}
+
+.rightmost-5characters-character {
+    align-self: flex-end;
+    transform: translateX(15%);
+}
+
+/* Adjust character sizing for 5-character layout */
+.layout-fivecharacters .character-container .portrait-image {
+    max-height: 55vh;
+    max-width: 250px;
+}
+
+.layout-fivecharacters .character-container {
+    bottom: 18%;
+    transform: scale(0.75) translateY(10px);
+}
+
+.layout-fivecharacters .character-container.active {
+    transform: scale(0.85) translateY(0px);
+}
+
+.layout-fivecharacters .character-container.inactive {
+    transform: scale(0.68) translateY(15px);
 }
 
 /********************************************

@@ -56,7 +56,7 @@ namespace Arcane_Coop.Services
             {
                 Id = "council_antechamber",
                 Name = "Council Chamber Antechamber - After the Meeting",
-                Layout = SceneLayout.DualCharacters,
+                Layout = SceneLayout.FiveCharacters,  // Updated to support 5 characters when Stanton appears
                 Theme = NovelTheme.Piltover,
                 BackgroundImage = "/images/Backgrounds/Scene1.png"
             };
@@ -523,7 +523,16 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "Heavy enforcer boots echo down the alley. Deputy Stanton appears with two officers.",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    // Position all 5 characters when Stanton appears
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "caitlyn", CharacterPosition.Leftmost_5Characters },
+        { "vi", CharacterPosition.Left_5Characters },
+        { "playerA", CharacterPosition.Center_5Characters },
+        { "playerB", CharacterPosition.Right_5Characters },
+        { "stanton", CharacterPosition.Rightmost_5Characters }
+    }
 },
 new DialogueLine
 {
@@ -556,6 +565,7 @@ new DialogueLine
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
     SpeakerExpression = CharacterExpression.Angry
+    // Positions already set with all 5 characters, no need to change
 },
 new DialogueLine
 {
@@ -636,7 +646,13 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "The group retreats from the scene, regrouping in a nearby alley...",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    // Return characters to original positions after Stanton leaves
+    CharacterPositions = new Dictionary<string, CharacterPosition>
+    {
+        { "caitlyn", CharacterPosition.Left },
+        { "vi", CharacterPosition.Right }
+    }
 },
 new DialogueLine
 {

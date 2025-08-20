@@ -10,7 +10,9 @@ namespace Arcane_Coop.Models
     {
         SingleCenter,
         DualCharacters,
-        Narrator
+        Narrator,
+        FourCharacters,   // Layout for 4 characters on screen
+        FiveCharacters    // Layout for 5 characters on screen
     }
 
     public enum TextAnimationType
@@ -25,7 +27,16 @@ namespace Arcane_Coop.Models
     {
         Left,
         Right,
-        Center
+        Center,
+        Leftmost_4Characters,    // Far left position in 4-character layout
+        Left_4Characters,        // Center-left position in 4-character layout
+        Right_4Characters,       // Center-right position in 4-character layout
+        Rightmost_4Characters,   // Far right position in 4-character layout
+        Leftmost_5Characters,    // Far left position in 5-character layout
+        Left_5Characters,        // Left position in 5-character layout
+        Center_5Characters,      // Center position in 5-character layout
+        Right_5Characters,       // Right position in 5-character layout
+        Rightmost_5Characters    // Far right position in 5-character layout
     }
 
     public enum CharacterExpression
@@ -111,6 +122,9 @@ namespace Arcane_Coop.Models
         // Expression support - allows setting character expressions for this dialogue line
         public CharacterExpression? SpeakerExpression { get; set; } = null;
         public Dictionary<string, CharacterExpression> CharacterExpressions { get; set; } = new();
+        
+        // Position support - allows changing character positions for this dialogue line
+        public Dictionary<string, CharacterPosition> CharacterPositions { get; set; } = new();
         
         // Player choice support
         public bool IsPlayerChoice { get; set; } = false;
