@@ -55,21 +55,21 @@
                         <div class="step-number">2</div>
                         <div class="step-content">
                             <h4>Split Responsibilities</h4>
-                            <p><strong>Piltover Agent</strong> accesses the visual records. <strong>Zaun Operative</strong> handles the identification terminal.</p>
+                            <p><strong>Zaun Operative</strong> accesses the visual records. <strong>Piltover Agent</strong> handles the identification terminal.</p>
                         </div>
                     </div>
                     <div class="instruction-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
                             <h4>Identify the Targets</h4>
-                            <p><strong>Piltover</strong> describes the person's features from the file photo. <strong>Zaun</strong> identifies them from the database options. Find all 4 marked scientists!</p>
+                            <p><strong>Zaun</strong> describes the person's features from the file photo. <strong>Piltover</strong> identifies them from the database options. Find all 4 marked scientists!</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="role-preview">
-                    <div class="role-card piltover-preview">
-                        <h4>📋 Caitlyn (Database Access)</h4>
+                    <div class="role-card zaunite-preview">
+                        <h4>🕵️ Vi (Database Access)</h4>
                         <p>You have visual access to the corrupted files:</p>
                         <ul class="preview-clues">
                             <li><strong>📁 File Access:</strong> View photos from Marcus's hidden files</li>
@@ -77,8 +77,8 @@
                             <li><strong>⚠️ Time Pressure:</strong> Files auto-corrupt after viewing</li>
                         </ul>
                     </div>
-                    <div class="role-card zaunite-preview">
-                        <h4>🕵️ Vi (Street Knowledge)</h4>
+                    <div class="role-card piltover-preview">
+                        <h4>📋 Caitlyn (Street Knowledge)</h4>
                         <p>You know these faces from the underground:</p>
                         <ul class="preview-clues">
                             <li><strong>👥 Recognition:</strong> Match descriptions to known faces</li>
@@ -193,10 +193,10 @@
                 </div>
             </div>
             
-            <!-- Piltover (Describer) Interface -->
-            @if (playerView.Role == "Piltover")
+            <!-- Zaun (Describer) Interface -->
+            @if (playerView.Role == "Zaunite")
             {
-                <div class="piltover-interface">
+                <div class="zaunite-interface describer-interface">
                     <div class="archive-panel">
                         <div class="panel-header">
                             <h4>📁 Marcus's Hidden Files - Project Safeguard</h4>
@@ -219,10 +219,10 @@
                             <div class="voice-description-panel">
                                 <div class="voice-instructions">
                                     <h5>⚠️ Describe this person's features quickly</h5>
-                                    <p>This file is corrupting - describe their face, hair, clothing, and any distinguishing features. Vi might recognize them from the underground. Press below when done.</p>
+                                    <p>This file is corrupting - describe their face, hair, clothing, and any distinguishing features. Caitlyn might recognize them from the underground. Press below when done.</p>
                                 </div>
                                 <button class="arcane-btn arcane-btn-warning" @onclick="FinishDescribing">
-                                    📁 Lock File & Send to Vi
+                                    📁 Lock File & Send to Caitlyn
                                 </button>
                             </div>
                         }
@@ -239,20 +239,20 @@
                 </div>
             }
             
-            <!-- Zaunite (Guesser) Interface -->
-            @if (playerView.Role == "Zaunite")
+            <!-- Piltover (Guesser) Interface -->
+            @if (playerView.Role == "Piltover")
             {
-                <div class="zaunite-interface">
+                <div class="piltover-interface guesser-interface">
                     <div class="intelligence-panel">
                         <div class="panel-header">
-                            <h4>🕵️ Zaun Database Terminal - Facial Recognition</h4>
+                            <h4>📋 Piltover Database Terminal - Facial Recognition</h4>
                         </div>
                         
                         @if (!playerView.CanChoose && !playerView.RoundCompleted)
                         {
                             <div class="waiting-description">
                                 <div class="loading-spinner">👂</div>
-                                <p>Caitlyn is accessing the corrupted file...</p>
+                                <p>Vi is accessing the corrupted file...</p>
                                 <small class="voice-reminder">⚠️ Listen for descriptions - these people are marked for elimination!</small>
                             </div>
                         }
@@ -1339,7 +1339,7 @@
     border-radius: 4px;
 }
 
-/* Piltover Interface */
+/* Interface base styles */
 .piltover-interface {
     background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
     border: 2px solid #c89b3c;
@@ -1510,14 +1510,83 @@
     transform: rotate(3deg);
 }
 
+/* Describer interface styles (for Zaun now) */
+.zaunite-interface.describer-interface .archive-panel {
+    background: rgba(0, 200, 200, 0.05);
+}
+
+.zaunite-interface.describer-interface .panel-header {
+    border-bottom: 1px solid rgba(0, 200, 200, 0.3);
+}
+
+.zaunite-interface.describer-interface .main-image {
+    border: 3px solid #00c8c8;
+    box-shadow: 0 0 20px rgba(0, 200, 200, 0.3);
+}
+
+.zaunite-interface.describer-interface .main-image:hover {
+    box-shadow: 0 0 30px rgba(0, 200, 200, 0.5);
+}
+
+.zaunite-interface.describer-interface .image-overlay {
+    background: linear-gradient(transparent 60%, rgba(0, 200, 200, 0.8));
+}
+
+.zaunite-interface.describer-interface .image-info {
+    border: 1px solid #00c8c8;
+}
+
+.zaunite-interface.describer-interface .voice-description-panel {
+    background: rgba(0, 200, 200, 0.1);
+    border: 1px solid rgba(0, 200, 200, 0.3);
+}
+
+.zaunite-interface.describer-interface .voice-instructions h5 {
+    color: #00c8c8;
+}
+
+/* Guesser interface styles (for Piltover now) */
+.piltover-interface.guesser-interface .intelligence-panel {
+    background: rgba(200, 155, 60, 0.05);
+}
+
+.piltover-interface.guesser-interface .panel-header h4 {
+    color: #c89b3c;
+}
+
+.piltover-interface.guesser-interface .waiting-description {
+    color: #c89b3c;
+}
+
+.piltover-interface.guesser-interface .choices-header {
+    color: #c89b3c;
+}
+
+.piltover-interface.guesser-interface .choice-item {
+    border: 2px solid rgba(200, 155, 60, 0.3);
+}
+
+.piltover-interface.guesser-interface .choice-item:hover {
+    border-color: #c89b3c;
+    background: rgba(200, 155, 60, 0.1);
+}
+
+.piltover-interface.guesser-interface .choice-image {
+    border: 1px solid rgba(200, 155, 60, 0.3);
+}
+
+.piltover-interface.guesser-interface .choice-item:hover .choice-image {
+    border-color: #c89b3c;
+}
+
+.piltover-interface.guesser-interface .choice-label {
+    color: #c89b3c;
+}
+
 .intelligence-panel {
     background: rgba(0, 200, 200, 0.05);
     border-radius: 8px;
     padding: 1.5rem;
-}
-
-.zaunite-interface .panel-header h4 {
-    color: #00c8c8;
 }
 
 .description-display {

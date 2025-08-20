@@ -5319,8 +5319,8 @@ public class PictureExplanationGame
         if (!Players.ContainsKey(connectionId))
             return new GameActionResult { Success = false, Message = "Player not in game" };
             
-        if (Players[connectionId] != PlayerRole.Piltover)
-            return new GameActionResult { Success = false, Message = "Only Piltover player can finish describing" };
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return new GameActionResult { Success = false, Message = "Only Zaunite player can finish describing" };
             
         if (DescriptionFinished)
             return new GameActionResult { Success = false, Message = "Description already finished for this round" };
@@ -5336,8 +5336,8 @@ public class PictureExplanationGame
         if (!Players.ContainsKey(connectionId))
             return new GameActionResult { Success = false, Message = "Player not in game" };
             
-        if (Players[connectionId] != PlayerRole.Zaunite)
-            return new GameActionResult { Success = false, Message = "Only Zaunite player can choose" };
+        if (Players[connectionId] != PlayerRole.Piltover)
+            return new GameActionResult { Success = false, Message = "Only Piltover player can choose" };
             
         if (!DescriptionFinished)
             return new GameActionResult { Success = false, Message = "Wait for partner to finish describing" };
@@ -5407,10 +5407,10 @@ public class PictureExplanationGame
         {
             Role = role == PlayerRole.Piltover ? "Piltover" : "Zaunite",
             DisplayName = playerName,
-            CurrentImageUrl = role == PlayerRole.Piltover && ImageVisible ? (CurrentPicture?.ImageUrl ?? "") : "",
-            ChoiceImages = role == PlayerRole.Zaunite && DescriptionFinished ? CurrentChoices : new(),
-            CanFinishDescribing = role == PlayerRole.Piltover && ImageVisible && !DescriptionFinished && !RoundComplete,
-            CanChoose = role == PlayerRole.Zaunite && DescriptionFinished && !SubmittedChoice.HasValue && !RoundComplete,
+            CurrentImageUrl = role == PlayerRole.Zaunite && ImageVisible ? (CurrentPicture?.ImageUrl ?? "") : "",
+            ChoiceImages = role == PlayerRole.Piltover && DescriptionFinished ? CurrentChoices : new(),
+            CanFinishDescribing = role == PlayerRole.Zaunite && ImageVisible && !DescriptionFinished && !RoundComplete,
+            CanChoose = role == PlayerRole.Piltover && DescriptionFinished && !SubmittedChoice.HasValue && !RoundComplete,
             SelectedChoice = SubmittedChoice,
             RoundCompleted = RoundComplete,
             RoundResult = LastRoundResult?.ResultMessage ?? "",

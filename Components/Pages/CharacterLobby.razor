@@ -585,8 +585,10 @@
 /* Avatar Selection */
 .avatar-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 .avatar-option {
@@ -1344,18 +1346,16 @@
         {
             return new List<AvatarOption>
             {
-                new AvatarOption { Index = 1, Name = "Vi", ImagePath = "/images/Vi.jpeg" },
-                new AvatarOption { Index = 2, Name = "Caitlyn", ImagePath = "/images/Cait.jpeg" },
-                new AvatarOption { Index = 3, Name = "Street Fighter", ImagePath = "/images/Vi.jpeg" } // Placeholder
+                new AvatarOption { Index = 1, Name = "Male", ImagePath = "/images/Characters/PlayerZaun/zaun_default_male.png" },
+                new AvatarOption { Index = 2, Name = "Female", ImagePath = "/images/Characters/PlayerZaun/zaun_default_female.png" }
             };
         }
         else
         {
             return new List<AvatarOption>
             {
-                new AvatarOption { Index = 1, Name = "Jayce", ImagePath = "/images/Jayce.jpeg" },
-                new AvatarOption { Index = 2, Name = "Viktor", ImagePath = "/images/Viktor.jpeg" },
-                new AvatarOption { Index = 3, Name = "Enforcer", ImagePath = "/images/Cait.jpeg" } // Placeholder
+                new AvatarOption { Index = 1, Name = "Male", ImagePath = "/images/Characters/PlayerPiltover/piltover_default_male.png" },
+                new AvatarOption { Index = 2, Name = "Female", ImagePath = "/images/Characters/PlayerPiltover/piltover_default_female.png" }
             };
         }
     }

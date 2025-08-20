@@ -43,6 +43,32 @@ namespace Arcane_Coop.Services
 
     public class Act1StoryEngine : IAct1StoryEngine
     {
+        private string GetPlayerImagePath(string role, string avatar, CharacterExpression expression)
+        {
+            // Avatar: "1" = male, "2" = female
+            bool isFemale = avatar == "2";
+            string gender = isFemale ? "female" : "male";
+            
+            // Map expression to image file naming convention
+            string expressionName = expression switch
+            {
+                CharacterExpression.Default => "default",
+                CharacterExpression.Worried => "worried",
+                CharacterExpression.Determined => "determined",
+                CharacterExpression.Serious => "default", // fallback to default if serious not available
+                _ => "default"
+            };
+            
+            if (role.Equals("piltover", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"/images/Characters/PlayerPiltover/piltover_{expressionName}_{gender}.png";
+            }
+            else
+            {
+                return $"/images/Characters/PlayerZaun/zaun_{expressionName}_{gender}.png";
+            }
+        }
+
         public VisualNovelScene CreateEmergencyBriefingScene(string squadName, Act1MultiplayerGame game)
         {
             // Get player names for dynamic character naming
@@ -70,7 +96,7 @@ namespace Arcane_Coop.Services
                     Name = "Vi",
                     DisplayName = "Vi",
                     ImagePath = "/images/Characters/Vi/vi_neutral.png",
-                    Position = CharacterPosition.Left,
+                    Position = CharacterPosition.Leftmost_5Characters,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -88,7 +114,7 @@ namespace Arcane_Coop.Services
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
                     ImagePath = "/images/Characters/Caitlyn/cait_default.png",
-                    Position = CharacterPosition.Right,
+                    Position = CharacterPosition.Left_5Characters,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -104,14 +130,16 @@ namespace Arcane_Coop.Services
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
-                    Position = CharacterPosition.Center,
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
+                    Position = CharacterPosition.Center_5Characters,
+                    HiddenUntilFirstLine = true,  // He won't appear until he speaks
+                    IsVisible = false,  // Initially hidden
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -119,14 +147,16 @@ namespace Arcane_Coop.Services
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
-                    Position = CharacterPosition.Center,
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
+                    Position = CharacterPosition.Right_5Characters,
+                    HiddenUntilFirstLine = true,  // He won't appear until he speaks
+                    IsVisible = false,  // Initially hidden
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) }
                     }
                 },
                 new VisualNovelCharacter
@@ -838,15 +868,15 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Surprised, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -854,15 +884,15 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Confused, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Confused, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1202,15 +1232,15 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1218,15 +1248,15 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Surprised, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1502,15 +1532,15 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1518,15 +1548,15 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Surprised, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1979,16 +2009,16 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Happy, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) },
+                        { CharacterExpression.Happy, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) }
                     }
                 },
                 new VisualNovelCharacter
@@ -1996,18 +2026,18 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Happy, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Angry, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Surprised, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Happy, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Angry, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) }
                     }
                 },
                 new VisualNovelCharacter
@@ -2376,15 +2406,15 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -2392,14 +2422,14 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -2507,14 +2537,14 @@ new DialogueLine
                     Id = "playerA",
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
-                    ImagePath = "/images/Characters/Enforcer/enforcer_default.png",
+                    ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Enforcer/enforcer_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Enforcer/enforcer_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Serious, "/images/Characters/PlayerPiltover/piltover_default_male.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2522,14 +2552,14 @@ new DialogueLine
                     Id = "playerB",
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
-                    ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png",
+                    ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
                     Position = CharacterPosition.Center,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/ZaunFriend/zaun_friend_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/ZaunFriend/zaun_friend_default.png" }
+                        { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
+                        { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
                 new VisualNovelCharacter
@@ -2603,8 +2633,8 @@ new DialogueLine
             {
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2667,8 +2697,8 @@ new DialogueLine
             {
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2772,8 +2802,8 @@ new DialogueLine
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2840,8 +2870,8 @@ new DialogueLine
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -2896,8 +2926,8 @@ new DialogueLine
                 new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" }
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" }
             });
 
             scene.DialogueLines.AddRange(new List<DialogueLine>
@@ -2981,8 +3011,8 @@ new DialogueLine
                 new VisualNovelCharacter { Id = "jayce", Name = "Jayce", DisplayName = "Jayce", ImagePath = "/images/Characters/Jayce/jayce_default.png", Position = CharacterPosition.Left, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -3052,8 +3082,8 @@ new DialogueLine
             {
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
@@ -3122,8 +3152,11 @@ new DialogueLine
 
         public VisualNovelScene CreateTruthRevealedScene(string squadName, Act1MultiplayerGame game)
         {
-            var piltoverPlayerName = game.Players.FirstOrDefault(p => p.PlayerRole == "piltover")?.PlayerName ?? "Piltover Agent";
-            var zaunPlayerName = game.Players.FirstOrDefault(p => p.PlayerRole == "zaun")?.PlayerName ?? "Zaun Operative";
+            var piltoverPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("piltover", StringComparison.OrdinalIgnoreCase));
+            var zaunPlayer = game.Players.FirstOrDefault(p => p.PlayerRole.Equals("zaun", StringComparison.OrdinalIgnoreCase));
+            
+            var piltoverPlayerName = piltoverPlayer?.PlayerName ?? "Piltover Agent";
+            var zaunPlayerName = zaunPlayer?.PlayerName ?? "Zaun Operative";
 
             var scene = new VisualNovelScene
             {
@@ -3138,8 +3171,8 @@ new DialogueLine
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "jinx", Name = "Jinx", DisplayName = "Jinx", ImagePath = "/images/Characters/Jinx/jinx_default.png", Position = CharacterPosition.Center, ThemeColor = "#ff00ff" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunOperative/zaun_operative_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "silco", Name = "Silco", DisplayName = "Silco", ImagePath = "/images/Characters/Silco/silco_default.png", Position = CharacterPosition.Center, ThemeColor = "#800080" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
@@ -3246,8 +3279,8 @@ new DialogueLine
             {
                 new VisualNovelCharacter { Id = "vi", Name = "Vi", DisplayName = "Vi", ImagePath = "/images/Characters/Vi/vi_neutral.png", Position = CharacterPosition.Left, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "caitlyn", Name = "Caitlyn", DisplayName = "Caitlyn", ImagePath = "/images/Characters/Caitlyn/cait_default.png", Position = CharacterPosition.Right, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = "/images/Characters/Enforcer/enforcer_default.png", Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
-                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = "/images/Characters/ZaunFriend/zaun_friend_default.png", Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
+                new VisualNovelCharacter { Id = "playerA", Name = piltoverPlayerName, DisplayName = piltoverPlayerName, ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#c8aa6e" },
+                new VisualNovelCharacter { Id = "playerB", Name = zaunPlayerName, DisplayName = zaunPlayerName, ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default), Position = CharacterPosition.Center, ThemeColor = "#00d4aa" },
                 new VisualNovelCharacter { Id = "narrator", Name = "Narrator", DisplayName = "Narrator", ImagePath = "", Position = CharacterPosition.Center, ThemeColor = "#888888" }
             });
 
