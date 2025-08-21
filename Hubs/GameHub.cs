@@ -5168,6 +5168,8 @@ public class PictureExplanationGame
     private bool ImageVisible = true; // Whether Piltover player can see the image
     private int? SubmittedChoice;
     private bool RoundComplete = false;
+    private bool ShouldRepeatRound = false; // If true, repeat the same round on NextRound
+    private bool NoPointsThisRound = false; // Once wrong in a round, future correct answer yields 0
     private PictureRoundResult? LastRoundResult;
 
     public class GameActionResult
@@ -5269,7 +5271,7 @@ public class PictureExplanationGame
         return Players.Keys.ToList();
     }
 
-    private void StartNewRound()
+    private void StartNewRound(bool isRepeat = false)
     {
         if (CurrentRound > TotalRounds)
         {
@@ -5312,6 +5314,12 @@ public class PictureExplanationGame
         SubmittedChoice = null;
         RoundComplete = false;
         LastRoundResult = null;
+        ShouldRepeatRound = false;
+        if (!isRepeat)
+        {
+            // Only reset scoring lockout when moving to a new round
+            NoPointsThisRound = false;
+        }
     }
 
     public GameActionResult FinishDescribing(string connectionId)
@@ -5350,11 +5358,21 @@ public class PictureExplanationGame
 
         SubmittedChoice = choiceIndex;
         bool isCorrect = choiceIndex == CorrectChoiceIndex;
-        int pointsEarned = isCorrect ? 10 : 0;
-        
+        int pointsEarned = 0;
         if (isCorrect)
         {
-            Score += pointsEarned;
+            // Award points only if there wasn't a previous wrong attempt in this round
+            if (!NoPointsThisRound)
+            {
+                pointsEarned = 10;
+                Score += pointsEarned;
+            }
+        }
+        else
+        {
+            // Mark round to be repeated and lock out points for this round
+            ShouldRepeatRound = true;
+            NoPointsThisRound = true;
         }
 
         LastRoundResult = new PictureRoundResult
@@ -5381,8 +5399,14 @@ public class PictureExplanationGame
         if (!RoundComplete)
             return new GameActionResult { Success = false, Message = "Current round not complete" };
 
+        // If they answered incorrectly, repeat the same round without advancing.
+        if (ShouldRepeatRound)
+        {
+            StartNewRound(isRepeat: true);
+            return new GameActionResult { Success = true, Message = $"Repeating round {CurrentRound}" };
+        }
+
         // Only advance the round counter if we have not reached the final round yet.
-        // This prevents CurrentRound from becoming TotalRounds + 1 (e.g., showing 5/4).
         if (CurrentRound < TotalRounds)
         {
             CurrentRound++;
