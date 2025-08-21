@@ -5153,6 +5153,18 @@ public class PictureExplanationGame
         return femaleImages.OrderBy(x => random.Next()).Take(count).ToList();
     }
 
+    // Tailored distractors per round (Round1-Round4/choice1.png..choice3.png)
+    private static List<string> GetTailoredDistractorsForRound(int roundNumber)
+    {
+        var basePath = $"/images/PictureDescriptionImages/Round{roundNumber}/";
+        return new List<string>
+        {
+            $"{basePath}choice1.png",
+            $"{basePath}choice2.png",
+            $"{basePath}choice3.png"
+        };
+    }
+
     private readonly ConcurrentDictionary<string, PlayerRole> Players = new();
     public readonly ConcurrentDictionary<string, string> PlayerNames = new();
     
@@ -5282,16 +5294,8 @@ public class PictureExplanationGame
         // For demo: cycle through the 4 characters in order
         CurrentPicture = PictureBank[(CurrentRound - 1) % PictureBank.Count];
         
-        // Generate fresh distractors based on the character's gender
-        List<string> freshDistractors;
-        if (CurrentPicture.Category == "Male")
-        {
-            freshDistractors = GetRandomMaleDistractors(3);
-        }
-        else // Female
-        {
-            freshDistractors = GetRandomFemaleDistractors(3);
-        }
+        // Use tailored per-round distractors instead of random ones
+        List<string> freshDistractors = GetTailoredDistractorsForRound(CurrentRound);
         
         // Create shuffled choices (correct + 3 distractors)
         CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
