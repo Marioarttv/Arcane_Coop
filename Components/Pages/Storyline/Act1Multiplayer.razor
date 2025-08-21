@@ -7,6 +7,7 @@
 @implements IAsyncDisposable
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
 <script>
     window.preloadImage = function(src) {
@@ -113,9 +114,10 @@
             <div class="characters-layer @GetLayoutClass()">
                 @if (playerView.CurrentScene.Layout == SceneLayout.SingleCenter && GetCurrentSpeaker() != null)
                 {
-                    <div class="character-container center-character @(GetCurrentSpeaker()?.IsActive == true ? "active" : "")">
+                    var speaker = GetCurrentSpeaker();
+                    <div class="character-container center-character @(speaker?.IsActive == true ? "active" : "") @(speaker != null ? GetCharacterAnimationClass(speaker) : "")">
                         <div class="character-portrait">
-                            <img src="@GetCurrentSpeaker()?.GetCurrentImagePath()" alt="@GetCurrentSpeaker()?.Name (@GetCurrentSpeaker()?.CurrentExpression)" class="portrait-image" />
+                            <img src="@speaker?.GetCurrentImagePath()" alt="@speaker?.Name (@speaker?.CurrentExpression)" class="portrait-image" />
                             <div class="character-glow"></div>
                         </div>
                     </div>
@@ -124,7 +126,7 @@
                 {
                     @foreach (var character in playerView.CurrentScene.Characters.Take(2).Where(c => c.IsVisible))
                     {
-                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
                                 <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
                                 <div class="character-glow"></div>
@@ -136,7 +138,7 @@
                 {
                     @foreach (var character in playerView.CurrentScene.Characters.Take(4).Where(c => c.IsVisible))
                     {
-                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
                                 <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
                                 <div class="character-glow"></div>
@@ -148,7 +150,7 @@
                 {
                     @foreach (var character in playerView.CurrentScene.Characters.Take(5).Where(c => c.IsVisible))
                     {
-                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive")">
+                        <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
                                 <img src="@character.GetCurrentImagePath()" alt="@character.Name (@character.CurrentExpression)" class="portrait-image" />
                                 <div class="character-glow"></div>
@@ -312,6 +314,8 @@
     private string? lastChoiceText = null;
     private int? lastAnimatedDialogueIndex = null;
     private string? lastAnimatedText = null;
+    private HashSet<string> appearedCharacters = new HashSet<string>(); // Track characters that have already appeared
+    private HashSet<string> animatingCharacters = new HashSet<string>(); // Track characters currently animating
 
     // DTO for choice events to avoid dynamic binder issues
     private class ChoiceMadeDto
@@ -394,11 +398,14 @@
         {
             await InvokeAsync(() =>
             {
-                // Check if scene changed - reset persistent background
+                // Check if scene changed - reset persistent background and character tracking
                 if (view?.CurrentScene?.Id != lastSceneId)
                 {
                     persistentBackgroundImage = null;
                     lastSceneId = view?.CurrentScene?.Id;
+                    // Reset character appearance tracking for new scene
+                    appearedCharacters.Clear();
+                    animatingCharacters.Clear();
                 }
                 
                 playerView = view;
@@ -767,6 +774,17 @@
             if (character != null)
                 character.CurrentExpression = expressionChange.Value;
         }
+        
+        // Check for characters that should appear for the first time
+        foreach (var character in playerView.CurrentScene.Characters.Where(c => c.IsVisible))
+        {
+            if (!appearedCharacters.Contains(character.Id))
+            {
+                // This will trigger the animation via GetCharacterAnimationClass
+                StateHasChanged();
+                break; // Only trigger once per update
+            }
+        }
     }
 
     private VisualNovelCharacter? GetCurrentSpeaker()
@@ -813,6 +831,61 @@
         
         // Handle standard positions
         return position.ToLower() + "-character";
+    }
+    
+    private string GetCharacterAnimationClass(VisualNovelCharacter character)
+    {
+        if (character == null || string.IsNullOrEmpty(character.Id)) return "";
+        
+        // Check if this character is appearing for the first time
+        if (!appearedCharacters.Contains(character.Id) && character.IsVisible)
+        {
+            // Mark as appeared and start animation
+            appearedCharacters.Add(character.Id);
+            animatingCharacters.Add(character.Id);
+            
+            // Remove from animating list after animation completes (1s duration)
+            Task.Delay(1000).ContinueWith(_ => 
+            {
+                animatingCharacters.Remove(character.Id);
+                InvokeAsync(StateHasChanged);
+            });
+            
+            // Return animation class based on position
+            var position = character.Position.ToString().ToLower();
+            if (position.Contains("right"))
+            {
+                return "animate__animated animate__fadeInRight";
+            }
+            else if (position.Contains("left"))
+            {
+                return "animate__animated animate__fadeInLeft";
+            }
+            else
+            {
+                return "animate__animated animate__fadeIn"; // Center characters just fade in
+            }
+        }
+        
+        // If currently animating, keep the animation class
+        if (animatingCharacters.Contains(character.Id))
+        {
+            var position = character.Position.ToString().ToLower();
+            if (position.Contains("right"))
+            {
+                return "animate__animated animate__fadeInRight";
+            }
+            else if (position.Contains("left"))
+            {
+                return "animate__animated animate__fadeInLeft";
+            }
+            else
+            {
+                return "animate__animated animate__fadeIn";
+            }
+        }
+        
+        return "";
     }
     
     private string GetFallbackTransitionUrl(string nameParam, string squadParam)
@@ -1997,6 +2070,62 @@
 /* Smooth scrolling for long dialogue */
 .dialogue-text {
     scroll-behavior: smooth;
+}
+
+/********************************************
+ * Character Appearance Animations
+ ********************************************/
+/* Customize Animate.css animations for better character entrance */
+.character-container.animate__animated {
+    --animate-duration: 0.8s;
+    animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Ensure characters start invisible when using fade-in animations */
+.character-container.animate__fadeInRight,
+.character-container.animate__fadeInLeft,
+.character-container.animate__fadeIn {
+    animation-fill-mode: both;
+}
+
+/* Add subtle bounce at the end of the fade-in for more life */
+@@keyframes fadeInRightWithBounce {
+    0% {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    70% {
+        opacity: 1;
+        transform: translateX(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@@keyframes fadeInLeftWithBounce {
+    0% {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    70% {
+        opacity: 1;
+        transform: translateX(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Override Animate.css defaults for smoother entrance */
+.character-container.animate__fadeInRight {
+    animation-name: fadeInRightWithBounce;
+}
+
+.character-container.animate__fadeInLeft {
+    animation-name: fadeInLeftWithBounce;
 }
 
 /********************************************

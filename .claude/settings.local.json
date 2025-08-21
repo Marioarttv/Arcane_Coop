@@ -19,7 +19,10 @@
       "Bash(mv:*)",
       "Bash(csc:*)",
       "Bash(TestDialogueFlow.exe)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
