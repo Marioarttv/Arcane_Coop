@@ -124,7 +124,7 @@
                 }
                 else if (playerView.CurrentScene.Layout == SceneLayout.DualCharacters)
                 {
-                    @foreach (var character in playerView.CurrentScene.Characters.Take(2).Where(c => c.IsVisible))
+                    @foreach (var character in playerView.CurrentScene.Characters.Take(2).Where(c => c.IsVisible || disappearingCharacters.Contains(c.Id)))
                     {
                         <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
@@ -136,7 +136,7 @@
                 }
                 else if (playerView.CurrentScene.Layout == SceneLayout.FourCharacters)
                 {
-                    @foreach (var character in playerView.CurrentScene.Characters.Take(4).Where(c => c.IsVisible))
+                    @foreach (var character in playerView.CurrentScene.Characters.Take(4).Where(c => c.IsVisible || disappearingCharacters.Contains(c.Id)))
                     {
                         <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
@@ -148,7 +148,7 @@
                 }
                 else if (playerView.CurrentScene.Layout == SceneLayout.FiveCharacters)
                 {
-                    @foreach (var character in playerView.CurrentScene.Characters.Take(5).Where(c => c.IsVisible))
+                    @foreach (var character in playerView.CurrentScene.Characters.Take(5).Where(c => c.IsVisible || disappearingCharacters.Contains(c.Id)))
                     {
                         <div class="character-container @GetCharacterPositionClass(character) @(character.IsActive ? "active" : "inactive") @GetCharacterAnimationClass(character)">
                             <div class="character-portrait">
@@ -316,6 +316,8 @@
     private string? lastAnimatedText = null;
     private HashSet<string> appearedCharacters = new HashSet<string>(); // Track characters that have already appeared
     private HashSet<string> animatingCharacters = new HashSet<string>(); // Track characters currently animating
+    private HashSet<string> disappearingCharacters = new HashSet<string>(); // Track characters that are disappearing
+    private Dictionary<string, bool> previousCharacterVisibility = new Dictionary<string, bool>(); // Track previous visibility state
 
     // DTO for choice events to avoid dynamic binder issues
     private class ChoiceMadeDto
@@ -406,6 +408,8 @@
                     // Reset character appearance tracking for new scene
                     appearedCharacters.Clear();
                     animatingCharacters.Clear();
+                    disappearingCharacters.Clear();
+                    previousCharacterVisibility.Clear();
                 }
                 
                 playerView = view;
@@ -752,6 +756,30 @@
     {
         if (playerView?.CurrentScene == null || currentDialogue == null) return;
 
+        // Check for characters that are becoming invisible (disappearing)
+        foreach (var character in playerView.CurrentScene.Characters)
+        {
+            var wasVisible = previousCharacterVisibility.ContainsKey(character.Id) && previousCharacterVisibility[character.Id];
+            var isNowVisible = character.IsVisible;
+            
+            // Character is disappearing
+            if (wasVisible && !isNowVisible && !disappearingCharacters.Contains(character.Id))
+            {
+                disappearingCharacters.Add(character.Id);
+                appearedCharacters.Remove(character.Id); // Remove from appeared so they can reappear later
+                
+                // Remove from disappearing list after animation completes
+                Task.Delay(800).ContinueWith(_ => 
+                {
+                    disappearingCharacters.Remove(character.Id);
+                    InvokeAsync(StateHasChanged);
+                });
+            }
+            
+            // Update previous visibility state
+            previousCharacterVisibility[character.Id] = isNowVisible;
+        }
+
         // Reset all characters to inactive
         foreach (var character in playerView.CurrentScene.Characters)
             character.IsActive = false;
@@ -778,7 +806,7 @@
         // Check for characters that should appear for the first time
         foreach (var character in playerView.CurrentScene.Characters.Where(c => c.IsVisible))
         {
-            if (!appearedCharacters.Contains(character.Id))
+            if (!appearedCharacters.Contains(character.Id) && !animatingCharacters.Contains(character.Id))
             {
                 // This will trigger the animation via GetCharacterAnimationClass
                 StateHasChanged();
@@ -837,6 +865,26 @@
     {
         if (character == null || string.IsNullOrEmpty(character.Id)) return "";
         
+        var position = character.Position.ToString().ToLower();
+        
+        // Check if character is disappearing
+        if (disappearingCharacters.Contains(character.Id))
+        {
+            // Return fade-out animation based on position
+            if (position.Contains("right"))
+            {
+                return "animate__animated animate__fadeOutRight";
+            }
+            else if (position.Contains("left"))
+            {
+                return "animate__animated animate__fadeOutLeft";
+            }
+            else
+            {
+                return "animate__animated animate__fadeOut";
+            }
+        }
+        
         // Check if this character is appearing for the first time
         if (!appearedCharacters.Contains(character.Id) && character.IsVisible)
         {
@@ -844,15 +892,14 @@
             appearedCharacters.Add(character.Id);
             animatingCharacters.Add(character.Id);
             
-            // Remove from animating list after animation completes (1s duration)
-            Task.Delay(1000).ContinueWith(_ => 
+            // Remove from animating list after animation completes (0.8s duration)
+            Task.Delay(800).ContinueWith(_ => 
             {
                 animatingCharacters.Remove(character.Id);
                 InvokeAsync(StateHasChanged);
             });
             
             // Return animation class based on position
-            var position = character.Position.ToString().ToLower();
             if (position.Contains("right"))
             {
                 return "animate__animated animate__fadeInRight";
@@ -867,10 +914,9 @@
             }
         }
         
-        // If currently animating, keep the animation class
+        // If currently animating in, keep the animation class
         if (animatingCharacters.Contains(character.Id))
         {
-            var position = character.Position.ToString().ToLower();
             if (position.Contains("right"))
             {
                 return "animate__animated animate__fadeInRight";
@@ -2088,15 +2134,19 @@
     animation-fill-mode: both;
 }
 
-/* Add subtle bounce at the end of the fade-in for more life */
-@@keyframes fadeInRightWithBounce {
+/* Ensure fade-out animations hide characters at the end */
+.character-container.animate__fadeOutRight,
+.character-container.animate__fadeOutLeft,
+.character-container.animate__fadeOut {
+    animation-fill-mode: forwards;
+    pointer-events: none;
+}
+
+/* Smooth fade-in animations without bounce */
+@@keyframes fadeInRightSmooth {
     0% {
         opacity: 0;
-        transform: translateX(50px);
-    }
-    70% {
-        opacity: 1;
-        transform: translateX(-5px);
+        transform: translateX(40px);
     }
     100% {
         opacity: 1;
@@ -2104,14 +2154,10 @@
     }
 }
 
-@@keyframes fadeInLeftWithBounce {
+@@keyframes fadeInLeftSmooth {
     0% {
         opacity: 0;
-        transform: translateX(-50px);
-    }
-    70% {
-        opacity: 1;
-        transform: translateX(5px);
+        transform: translateX(-40px);
     }
     100% {
         opacity: 1;
@@ -2119,13 +2165,44 @@
     }
 }
 
-/* Override Animate.css defaults for smoother entrance */
+/* Smooth fade-out animations */
+@@keyframes fadeOutRightSmooth {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}
+
+@@keyframes fadeOutLeftSmooth {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+}
+
+/* Override Animate.css defaults for smoother entrance/exit */
 .character-container.animate__fadeInRight {
-    animation-name: fadeInRightWithBounce;
+    animation-name: fadeInRightSmooth;
 }
 
 .character-container.animate__fadeInLeft {
-    animation-name: fadeInLeftWithBounce;
+    animation-name: fadeInLeftSmooth;
+}
+
+.character-container.animate__fadeOutRight {
+    animation-name: fadeOutRightSmooth;
+}
+
+.character-container.animate__fadeOutLeft {
+    animation-name: fadeOutLeftSmooth;
 }
 
 /********************************************
