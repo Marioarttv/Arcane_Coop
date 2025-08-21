@@ -5381,10 +5381,11 @@ public class PictureExplanationGame
         if (!RoundComplete)
             return new GameActionResult { Success = false, Message = "Current round not complete" };
 
-        CurrentRound++;
-        
-        if (CurrentRound <= TotalRounds)
+        // Only advance the round counter if we have not reached the final round yet.
+        // This prevents CurrentRound from becoming TotalRounds + 1 (e.g., showing 5/4).
+        if (CurrentRound < TotalRounds)
         {
+            CurrentRound++;
             StartNewRound();
             return new GameActionResult { Success = true, Message = $"Starting round {CurrentRound}" };
         }

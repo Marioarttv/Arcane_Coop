@@ -1,3 +1,12 @@
+/* Prevent horizontal scrollbars globally and reduce flicker from animated backgrounds */
+html, body {
+    overflow-x: hidden;
+}
+
+/* Ensure the main app container doesn't induce vertical scrollbar jumps */
+body {
+    overscroll-behavior-y: contain;
+}
 /* CSS Reset to remove white borders/gaps */
 * {
     margin: 0;
