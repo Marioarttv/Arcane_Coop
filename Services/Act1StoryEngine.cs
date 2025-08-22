@@ -202,11 +202,11 @@ new DialogueLine
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
     // Example: Start background music on the first line
-    BackgroundMusic = "/audio/music/emergency_theme.mp3",
+    BackgroundMusic = "/audio/music/The Mist.wav",
     BackgroundMusicLoop = true,
-    BackgroundMusicVolume = 0.6f,
+    BackgroundMusicVolume = 0.3f,
     // Example: Play door slam sound effect
-    SoundEffect = "/audio/sfx/door_slam.mp3",
+    SoundEffect = "/audio/sfx/DOORWood_Door Bathroom Wood Close Small Room Thud Bassy 02_ESM_SG.wav",
     SoundEffectVolume = 0.8f
 },
 new DialogueLine
@@ -217,7 +217,7 @@ new DialogueLine
     TypewriterSpeed = 40,
     SpeakerExpression = CharacterExpression.Angry,
     // Example: Play Vi's voice line (if available)
-    VoiceLine = "/audio/voices/vi/vi_negotiate.mp3",
+    VoiceLine = "/audio/voicelines/line1.mp3",
     VoiceLineVolume = 1.0f
 },
 new DialogueLine
@@ -234,7 +234,9 @@ new DialogueLine
     Text = "War? We're already at war! People are dying down there every day from his Shimmer. And Powder... Jinx is with him.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line3.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -250,7 +252,9 @@ new DialogueLine
     Text = "You really think you can talk to him? He hates everything Piltover stands for. He'll never back down.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line5.mp3",
+    VoiceLineVolume = 1.0f
 },
 
 // Player Introduction

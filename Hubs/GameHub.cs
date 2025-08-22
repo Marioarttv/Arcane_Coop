@@ -3952,31 +3952,38 @@ public class SimpleSignalDecoderGame
     {
         new SimpleSignalData
         {
-            FullSentence = "Emergency dispatch explosion at the small workshop on Main Street blue-haired suspect fled the scene one person injured all units respond",
-            SentenceWithBlanks = "Emergency dispatch explosion at the {0} workshop on {1} Street {2}-haired suspect fled the scene one {3} injured all units respond",
-            MissingWords = new[] { "small", "Main", "blue", "person" },
-            AudioFile = "audio/signal-decoder/story/transmission1_full.mp3"
+            FullSentence = "Code red: LARGE explosion on the NORTH side of the district",
+            SentenceWithBlanks = "Code red: {0} explosion on the {1} side of the district",
+            MissingWords = new[] { "large", "north" },
+            AudioFile = "audio/signals/signal1.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Alert the old woman failed to report for safe custody last known location repair shop above the big market consider subject in immediate danger",
-            SentenceWithBlanks = "Alert the {0} woman failed to report for {1} custody last known location {2} shop above the {3} market consider subject in immediate {4}",
-            MissingWords = new[] { "old", "safe", "repair", "big", "danger" },
-            AudioFile = "audio/signal-decoder/story/transmission2_full.mp3"
+            FullSentence = "The female scientist is MISSING from her HOME since yesterday",
+            SentenceWithBlanks = "The female scientist is {0} from her {1} since yesterday",
+            MissingWords = new[] { "missing", "home" },
+            AudioFile = "audio/signals/signal2.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Police chief orders avoid the warehouse district tonight evidence removal in progress old files require immediate cleaning no patrol units until further notice",
-            SentenceWithBlanks = "Police {0} orders avoid the {1} district tonight evidence {2} in progress {3} files require immediate {4} no patrol units until further notice",
-            MissingWords = new[] { "chief", "warehouse", "removal", "old", "cleaning" },
-            AudioFile = "audio/signal-decoder/story/transmission3_full.mp3"
+            FullSentence = "All units must LEAVE the old factory UNTIL further notice",
+            SentenceWithBlanks = "All units must {0} the old factory {1} further notice",
+            MissingWords = new[] { "leave", "until" },
+            AudioFile = "audio/signals/signal3.mp3"
         },
         new SimpleSignalData
         {
-            FullSentence = "Update on secret project team two workers confirmed missing first and second locations unknown science lab security broken start emergency procedures",
-            SentenceWithBlanks = "Update on {0} project team two {1} confirmed missing {2} and {3} locations unknown {4} lab security broken start emergency procedures",
-            MissingWords = new[] { "secret", "workers", "first", "second", "science" },
-            AudioFile = "audio/signal-decoder/story/transmission4_full.mp3"
+            FullSentence = "THREE witnesses saw a BLUE haired girl running from the scene",
+            SentenceWithBlanks = "{0} witnesses saw a {1} haired girl running from the scene",
+            MissingWords = new[] { "three", "blue" },
+            AudioFile = "audio/signals/signal4.mp3"
+        },
+        new SimpleSignalData
+        {
+            FullSentence = "Evidence suggests the suspect is ARMED and extremely DANGEROUS",
+            SentenceWithBlanks = "Evidence suggests the suspect is {0} and extremely {1}",
+            MissingWords = new[] { "armed", "dangerous" },
+            AudioFile = "audio/signals/signal5.mp3"
         }
     };
 

@@ -175,6 +175,34 @@
                 </div>
             </div>
 
+            <!-- Audio Controls -->
+            <div class="audio-controls @GetThemeClass()">
+                <div class="audio-control-item">
+                    <button class="audio-btn @GetThemeClass() @(musicMuted ? "muted" : "")" 
+                            @onclick="ToggleMusicMute" 
+                            title="@(musicMuted ? "Unmute Music" : "Mute Music")">
+                        <span class="audio-icon">🎵</span>
+                    </button>
+                    <span class="audio-label">Music</span>
+                </div>
+                <div class="audio-control-item">
+                    <button class="audio-btn @GetThemeClass() @(sfxMuted ? "muted" : "")" 
+                            @onclick="ToggleSfxMute" 
+                            title="@(sfxMuted ? "Unmute SFX" : "Mute SFX")">
+                        <span class="audio-icon">🔊</span>
+                    </button>
+                    <span class="audio-label">SFX</span>
+                </div>
+                <div class="audio-control-item">
+                    <button class="audio-btn @GetThemeClass() @(voiceMuted ? "muted" : "")" 
+                            @onclick="ToggleVoiceMute" 
+                            title="@(voiceMuted ? "Unmute Voice" : "Mute Voice")">
+                        <span class="audio-icon">🎤</span>
+                    </button>
+                    <span class="audio-label">Voice</span>
+                </div>
+            </div>
+
             <!-- Dialogue Box -->
             <div class="dialogue-section">
                 <div class="dialogue-box @GetDialogueBoxClass()">
@@ -320,6 +348,18 @@
     private HashSet<string> animatingCharacters = new HashSet<string>(); // Track characters currently animating
     private HashSet<string> disappearingCharacters = new HashSet<string>(); // Track characters that are disappearing
     private Dictionary<string, bool> previousCharacterVisibility = new Dictionary<string, bool>(); // Track previous visibility state
+
+    // Audio control state
+    private bool musicMuted = false;
+    private bool sfxMuted = false;
+    private bool voiceMuted = false;
+    private float originalMusicVolume = 0.7f;
+    private float originalSfxVolume = 0.8f;
+    private float originalVoiceVolume = 1.0f;
+    
+    // Voice line management
+    private bool isHandlingAudio = false;
+    private string? lastPlayedVoiceLine = null;
 
     // DTO for choice events to avoid dynamic binder issues
     private class ChoiceMadeDto
@@ -638,14 +678,28 @@
             
             UpdateCharacterStates();
             
-            // Handle audio for this dialogue line
-            _ = HandleDialogueAudio();
+            // Handle audio for this dialogue line (prevent overlapping calls)
+            _ = HandleDialogueAudioSafe();
         }
+    }
+    
+    private async Task HandleDialogueAudioSafe()
+    {
+        // Prevent overlapping audio handling calls
+        if (isHandlingAudio) 
+        {
+            Console.WriteLine($"[Act1Multiplayer] Audio handling already in progress, skipping");
+            return;
+        }
+        
+        await HandleDialogueAudio();
     }
     
     private async Task HandleDialogueAudio()
     {
         if (currentDialogue == null) return;
+        
+        isHandlingAudio = true;
         
         try
         {
@@ -655,7 +709,7 @@
                 await AudioManager.StopBackgroundMusicAsync(currentDialogue.CrossfadeDuration);
                 Console.WriteLine($"[Act1Multiplayer] Stopped background music");
             }
-            else if (!string.IsNullOrEmpty(currentDialogue.BackgroundMusic))
+            else if (!string.IsNullOrEmpty(currentDialogue.BackgroundMusic) && !musicMuted)
             {
                 await AudioManager.PlayBackgroundMusicAsync(
                     currentDialogue.BackgroundMusic,
@@ -667,9 +721,13 @@
                 );
                 Console.WriteLine($"[Act1Multiplayer] Playing background music: {currentDialogue.BackgroundMusic}");
             }
+            else if (!string.IsNullOrEmpty(currentDialogue.BackgroundMusic) && musicMuted)
+            {
+                Console.WriteLine($"[Act1Multiplayer] Background music muted: {currentDialogue.BackgroundMusic}");
+            }
             
             // Play sound effect
-            if (!string.IsNullOrEmpty(currentDialogue.SoundEffect))
+            if (!string.IsNullOrEmpty(currentDialogue.SoundEffect) && !sfxMuted)
             {
                 await AudioManager.PlaySoundEffectAsync(
                     currentDialogue.SoundEffect,
@@ -677,21 +735,56 @@
                 );
                 Console.WriteLine($"[Act1Multiplayer] Playing sound effect: {currentDialogue.SoundEffect}");
             }
-            
-            // Play voice line
-            if (!string.IsNullOrEmpty(currentDialogue.VoiceLine))
+            else if (!string.IsNullOrEmpty(currentDialogue.SoundEffect) && sfxMuted)
             {
-                await AudioManager.PlayVoiceLineAsync(
-                    currentDialogue.VoiceLine,
-                    currentDialogue.VoiceLineVolume,
-                    true // stop previous voice lines
-                );
-                Console.WriteLine($"[Act1Multiplayer] Playing voice line: {currentDialogue.VoiceLine}");
+                Console.WriteLine($"[Act1Multiplayer] Sound effect muted: {currentDialogue.SoundEffect}");
+            }
+            
+            // Play voice line (only if different from last played)
+            if (!string.IsNullOrEmpty(currentDialogue.VoiceLine) && !voiceMuted)
+            {
+                // Prevent playing the same voice line multiple times
+                if (lastPlayedVoiceLine != currentDialogue.VoiceLine)
+                {
+                    // Stop previous voice lines only when we have a new voice line to play
+                    await AudioManager.StopAllVoiceLinesAsync();
+                    Console.WriteLine($"[Act1Multiplayer] Stopped previous voice lines before playing new one");
+                    
+                    // Small delay to ensure previous voice line is fully stopped
+                    await Task.Delay(50);
+                    
+                    await AudioManager.PlayVoiceLineAsync(
+                        currentDialogue.VoiceLine,
+                        currentDialogue.VoiceLineVolume,
+                        true // stop previous voice lines (redundant but safe)
+                    );
+                    
+                    lastPlayedVoiceLine = currentDialogue.VoiceLine;
+                    Console.WriteLine($"[Act1Multiplayer] Playing voice line: {currentDialogue.VoiceLine}");
+                }
+                else
+                {
+                    Console.WriteLine($"[Act1Multiplayer] Skipping duplicate voice line: {currentDialogue.VoiceLine}");
+                }
+            }
+            else if (!string.IsNullOrEmpty(currentDialogue.VoiceLine) && voiceMuted)
+            {
+                Console.WriteLine($"[Act1Multiplayer] Voice line muted: {currentDialogue.VoiceLine}");
+            }
+            else if (string.IsNullOrEmpty(currentDialogue.VoiceLine))
+            {
+                // Clear the last played voice line when there's no voice line
+                lastPlayedVoiceLine = null;
+                Console.WriteLine($"[Act1Multiplayer] No voice line for this dialogue");
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Act1Multiplayer] Error handling dialogue audio: {ex.Message}");
+        }
+        finally
+        {
+            isHandlingAudio = false;
         }
     }
 
@@ -1069,6 +1162,52 @@
         classes.Add(GetThemeClass());
         
         return string.Join(" ", classes);
+    }
+
+    // Audio Control Methods
+    private async Task ToggleMusicMute()
+    {
+        musicMuted = !musicMuted;
+        
+        if (musicMuted)
+        {
+            // Store current volume and mute
+            await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
+            Console.WriteLine("[Act1Multiplayer] Music muted");
+        }
+        else
+        {
+            // Restore original volume
+            await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
+            Console.WriteLine("[Act1Multiplayer] Music unmuted");
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task ToggleSfxMute()
+    {
+        sfxMuted = !sfxMuted;
+        Console.WriteLine($"[Act1Multiplayer] SFX {(sfxMuted ? "muted" : "unmuted")}");
+        StateHasChanged();
+    }
+
+    private async Task ToggleVoiceMute()
+    {
+        voiceMuted = !voiceMuted;
+        
+        if (voiceMuted)
+        {
+            // Stop any currently playing voice lines
+            await AudioManager.StopAllVoiceLinesAsync();
+            Console.WriteLine("[Act1Multiplayer] Voice muted and stopped current voice lines");
+        }
+        else
+        {
+            Console.WriteLine("[Act1Multiplayer] Voice unmuted");
+        }
+        
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()
@@ -2540,5 +2679,126 @@
 .background-zaun .atmospheric-effects {
     background: radial-gradient(circle at 30% 70%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 70% 30%, rgba(0, 255, 200, 0.05) 0%, transparent 50%);
+}
+
+/* Audio Controls */
+.audio-controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.audio-control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.audio-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.audio-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.audio-btn.piltover {
+    border-color: rgba(200, 170, 110, 0.5);
+    background: rgba(200, 170, 110, 0.1);
+}
+
+.audio-btn.piltover:hover {
+    border-color: rgba(200, 170, 110, 0.8);
+    background: rgba(200, 170, 110, 0.2);
+    box-shadow: 0 4px 12px rgba(200, 170, 110, 0.3);
+}
+
+.audio-btn.zaun {
+    border-color: rgba(0, 212, 170, 0.5);
+    background: rgba(0, 212, 170, 0.1);
+}
+
+.audio-btn.zaun:hover {
+    border-color: rgba(0, 212, 170, 0.8);
+    background: rgba(0, 212, 170, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+}
+
+.audio-btn.muted {
+    opacity: 0.5;
+    border-color: rgba(255, 69, 0, 0.7) !important;
+    background: rgba(255, 69, 0, 0.2) !important;
+}
+
+.audio-btn.muted:hover {
+    border-color: rgba(255, 69, 0, 0.9) !important;
+    background: rgba(255, 69, 0, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4) !important;
+}
+
+.audio-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.audio-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.audio-controls.piltover .audio-label {
+    color: rgba(200, 170, 110, 0.9);
+}
+
+.audio-controls.zaun .audio-label {
+    color: rgba(0, 212, 170, 0.9);
+}
+
+/* Responsive audio controls */
+@@media (max-width: 768px) {
+    .audio-controls {
+        top: 10px;
+        left: 10px;
+        gap: 10px;
+        padding: 6px 8px;
+    }
+    
+    .audio-btn {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .audio-icon {
+        font-size: 16px;
+    }
+    
+    .audio-label {
+        font-size: 9px;
+    }
 }
 </style>
