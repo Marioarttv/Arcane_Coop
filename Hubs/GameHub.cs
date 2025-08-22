@@ -5153,10 +5153,11 @@ public class PictureExplanationGame
         return femaleImages.OrderBy(x => random.Next()).Take(count).ToList();
     }
 
-    // Tailored distractors per round (Round1-Round4/choice1.png..choice3.png)
-    private static List<string> GetTailoredDistractorsForRound(int roundNumber)
+    // Tailored distractors per round - just return the 3 choices from the Round folder
+    private static List<string> GetTailoredDistractorsForRound(int roundNumber, string correctImageUrl)
     {
         var basePath = $"/images/PictureDescriptionImages/Round{roundNumber}/";
+        // Simply return the 3 distractor images for this round
         return new List<string>
         {
             $"{basePath}choice1.png",
@@ -5283,6 +5284,9 @@ public class PictureExplanationGame
         return Players.Keys.ToList();
     }
 
+    // Store the choices for each round to ensure consistency when repeating
+    private Dictionary<int, List<string>> RoundChoicesCache = new();
+    
     private void StartNewRound(bool isRepeat = false)
     {
         if (CurrentRound > TotalRounds)
@@ -5294,19 +5298,93 @@ public class PictureExplanationGame
         // For demo: cycle through the 4 characters in order
         CurrentPicture = PictureBank[(CurrentRound - 1) % PictureBank.Count];
         
-        // Use tailored per-round distractors instead of random ones
-        List<string> freshDistractors = GetTailoredDistractorsForRound(CurrentRound);
-        
-        // Create shuffled choices (correct + 3 distractors)
-        CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
-        CurrentChoices.AddRange(freshDistractors);
-        
-        // Shuffle the choices
-        var random = new Random();
-        for (int i = CurrentChoices.Count - 1; i > 0; i--)
+        // If repeating a round, use the same choices from the cache
+        if (isRepeat && RoundChoicesCache.ContainsKey(CurrentRound))
         {
-            int j = random.Next(i + 1);
-            (CurrentChoices[i], CurrentChoices[j]) = (CurrentChoices[j], CurrentChoices[i]);
+            CurrentChoices = new List<string>(RoundChoicesCache[CurrentRound]);
+            Console.WriteLine($"[PictureExplanationGame] Repeating round {CurrentRound} with same choices");
+        }
+        else
+        {
+            // Generate new choices for this round
+            // Use tailored per-round distractors
+            List<string> freshDistractors = GetTailoredDistractorsForRound(CurrentRound, CurrentPicture.ImageUrl);
+            
+            // Create choices (correct + 3 distractors)
+            CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
+            CurrentChoices.AddRange(freshDistractors);
+            
+            // Log the choices for debugging
+            Console.WriteLine($"[PictureExplanationGame] Round {CurrentRound} initial choices:");
+            for (int i = 0; i < CurrentChoices.Count; i++)
+            {
+                Console.WriteLine($"  Choice {i}: {CurrentChoices[i]}");
+            }
+            
+            // Validate that all choices are unique
+            var uniqueChoices = CurrentChoices.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (uniqueChoices.Count != CurrentChoices.Count)
+            {
+                Console.WriteLine($"[PictureExplanationGame] Warning: Duplicate images detected in round {CurrentRound}!");
+                Console.WriteLine($"  Expected 4 unique images, but got {uniqueChoices.Count}");
+                
+                // Log which images are duplicated
+                var duplicates = CurrentChoices.GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key);
+                foreach (var dup in duplicates)
+                {
+                    Console.WriteLine($"  Duplicate found: {dup}");
+                }
+                
+                // Fix by using unique choices only, then add fallbacks if needed
+                CurrentChoices = uniqueChoices;
+                
+                // If we need more choices, add fallback distractors
+                while (CurrentChoices.Count < 4)
+                {
+                    List<string> fallbackPool;
+                    if (CurrentPicture.Category == "Male")
+                    {
+                        fallbackPool = GetRandomMaleDistractors(10);
+                    }
+                    else
+                    {
+                        fallbackPool = GetRandomFemaleDistractors(10);
+                    }
+                    
+                    // Find a distractor that's not already in our choices
+                    foreach (var fallback in fallbackPool)
+                    {
+                        if (!CurrentChoices.Any(c => c.Equals(fallback, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            CurrentChoices.Add(fallback);
+                            Console.WriteLine($"  Added fallback: {fallback}");
+                            break;
+                        }
+                    }
+                }
+                
+                Console.WriteLine($"[PictureExplanationGame] Fixed choices for round {CurrentRound}. Now have {CurrentChoices.Count} unique images.");
+            }
+            
+            // Shuffle the choices
+            var random = new Random();
+            for (int i = CurrentChoices.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+                (CurrentChoices[i], CurrentChoices[j]) = (CurrentChoices[j], CurrentChoices[i]);
+            }
+            
+            // Log final shuffled choices
+            Console.WriteLine($"[PictureExplanationGame] Round {CurrentRound} final shuffled choices:");
+            for (int i = 0; i < CurrentChoices.Count; i++)
+            {
+                Console.WriteLine($"  Position {i}: {CurrentChoices[i]}");
+            }
+            
+            // Cache these choices for potential repeat
+            RoundChoicesCache[CurrentRound] = new List<string>(CurrentChoices);
         }
         
         // Find correct answer index after shuffling
@@ -5508,6 +5586,16 @@ public class PictureExplanationGame
         SubmittedChoice = null;
         RoundComplete = false;
         LastRoundResult = null;
+        ShouldRepeatRound = false;
+        NoPointsThisRound = false;
+        RoundChoicesCache.Clear(); // Clear the cached choices for a fresh start
+        
+        // Initialize the first round if we have 2 players
+        // This prevents the issue where the game is in an incomplete state after reset
+        if (Players.Count == 2)
+        {
+            StartNewRound();
+        }
     }
 }
 

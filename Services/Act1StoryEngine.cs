@@ -322,7 +322,8 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "They hurry to the service entrance, where a figure waits in the shadows...",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    BackgroundImage = "/images/Backgrounds/ServiceEntrance.png"
 },
 new DialogueLine
 {
@@ -465,7 +466,8 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "The unlikely group heads into the depths of Zaun, leaving the Council's politics behind for a more personal mission...",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    BackgroundImage = "/images/Backgrounds/House1.png"
 },
                 
                 // === SCENE 2: THE CRIME SCENE ===
@@ -475,11 +477,12 @@ new DialogueLine
     Text = "Zaun - Abandoned Records Storage Facility",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30
+    
 },
 new DialogueLine
 {
     CharacterId = "playerB",
-    Text = "This is it. Whole place shook when she blew the door. Classic Jinx—why pick a lock when you can make it disappear?",
+    Text = "This is it. Whole place shook when she blew the wall open. Classic Jinx—why pick a lock when you can make a hole appear?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
     SpeakerExpression = CharacterExpression.Serious
@@ -527,7 +530,7 @@ new DialogueLine
 new DialogueLine
 {
     CharacterId = "caitlyn",
-    Text = "Personnel files... scientists? These are old Hextech researchers. They worked on the early prototypes before the technology was regulated.",
+    Text = "Personnel files... scientists?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
     SpeakerExpression = CharacterExpression.Serious
@@ -679,6 +682,7 @@ new DialogueLine
     Text = "The group retreats from the scene, regrouping in a nearby alley...",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
+    BackgroundImage = "/images/Backgrounds/hallway1.jpg",
     // Return characters to original positions and hide Stanton
     CharacterPositions = new Dictionary<string, CharacterPosition>
     {
@@ -786,7 +790,8 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "The team heads toward Piltover Enforcer HQ, knowing they're racing against time—and against Jinx...",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    BackgroundImage = "/images/Backgrounds/EnforcerHQ.jpg",
 },
             });
 
@@ -821,7 +826,7 @@ new DialogueLine
             {
                 Id = "database_revelation",
                 Name = "Enforcer Database - After Identification",
-                Layout = SceneLayout.DualCharacters,
+                Layout = SceneLayout.FourCharacters,
                 Theme = NovelTheme.Piltover
             };
 
@@ -834,12 +839,12 @@ new DialogueLine
                     Name = "Vi",
                     DisplayName = "Vi",
                     ImagePath = "/images/Characters/Vi/vi_neutral.png",
-                    Position = CharacterPosition.Left,
+                    Position = CharacterPosition.Leftmost_4Characters,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
-                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_confused.png" },
                         { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
                         { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" },
                         { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
@@ -852,7 +857,7 @@ new DialogueLine
                     Name = "Caitlyn",
                     DisplayName = "Caitlyn",
                     ImagePath = "/images/Characters/Caitlyn/cait_default.png",
-                    Position = CharacterPosition.Right,
+                    Position = CharacterPosition.Left_4Characters,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -869,7 +874,7 @@ new DialogueLine
                     Name = piltoverPlayerName,
                     DisplayName = piltoverPlayerName,
                     ImagePath = GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
-                    Position = CharacterPosition.Center,
+                    Position = CharacterPosition.Right_4Characters,
                     ThemeColor = "#c8aa6e",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -885,7 +890,7 @@ new DialogueLine
                     Name = zaunPlayerName,
                     DisplayName = zaunPlayerName,
                     ImagePath = GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default),
-                    Position = CharacterPosition.Center,
+                    Position = CharacterPosition.Rightmost_4Characters,
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -917,9 +922,10 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "narrator",
-                    Text = "Piltover Enforcer HQ Records Room - Discovery Complete",
+                    Text = "Piltover Enforcer HQ Records Room",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    BackgroundImage = "/images/Backgrounds/piltoverHQinside.png"
                 },
                 new DialogueLine
                 {
@@ -1047,7 +1053,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "narrator",
-                    Text = "The enforcer radio from earlier suddenly crackles to life...",
+                    Text = "The enforcer radio suddenly crackles to life...",
                     AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30
                 },
