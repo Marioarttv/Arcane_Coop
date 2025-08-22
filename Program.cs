@@ -19,6 +19,8 @@ builder.Services.AddBlazorDragDrop();
 builder.Services.AddScoped<IVisualNovelService, VisualNovelService>();
 // Add Act 1 Story Engine
 builder.Services.AddSingleton<IAct1StoryEngine, Act1StoryEngine>();
+// Add Audio Manager Service
+builder.Services.AddScoped<IAudioManager, AudioManager>();
 
 var app = builder.Build();
 
@@ -32,7 +34,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

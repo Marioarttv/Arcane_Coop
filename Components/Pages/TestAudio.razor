@@ -1,0 +1,239 @@
+@page "/test-audio"
+@using Arcane_Coop.Services
+@inject IAudioManager AudioManager
+@inject IJSRuntime JSRuntime
+
+<h3>Audio System Test Page</h3>
+
+<div style="padding: 20px;">
+    <div style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0;">🔊 Audio System Status</h4>
+        <button @onclick="CheckStatus" style="margin-right: 10px; padding: 5px 10px;">Check Status</button>
+        <button @onclick="UnlockAudio" style="margin-right: 10px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 3px;">Unlock Audio</button>
+        <button @onclick="TestSimpleSound" style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px;">Test Simple Sound</button>
+        <div style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 3px; font-family: monospace; font-size: 12px; white-space: pre-wrap;">@debugInfo</div>
+    </div>
+    
+    <h4>Background Music Controls</h4>
+    <button @onclick="PlayBackgroundMusic">Play Background Music</button>
+    <button @onclick="StopBackgroundMusic">Stop Background Music</button>
+    <button @onclick="ChangeBackgroundMusic">Change Background Music</button>
+    
+    <h4 style="margin-top: 20px;">Sound Effects</h4>
+    <button @onclick="PlaySFX1">Play Sound Effect 1</button>
+    <button @onclick="PlaySFX2">Play Sound Effect 2</button>
+    
+    <h4 style="margin-top: 20px;">Voice Lines</h4>
+    <button @onclick="PlayVoice1">Play Voice Line 1</button>
+    <button @onclick="PlayVoice2">Play Voice Line 2</button>
+    
+    <h4 style="margin-top: 20px;">Volume Control</h4>
+    <label>Global Volume: @globalVolume</label>
+    <input type="range" min="0" max="100" @bind="globalVolume" @bind:event="oninput" @onchange="UpdateGlobalVolume" />
+    
+    <h4 style="margin-top: 20px;">Combined Test</h4>
+    <button @onclick="PlayAll">Play All Together</button>
+    <button @onclick="StopAll">Stop All Audio</button>
+    
+    <h4 style="margin-top: 20px;">Status</h4>
+    <p>@statusMessage</p>
+    <p style="color: #666; font-size: 12px;">
+        <strong>Important:</strong> Modern browsers require user interaction to play audio. 
+        Click "Unlock Audio" button first if you don't hear anything.
+    </p>
+</div>
+
+@code {
+    private int globalVolume = 70;
+    private string statusMessage = "Ready to test audio";
+    private string debugInfo = "Click 'Check Status' to see audio system state";
+    private int currentMusic = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AudioManager.InitializeAsync();
+        statusMessage = "Audio Manager initialized";
+        await CheckStatus();
+    }
+
+    private async Task CheckStatus()
+    {
+        try
+        {
+            var status = await JSRuntime.InvokeAsync<object>("audioManager.getStatus");
+            debugInfo = System.Text.Json.JsonSerializer.Serialize(status, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            statusMessage = "Status checked - see debug info above";
+        }
+        catch (Exception ex)
+        {
+            debugInfo = $"Error getting status: {ex.Message}";
+        }
+    }
+
+    private async Task UnlockAudio()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("audioManager.manualUnlock");
+            statusMessage = "Audio unlock attempted - try playing audio now";
+            await Task.Delay(500);
+            await CheckStatus();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error unlocking audio: {ex.Message}";
+        }
+    }
+
+    private async Task TestSimpleSound()
+    {
+        try
+        {
+            // Test with a small existing file
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                // Create a simple test sound
+                var testSound = new Howl({
+                    src: ['/audio/signals/mixed_01.mp3'],
+                    volume: 0.5,
+                    onplay: function() {
+                        console.log('[TestAudio] Test sound playing');
+                    },
+                    onplayerror: function(id, error) {
+                        console.error('[TestAudio] Test sound play error:', error);
+                        // Try to unlock and play again
+                        testSound.once('unlock', function() {
+                            testSound.play();
+                        });
+                    },
+                    onloaderror: function(id, error) {
+                        console.error('[TestAudio] Test sound load error:', error);
+                    }
+                });
+                testSound.play();
+            ");
+            statusMessage = "Test sound initiated - check browser console";
+            await Task.Delay(500);
+            await CheckStatus();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error playing test sound: {ex.Message}";
+        }
+    }
+
+    private async Task PlayBackgroundMusic()
+    {
+        // Using an existing audio file from the project
+        await AudioManager.PlayBackgroundMusicAsync(
+            "/audio/music/Past_RegretLONG_55BPM.wav",
+            volume: 0.7f,
+            loop: true,
+            fadeIn: 1000
+        );
+        statusMessage = "Playing background music (looped)";
+        await Task.Delay(500);
+        await CheckStatus();
+    }
+
+    private async Task StopBackgroundMusic()
+    {
+        await AudioManager.StopBackgroundMusicAsync(fadeOut: 1000);
+        statusMessage = "Stopped background music with fadeout";
+    }
+
+    private async Task ChangeBackgroundMusic()
+    {
+        currentMusic = (currentMusic + 1) % 3;
+        string[] tracks = {
+            "/audio/music/In The Dream_full.wav",
+            "/audio/music/Into The Void (Loop).wav",
+            "/audio/music/The Mist.wav"
+        };
+        
+        await AudioManager.PlayBackgroundMusicAsync(
+            tracks[currentMusic],
+            volume: 0.7f,
+            loop: true,
+            fadeIn: 1000,
+            crossfade: true,
+            crossfadeDuration: 2000
+        );
+        statusMessage = $"Changed to track {currentMusic + 1} with crossfade";
+    }
+
+    private async Task PlaySFX1()
+    {
+        await AudioManager.PlaySoundEffectAsync(
+            "/audio/sfx/GUI - Accept 001.wav",
+            volume: 0.8f
+        );
+        statusMessage = "Playing sound effect 1";
+    }
+
+    private async Task PlaySFX2()
+    {
+        await AudioManager.PlaySoundEffectAsync(
+            "/audio/signals/mixed_02.mp3",
+            volume: 0.8f
+        );
+        statusMessage = "Playing sound effect 2";
+    }
+
+    private async Task PlayVoice1()
+    {
+        await AudioManager.PlayVoiceLineAsync(
+            "/audio/voicelines/line1.mp3",
+            volume: 1.0f,
+            stopPrevious: true
+        );
+        statusMessage = "Playing voice line 1";
+    }
+
+    private async Task PlayVoice2()
+    {
+        await AudioManager.PlayVoiceLineAsync(
+            "/audio/signals/standard_03.mp3",
+            volume: 1.0f,
+            stopPrevious: true
+        );
+        statusMessage = "Playing voice line 2";
+    }
+
+    private async Task UpdateGlobalVolume()
+    {
+        await AudioManager.SetGlobalVolumeAsync(globalVolume / 100f);
+        statusMessage = $"Set global volume to {globalVolume}%";
+    }
+
+    private async Task PlayAll()
+    {
+        // Play background music
+        await AudioManager.PlayBackgroundMusicAsync(
+            "/audio/signals/standard_01.mp3",
+            volume: 0.5f,
+            loop: true
+        );
+        
+        // Play a sound effect
+        await Task.Delay(500);
+        await AudioManager.PlaySoundEffectAsync(
+            "/audio/signals/mixed_01.mp3",
+            volume: 0.8f
+        );
+        
+        // Play a voice line
+        await Task.Delay(500);
+        await AudioManager.PlayVoiceLineAsync(
+            "/audio/signals/important_01.mp3",
+            volume: 1.0f
+        );
+        
+        statusMessage = "Playing all audio layers together";
+    }
+
+    private async Task StopAll()
+    {
+        await AudioManager.StopAllAsync();
+        statusMessage = "Stopped all audio";
+    }
+}

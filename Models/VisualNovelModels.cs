@@ -112,8 +112,20 @@ namespace Arcane_Coop.Models
         public int TypewriterSpeed { get; set; } = 50; // milliseconds per character
         public bool AutoContinue { get; set; } = false;
         public int AutoContinueDelay { get; set; } = 3000;
+        
+        // Audio properties
         public string? BackgroundMusic { get; set; }
+        public bool BackgroundMusicLoop { get; set; } = true;
+        public float BackgroundMusicVolume { get; set; } = 0.7f;
+        public bool StopBackgroundMusic { get; set; } = false;
+        public int CrossfadeDuration { get; set; } = 2000; // milliseconds
+        
         public string? SoundEffect { get; set; }
+        public float SoundEffectVolume { get; set; } = 0.8f;
+        
+        public string? VoiceLine { get; set; }
+        public float VoiceLineVolume { get; set; } = 1.0f;
+        
         public Dictionary<string, object> Metadata { get; set; } = new();
         
         // Background support - allows changing background on specific dialogue lines

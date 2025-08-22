@@ -1,9 +1,11 @@
 @page "/act1-multiplayer"
 @page "/act1-multiplayer/{*parameters}"
 @using Arcane_Coop.Models
+@using Arcane_Coop.Services
 @using Microsoft.AspNetCore.SignalR.Client
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject IAudioManager AudioManager
 @implements IAsyncDisposable
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -635,6 +637,61 @@
             Console.WriteLine($"[Act1Multiplayer] Dialogue #{playerView.GameState.CurrentDialogueIndex}: {speaker}{dialogueId}{choiceInfo} - \"{currentDialogue.Text}\"");
             
             UpdateCharacterStates();
+            
+            // Handle audio for this dialogue line
+            _ = HandleDialogueAudio();
+        }
+    }
+    
+    private async Task HandleDialogueAudio()
+    {
+        if (currentDialogue == null) return;
+        
+        try
+        {
+            // Handle background music
+            if (currentDialogue.StopBackgroundMusic)
+            {
+                await AudioManager.StopBackgroundMusicAsync(currentDialogue.CrossfadeDuration);
+                Console.WriteLine($"[Act1Multiplayer] Stopped background music");
+            }
+            else if (!string.IsNullOrEmpty(currentDialogue.BackgroundMusic))
+            {
+                await AudioManager.PlayBackgroundMusicAsync(
+                    currentDialogue.BackgroundMusic,
+                    currentDialogue.BackgroundMusicVolume,
+                    currentDialogue.BackgroundMusicLoop,
+                    1000, // fadeIn
+                    true, // crossfade
+                    currentDialogue.CrossfadeDuration
+                );
+                Console.WriteLine($"[Act1Multiplayer] Playing background music: {currentDialogue.BackgroundMusic}");
+            }
+            
+            // Play sound effect
+            if (!string.IsNullOrEmpty(currentDialogue.SoundEffect))
+            {
+                await AudioManager.PlaySoundEffectAsync(
+                    currentDialogue.SoundEffect,
+                    currentDialogue.SoundEffectVolume
+                );
+                Console.WriteLine($"[Act1Multiplayer] Playing sound effect: {currentDialogue.SoundEffect}");
+            }
+            
+            // Play voice line
+            if (!string.IsNullOrEmpty(currentDialogue.VoiceLine))
+            {
+                await AudioManager.PlayVoiceLineAsync(
+                    currentDialogue.VoiceLine,
+                    currentDialogue.VoiceLineVolume,
+                    true // stop previous voice lines
+                );
+                Console.WriteLine($"[Act1Multiplayer] Playing voice line: {currentDialogue.VoiceLine}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error handling dialogue audio: {ex.Message}");
         }
     }
 
@@ -1018,6 +1075,14 @@
     {
         isDisposed = true;
         CancelTypewriter();
+        
+        // Clean up audio
+        try
+        {
+            await AudioManager.StopAllAsync();
+        }
+        catch { }
+        
         if (hubConnection is not null)
         {
             await hubConnection.DisposeAsync();

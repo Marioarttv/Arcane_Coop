@@ -200,7 +200,14 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "Council Chamber Antechamber - The grand doors slam shut behind them",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    // Example: Start background music on the first line
+    BackgroundMusic = "/audio/music/emergency_theme.mp3",
+    BackgroundMusicLoop = true,
+    BackgroundMusicVolume = 0.6f,
+    // Example: Play door slam sound effect
+    SoundEffect = "/audio/sfx/door_slam.mp3",
+    SoundEffectVolume = 0.8f
 },
 new DialogueLine
 {
@@ -208,7 +215,10 @@ new DialogueLine
     Text = "Negotiate. They want to NEGOTIATE with him. After everything he's done.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+    // Example: Play Vi's voice line (if available)
+    VoiceLine = "/audio/voices/vi/vi_negotiate.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {

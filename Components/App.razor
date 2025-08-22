@@ -13,6 +13,15 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
+    <!-- Audio Libraries - Load before Blazor -->
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+    <script>
+        // Fallback to local version if CDN fails
+        if (typeof Howler === 'undefined') {
+            document.write('<script src="/lib/howler/howler.min.js"><\/script>');
+        }
+    </script>
+    <script src="/js/audioManager.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 
