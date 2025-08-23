@@ -201,6 +201,14 @@
                     </button>
                     <span class="audio-label">Voice</span>
                 </div>
+                <div class="audio-control-item">
+                    <button class="audio-btn @GetThemeClass() @(allMuted ? "muted" : "")" 
+                            @onclick="ToggleMuteAll" 
+                            title="@(allMuted ? "Unmute All Audio" : "Mute All Audio")">
+                        <span class="audio-icon">🔇</span>
+                    </button>
+                    <span class="audio-label">All</span>
+                </div>
             </div>
 
             <!-- Dialogue Box -->
@@ -353,6 +361,7 @@
     private bool musicMuted = false;
     private bool sfxMuted = false;
     private bool voiceMuted = false;
+    private bool allMuted = false;
     private float originalMusicVolume = 0.7f;
     private float originalSfxVolume = 0.8f;
     private float originalVoiceVolume = 1.0f;
@@ -1169,18 +1178,28 @@
     {
         musicMuted = !musicMuted;
         
-        if (musicMuted)
+        try
         {
-            // Store current volume and mute
-            await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
-            Console.WriteLine("[Act1Multiplayer] Music muted");
+            if (musicMuted)
+            {
+                // Immediately mute currently playing music
+                await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
+                Console.WriteLine("[Act1Multiplayer] Music muted - set volume to 0");
+            }
+            else
+            {
+                // Restore original volume immediately
+                await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
+                Console.WriteLine($"[Act1Multiplayer] Music unmuted - restored volume to {originalMusicVolume}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Restore original volume
-            await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
-            Console.WriteLine("[Act1Multiplayer] Music unmuted");
+            Console.WriteLine($"[Act1Multiplayer] Error toggling music mute: {ex.Message}");
         }
+        
+        // Update allMuted state based on individual states
+        allMuted = musicMuted && sfxMuted && voiceMuted;
         
         StateHasChanged();
     }
@@ -1188,7 +1207,28 @@
     private async Task ToggleSfxMute()
     {
         sfxMuted = !sfxMuted;
-        Console.WriteLine($"[Act1Multiplayer] SFX {(sfxMuted ? "muted" : "unmuted")}");
+        
+        try
+        {
+            if (sfxMuted)
+            {
+                // Stop all currently playing sound effects immediately
+                await AudioManager.StopAllSoundEffectsAsync();
+                Console.WriteLine("[Act1Multiplayer] SFX muted - stopped all current sound effects");
+            }
+            else
+            {
+                Console.WriteLine("[Act1Multiplayer] SFX unmuted - new sound effects will play");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error toggling SFX mute: {ex.Message}");
+        }
+        
+        // Update allMuted state based on individual states
+        allMuted = musicMuted && sfxMuted && voiceMuted;
+        
         StateHasChanged();
     }
 
@@ -1196,15 +1236,66 @@
     {
         voiceMuted = !voiceMuted;
         
-        if (voiceMuted)
+        try
         {
-            // Stop any currently playing voice lines
-            await AudioManager.StopAllVoiceLinesAsync();
-            Console.WriteLine("[Act1Multiplayer] Voice muted and stopped current voice lines");
+            if (voiceMuted)
+            {
+                // Stop all currently playing voice lines immediately
+                await AudioManager.StopAllVoiceLinesAsync();
+                Console.WriteLine("[Act1Multiplayer] Voice muted - stopped all current voice lines");
+            }
+            else
+            {
+                Console.WriteLine("[Act1Multiplayer] Voice unmuted - new voice lines will play");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("[Act1Multiplayer] Voice unmuted");
+            Console.WriteLine($"[Act1Multiplayer] Error toggling voice mute: {ex.Message}");
+        }
+        
+        // Update allMuted state based on individual states
+        allMuted = musicMuted && sfxMuted && voiceMuted;
+        
+        StateHasChanged();
+    }
+
+    private async Task ToggleMuteAll()
+    {
+        allMuted = !allMuted;
+        
+        try
+        {
+            if (allMuted)
+            {
+                // Mute all audio types
+                musicMuted = true;
+                sfxMuted = true;
+                voiceMuted = true;
+                
+                // Stop all currently playing audio immediately
+                await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
+                await AudioManager.StopAllSoundEffectsAsync();
+                await AudioManager.StopAllVoiceLinesAsync();
+                
+                Console.WriteLine("[Act1Multiplayer] All audio muted - stopped all current audio");
+            }
+            else
+            {
+                // Unmute all audio types
+                musicMuted = false;
+                sfxMuted = false;
+                voiceMuted = false;
+                
+                // Restore music volume
+                await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
+                
+                Console.WriteLine("[Act1Multiplayer] All audio unmuted - restored music volume");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error toggling mute all: {ex.Message}");
         }
         
         StateHasChanged();

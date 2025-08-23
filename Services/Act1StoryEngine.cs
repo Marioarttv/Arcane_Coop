@@ -226,7 +226,10 @@ new DialogueLine
     Text = "Vi, please. The Council is trying to prevent a war—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     // Example: Play Vi's voice line (if available)
+    VoiceLine = "/audio/voicelines/line2.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -244,7 +247,9 @@ new DialogueLine
     Text = "Which is exactly why we need to be smart about this. If we can get to Silco diplomatically—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line4.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -279,7 +284,9 @@ new DialogueLine
     Text = "Not now, recruit. This isn't a good—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Surprised
+    SpeakerExpression = CharacterExpression.Surprised,
+     VoiceLine = "/audio/voicelines/line6.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -295,7 +302,9 @@ new DialogueLine
     Text = "What? Who?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Surprised
+    SpeakerExpression = CharacterExpression.Surprised,
+     VoiceLine = "/audio/voicelines/line7.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -311,7 +320,9 @@ new DialogueLine
     Text = $"{zaunPlayerName}? That's... no way. I thought they were dead.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Surprised
+    SpeakerExpression = CharacterExpression.Surprised,
+     VoiceLine = "/audio/voicelines/line8.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -319,7 +330,9 @@ new DialogueLine
     Text = "You know this person?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line9.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -327,7 +340,9 @@ new DialogueLine
     Text = "From before. Before Stillwater. If it's really them...",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line10.mp3",
+    VoiceLineVolume = 1.0f
 },
 
 // Service Entrance - Player B Introduction
@@ -353,7 +368,9 @@ new DialogueLine
     Text = "I could say the same about you being alive. I heard you got caught in the raid after... after that night.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Surprised
+    SpeakerExpression = CharacterExpression.Surprised,
+     VoiceLine = "/audio/voicelines/line11.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -369,7 +386,9 @@ new DialogueLine
     Text = "You saw Powder? When? Where?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line12.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -385,7 +404,9 @@ new DialogueLine
     Text = "Marked targets? She's planning something.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line13.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -401,7 +422,9 @@ new DialogueLine
     Text = "Forget the Council and their negotiations. This is our chance to find her before she does something she can't take back.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line14.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -409,7 +432,9 @@ new DialogueLine
     Text = "Vi, we can't just—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line15.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -417,7 +442,9 @@ new DialogueLine
     Text = "Can't what? The Council wants to talk while my sister is out there planning to kill people. You heard them in there—oil and water, right? Well, maybe it's time we stop pretending otherwise.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line16.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -425,7 +452,9 @@ new DialogueLine
     Text = "That's not... Vi, please. We can do this together. All of us.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line17.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -449,7 +478,9 @@ new DialogueLine
     Text = "They'll shoot first. I know. That's why we do this our way.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line18.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -457,7 +488,9 @@ new DialogueLine
     Text = "Alright. But we do this smart. No charging in without a plan.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line19.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -473,7 +506,9 @@ new DialogueLine
     Text = "Then let's go. Every second we waste arguing is another second closer to disaster.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line20.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
