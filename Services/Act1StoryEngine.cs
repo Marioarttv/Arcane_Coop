@@ -542,7 +542,9 @@ new DialogueLine
     Text = "These scorch marks... she's using more powerful explosives. The monkey bombs were just toys compared to this.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line21.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -550,7 +552,9 @@ new DialogueLine
     Text = "Look at the precision though. She only destroyed what she needed to. This wasn't random destruction—she was after something specific.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line22.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -566,7 +570,9 @@ new DialogueLine
     Text = "Or Marcus's private stash. He was dirty—working with Silco. Maybe she's cleaning up loose ends.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line23.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -582,7 +588,9 @@ new DialogueLine
     Text = "Personnel files... scientists?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line24.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -598,7 +606,9 @@ new DialogueLine
     Text = "Why would she be hunting old scientists? What does Silco want with—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Worried
+    SpeakerExpression = CharacterExpression.Worried,
+     VoiceLine = "/audio/voicelines/line24_2.mp3",
+    VoiceLineVolume = 1.0f
 },
 
 // Stanton's Interruption
@@ -608,15 +618,7 @@ new DialogueLine
     Text = "Heavy enforcer boots echo down the alley. Deputy Stanton appears with two officers.",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
-    // Rearrange characters to prepare for Stanton's entrance
-    CharacterPositions = new Dictionary<string, CharacterPosition>
-    {
-        { "caitlyn", CharacterPosition.Leftmost_5Characters },
-        { "vi", CharacterPosition.Left_5Characters },
-        { "playerA", CharacterPosition.Center_5Characters },
-        { "playerB", CharacterPosition.Right_5Characters }
-        // Stanton will appear on Rightmost_5Characters when he speaks
-    }
+   
 },
 new DialogueLine
 {
@@ -624,7 +626,9 @@ new DialogueLine
     Text = "Kiramman! What the hell are you doing here? This is a restricted crime scene!",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line25.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -632,7 +636,9 @@ new DialogueLine
     Text = "Deputy Stanton. We received intelligence about—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line26.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -640,7 +646,9 @@ new DialogueLine
     Text = "Intelligence? From who? The Council just voted to pursue diplomatic channels, and here you are playing vigilante with... is that the Zaunite prisoner?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line27.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -648,8 +656,9 @@ new DialogueLine
     Text = "I'm not a prisoner anymore, badge boy.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
-    // Positions already set with all 5 characters, no need to change
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line28.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -657,7 +666,9 @@ new DialogueLine
     Text = "Those files—give them here. NOW.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line29.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -673,7 +684,9 @@ new DialogueLine
     Text = "These are... how did she even know about—These were supposed to be destroyed! Marcus said he burned all of—",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Surprised
+    SpeakerExpression = CharacterExpression.Surprised,
+     VoiceLine = "/audio/voicelines/line30.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -681,7 +694,9 @@ new DialogueLine
     Text = "Marcus's files? Deputy, what aren't you telling us?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line31.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -689,7 +704,9 @@ new DialogueLine
     Text = "That's classified! Way above your pay grade, Kiramman. You're already on thin ice after that stunt on the bridge.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line32.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -697,7 +714,9 @@ new DialogueLine
     Text = "You're scared. What was Marcus hiding? What do these scientists know?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line33.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -705,7 +724,9 @@ new DialogueLine
     Text = "Enough! You're interfering with an official investigation. Get out before I have you all arrested for obstruction!",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line35.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -721,7 +742,9 @@ new DialogueLine
     Text = "The situation is under control! We have protocols in place. Now LEAVE!",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Angry
+    SpeakerExpression = CharacterExpression.Angry,
+     VoiceLine = "/audio/voicelines/line36.mp3",
+    VoiceLineVolume = 1.0f
 },
 
 // After Leaving
@@ -732,14 +755,6 @@ new DialogueLine
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
     BackgroundImage = "/images/Backgrounds/hallway1.jpg",
-    // Return characters to original positions and hide Stanton
-    CharacterPositions = new Dictionary<string, CharacterPosition>
-    {
-        { "caitlyn", CharacterPosition.Left },
-        { "vi", CharacterPosition.Right },
-        { "playerA", CharacterPosition.Center },
-        { "playerB", CharacterPosition.Center }
-    },
     // Hide Stanton after he leaves
     CharacterVisibility = new Dictionary<string, bool>
     {
@@ -752,7 +767,9 @@ new DialogueLine
     Text = "He knows something. Marcus was keeping secrets, and now Stanton's trying to bury them.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line37.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -760,7 +777,9 @@ new DialogueLine
     Text = "Those weren't just classified documents. They were personal files—Marcus's off-the-books operations. But how would Jinx know about them?",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line38.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -784,7 +803,9 @@ new DialogueLine
     Text = "They won't be for long. Not if she's hunting them.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line40.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -792,7 +813,9 @@ new DialogueLine
     Text = "The enforcer database. I still have access, despite Stanton's threats. We can search for those faces.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line41.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -808,7 +831,9 @@ new DialogueLine
     Text = "Not breaking in. I'm still technically an officer. But we'll need to be careful—Stanton will have eyes everywhere now.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Serious
+    SpeakerExpression = CharacterExpression.Serious,
+     VoiceLine = "/audio/voicelines/line42.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
@@ -816,7 +841,9 @@ new DialogueLine
     Text = "Then we better move fast. If the Council gets their way, they'll try to negotiate while Jinx picks off targets one by one.",
     AnimationType = TextAnimationType.Typewriter,
     TypewriterSpeed = 40,
-    SpeakerExpression = CharacterExpression.Determined
+    SpeakerExpression = CharacterExpression.Determined,
+     VoiceLine = "/audio/voicelines/line43.mp3",
+    VoiceLineVolume = 1.0f
 },
 new DialogueLine
 {
