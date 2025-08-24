@@ -1389,7 +1389,9 @@ new DialogueLine
                     Text = "Listen to this - 'All units must leave the old factory until further notice.' They're clearing an area. Why?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line44.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1397,7 +1399,9 @@ new DialogueLine
                     Text = "Because they know something big is about to happen there. Or someone dangerous is headed that way.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line45.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1413,7 +1417,9 @@ new DialogueLine
                     Text = "Jinx. They've spotted her. She's already making her move.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line46.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                
                 new DialogueLine
@@ -1430,7 +1436,9 @@ new DialogueLine
                     Text = "The explosion on the north side... that could be where Renni worked. If she escaped, she'd go home first.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line47.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1438,7 +1446,9 @@ new DialogueLine
                     Text = "We need to get to her home before Jinx does. She might still be alive.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/line48.mp3",
+                    VoiceLineVolume = 1.0f
                 },
 
                 // Planning Next Move section
@@ -1455,7 +1465,9 @@ new DialogueLine
                     Text = "According to the intel files, Renni has an apartment above a chem-tech repair shop in Zaun.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line49.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1471,7 +1483,9 @@ new DialogueLine
                     Text = "Then that's where we go. We need to find Renni before Jinx tracks her down.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/line50.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1487,7 +1501,9 @@ new DialogueLine
                     Text = "Then we better hurry. Powder... Jinx... she won't hesitate. Not anymore.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/line51.mp3",
+                    VoiceLineVolume = 1.0f
                 },
              
                 new DialogueLine
@@ -1512,7 +1528,9 @@ new DialogueLine
                     Text = "Renni might be our only chance to understand what Silco's told Jinx. What lies he's fed her about that night.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/line52.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1520,7 +1538,9 @@ new DialogueLine
                     Text = "We'll find her, Vi. And we'll find the truth.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/line53.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1528,7 +1548,9 @@ new DialogueLine
                     Text = "Let's move. Every second we waste is another second Jinx gets closer.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/line54.mp3",
+                    VoiceLineVolume = 1.0f
                 },
 
                 // Transition to Renni's Apartment
@@ -1579,7 +1601,7 @@ new DialogueLine
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_serious.png" },
                         { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
                         { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
                         { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
