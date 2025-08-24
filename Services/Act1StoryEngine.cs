@@ -1267,7 +1267,7 @@ new DialogueLine
             {
                 Id = "radio_decoded",
                 Name = "After Decoding the Messages",
-                Layout = SceneLayout.DualCharacters,
+                Layout = SceneLayout.FourCharacters,
                 Theme = NovelTheme.Piltover
             };
 
@@ -1321,7 +1321,7 @@ new DialogueLine
                     {
                         { CharacterExpression.Default, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
                         { CharacterExpression.Worried, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
-                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Serious, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Serious) },
                         { CharacterExpression.Determined, GetPlayerImagePath("piltover", piltoverPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
                 },
@@ -1336,7 +1336,7 @@ new DialogueLine
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
-                        { CharacterExpression.Surprised, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Default) },
+                        { CharacterExpression.Surprised, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Surprised) },
                         { CharacterExpression.Worried, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Worried) },
                         { CharacterExpression.Determined, GetPlayerImagePath("zaun", zaunPlayer?.PlayerAvatar ?? "1", CharacterExpression.Determined) }
                     }
@@ -1370,7 +1370,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "playerB",
-                    Text = "Werner's workshop on Fifth Street... an explosion...",
+                    Text = "Code red... large explosion on the north side of the district...",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Surprised
@@ -1378,7 +1378,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "playerA",
-                    Text = "And Dr. Renni Stiltner failed to report for protective custody. They knew these people were in danger!",
+                    Text = "And there's a female scientist missing from her home since yesterday. That has to be Dr. Renni!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Worried
@@ -1386,15 +1386,15 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "caitlyn",
-                    Text = "Protective custody? Stanton knew about this threat and didn't warn anyone?",
+                    Text = "Listen to this - 'All units must leave the old factory until further notice.' They're clearing an area. Why?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Serious
                 },
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "Worse. He's actively avoiding the warehouse district tonight for 'evidence disposal.' He's cleaning up Marcus's mess.",
+                    Text = "Because they know something big is about to happen there. Or someone dangerous is headed that way.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
@@ -1402,7 +1402,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "playerB",
-                    Text = "So Werner's already been hit. That means...",
+                    Text = "Three witnesses saw a blue-haired girl running from the scene. That has to be...",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Worried
@@ -1410,23 +1410,16 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "Jinx already got to him. She's hunting them down one by one.",
+                    Text = "Jinx. They've spotted her. She's already making her move.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
                 },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "But Renni's still out there. She didn't trust Stanton's protection - smart woman.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
+               
                 new DialogueLine
                 {
                     CharacterId = "playerA",
-                    Text = "If she's hiding on her own, she'd go somewhere she knows. Somewhere safe.",
+                    Text = "So Renni's the target. Jinx is hunting her, and the enforcers are letting it happen.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
@@ -1434,10 +1427,18 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "Her home. Or someone she trusts. We need to find her before Jinx does.",
+                    Text = "The explosion on the north side... that could be where Renni worked. If she escaped, she'd go home first.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Serious
+                },
+                new DialogueLine
+                {
+                    CharacterId = "caitlyn",
+                    Text = "We need to get to her home before Jinx does. She might still be alive.",
+                    AnimationType = TextAnimationType.Typewriter,
+                    TypewriterSpeed = 40,
+                    SpeakerExpression = CharacterExpression.Determined
                 },
 
                 // Planning Next Move section
@@ -1451,7 +1452,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "caitlyn",
-                    Text = "According to this, Renni has an apartment above a chem-tech repair shop in Zaun. And... she has a sister. Kira.",
+                    Text = "According to the intel files, Renni has an apartment above a chem-tech repair shop in Zaun.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
@@ -1467,7 +1468,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "Then that's where we go. Maybe the sister knows something.",
+                    Text = "Then that's where we go. We need to find Renni before Jinx tracks her down.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
@@ -1488,14 +1489,7 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Serious
                 },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "We should prepare for trouble. Stanton's enforcers might be watching, and if Jinx shows up...",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
+             
                 new DialogueLine
                 {
                     CharacterId = "playerB",
@@ -1541,7 +1535,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "narrator",
-                    Text = "The team heads to Zaun to find Renni's apartment and discover Renni's coded message...",
+                    Text = "The team heads to Zaun to find Renni's apartment...",
                     AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30
                 }
@@ -1567,7 +1561,7 @@ new DialogueLine
             {
                 Id = "renni_apartment",
                 Name = "Renni's Apartment - Finding the Clue",
-                Layout = SceneLayout.DualCharacters,
+                Layout = SceneLayout.FiveCharacters,
                 Theme = NovelTheme.Zaun
             };
 
@@ -1941,14 +1935,7 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Surprised
                 },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Classic Renni. Even her hiding spots have puzzles.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Smug
-                },
+               
 
                 // Setting Up Code Cracker
                 new DialogueLine
