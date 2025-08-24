@@ -22,7 +22,7 @@ Work together to decode Renni's hidden message by completing the words on the gr
 
 ### Scoring System
 - **Correct Word**: Points awarded for each decoded word in Renni's message
-- **Communication Efficiency**: Bonus points for effective clue-giving and collaboration
+- **Hint Usage**: Each hint slightly reduces points available for the current word
 - **Message Revelation**: Major points awarded when the complete hidden message is revealed
 
 ## Educational Value
@@ -57,7 +57,7 @@ Work together to decode Renni's hidden message by completing the words on the gr
 - **PlayerView**: Role-specific information (corrupted word vs. clues)
 
 ### User Interface
-- **Dual-theme Design**: Piltover (blue/gold) and Zaunite (teal/green) aesthetics
+- **Dual-theme Design**: Piltover sees a graffiti wall with black spray-paint lettering; Zaunite sees Renni's lined-paper notebook with a red margin line and handwritten styling
 - **Real-time Chat**: Built-in communication system
 - **Progress Tracking**: Visual indicators for rounds and scores
 - **Responsive Layout**: Works on desktop and mobile devices
@@ -72,7 +72,7 @@ Work together to decode Renni's hidden message by completing the words on the gr
 
 ### During Gameplay
 - Piltover types their guess for the corrupted word
-- Zaunite can see all clues but not the corrupted version
+- Zaunite initially sees only the definition; additional clues unlock via hints
 - Players can communicate via chat at any time
 - Each round has a time limit for urgency
 - Incorrect guesses may result in point penalties
@@ -83,6 +83,20 @@ Work together to decode Renni's hidden message by completing the words on the gr
 - Cooperative success - both players win or lose together
 
 ## Solutions and Hints
+
+### Current Word Set and Solutions
+The puzzle currently uses the following 10 words. Each distorted form (as seen by Piltover) maps to its correct solution:
+
+- sh_mm_r → SHIMMER
+- f_ct_ry → FACTORY 
+- l_v_l → LEVEL
+- thr__ → THREE
+- h_dd_n → HIDDEN
+- d_ng_r → DANGER
+- _sc_pe → ESCAPE
+- p_rpl_ → PURPLE
+- b_l_w → BELOW
+- s_cr_t → SECRET
 
 ### For Game Masters
 The puzzle includes a variety of word types:
@@ -117,8 +131,11 @@ This reveals that Renni didn't go into hiding - she went to investigate the old 
 
 ### SignalR Methods
 - `JoinRoom`: Connects player to game room
-- `JoinGame`: Assigns role and starts gameplay
+- `JoinGame` / `JoinGameWithRole`: Assigns role and starts gameplay
 - `SubmitGuess`: Processes Piltover's word guess
+- `RequestHint`: Requests a staged hint (2 total)
+  - Hint 1: Reveals one more letter and unlocks the German translation
+  - Hint 2: Reveals one more letter and unlocks the synonym
 - `SendMessage`: Handles chat communication
 - `LeaveRoom`: Graceful disconnection
 

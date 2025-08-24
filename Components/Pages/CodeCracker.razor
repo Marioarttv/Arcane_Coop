@@ -145,20 +145,22 @@
                             <strong>Score:</strong> @gameState?.Score<br/>
                             @if (!isFromStory)
                             {
-                                <text><strong>Hints Used:</strong> @gameState?.HintsUsed / 3</text>
+                                <text><strong>Hints Used:</strong> @gameState?.HintsUsed / 2</text>
                             }
                         </div>
                     </div>
                 </div>
             </div>
 
+            @if (!(gameState?.IsCompleted ?? false))
+            {
             <div class="puzzle-area">
                 @if (playerView?.Role == "Piltover")
                 {
                     <div class="piltover-section">
                         <div class="distorted-word">
                             <h3>Message on the Wall:</h3>
-                            <div class="word-display @(wordTransitioning ? "word-transition" : "")">@(playerView?.DistortedWord ?? "")</div>
+                            <div class="word-display @(wordTransitioning ? "word-transition" : "") @wordHintPopClass">@(playerView?.DistortedWord ?? "")</div>
                         </div>
                     </div>
                 }
@@ -181,44 +183,63 @@
                             <div class="clue-card @clueAnimationClass">
                                 <strong>Definition:</strong> @(playerView?.Definition ?? "")
                             </div>
-                            <div class="clue-card @clueAnimationClass">
-                                <strong>German:</strong> @(playerView?.GermanTranslation ?? "")
-                            </div>
-                            <div class="clue-card @clueAnimationClass">
-                                <strong>Synonym:</strong> @(playerView?.Synonym ?? "")
-                            </div>
+                            @if (!string.IsNullOrEmpty(playerView?.GermanTranslation))
+                            {
+                                <div class="clue-card @clueAnimationClass">
+                                    <strong>German:</strong> @playerView!.GermanTranslation
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(playerView?.Synonym))
+                            {
+                                <div class="clue-card @clueAnimationClass">
+                                    <strong>Synonym:</strong> @playerView!.Synonym
+                                </div>
+                            }
                         </div>
                     </div>
                 }
             </div>
+            }
 
+            @if (!(gameState?.IsCompleted ?? false))
+            {
             <div class="game-actions">
-                <div class="guess-section">
-                    <div class="input-group">
-                        <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
-                               class="form-control" placeholder="Enter your guess..." />
-                        <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
-                            Submit Guess
-                        </button>
+                @if (playerView?.Role == "Piltover")
+                {
+                    <div class="guess-section">
+                        <div class="input-group">
+                            <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
+                                   class="form-control" placeholder="Enter your guess..." />
+                            <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
+                                Submit Guess
+                            </button>
+                        </div>
                     </div>
-                </div>
+                }
 
                 <div class="game-controls mt-3">
-                    @if (!isFromStory)
-                    {
-                        <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 3)">
-                            Request Hint (@(3 - (gameState?.HintsUsed ?? 0)) left)
-                        </button>
-                    }
+                    <button class="btn btn-info" @onclick="RequestHint" disabled="@(!IsConnected || gameState?.HintsUsed >= 2)">
+                        Request Hint (@(Math.Max(0, 2 - (gameState?.HintsUsed ?? 0))) left)
+                    </button>
                     <button class="btn btn-warning ms-2" @onclick="RestartGame" disabled="@(!IsConnected)">
                         Restart Game
                     </button>
                 </div>
             </div>
+            }
 
             @if (!string.IsNullOrEmpty(gameStatus))
             {
                 <div class="alert @GetStatusClass() mt-3">@gameStatus</div>
+            }
+
+            @if (isFromStory && (gameState?.IsCompleted ?? false))
+            {
+                <div class="story-continue mt-3" style="text-align:center;">
+                    <button class="btn btn-success" @onclick="ContinueStory">
+                        ➡️ Continue Story
+                    </button>
+                </div>
             }
 
             @if (!isFromStory && !string.IsNullOrEmpty(latestHint))
@@ -274,7 +295,7 @@
 </div>
 
 <style>
-    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&family=Kalam:wght@400;700&family=Permanent+Marker&family=Shadows+Into+Light:wght@400&family=Caveat:wght@400;700&family=Creepster&family=Rubik+Spray+Paint&display=swap');
+    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&family=Kalam:wght@400;700&family=Permanent+Marker&family=Shadows+Into+Light:wght@400&family=Caveat:wght@400;700&family=Creepster&family=Rubik+Spray+Paint&family=Sedgwick+Ave+Display&display=swap');
 
     /* Load Arcane Nine font */
     @@font-face {
@@ -611,7 +632,7 @@
         color: var(--neutral-light);
         text-align: center;
         position: relative;
-        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        font-family: 'Sedgwick Ave Display', 'Rubik Spray Paint', 'Permanent Marker', cursive;
         font-size: 1.1em;
         border-radius: 8px;
         box-shadow: inset 0 0 60px rgba(0,0,0,0.6), inset 0 2px 24px rgba(0,0,0,0.5);
@@ -632,7 +653,7 @@
     }
     
     .piltover-section .distorted-word h3 {
-        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        font-family: 'Sedgwick Ave Display', 'Rubik Spray Paint', 'Permanent Marker', cursive;
         color: #e0e0e0;
         font-size: 1.2rem;
         letter-spacing: 1px;
@@ -737,10 +758,10 @@
         background: transparent;
         border-radius: 0;
         color: #f5f5f5;
-        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
-        font-weight: 700;
+        font-family: 'Sedgwick Ave Display', 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        font-weight: 800;
         letter-spacing: 0.08em;
-        text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 18px rgba(255, 0, 128, 0.55), 0 0 26px rgba(0, 212, 170, 0.45);
+        text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 18px rgba(255, 0, 128, 0.35), 0 0 26px rgba(0, 212, 170, 0.25);
         box-shadow: none;
         transform: rotate(-1.5deg);
     }
@@ -1337,6 +1358,7 @@
     private string currentGuess = "";
     private string gameStatus = "";
     private string latestHint = "";
+    private string wordHintPopClass = "";
     
     // Game state
     private bool inGame = false;
@@ -1507,8 +1529,8 @@
         {
             InvokeAsync(async () =>
             {
-                // For Piltover - trigger word transition
-                if (view.Role == "Piltover")
+                // For Piltover - trigger transition only on word change, not on hint update
+                if (view.Role == "Piltover" && latestHint == "")
                 {
                     wordTransitioning = true;
                     StateHasChanged();
@@ -1587,6 +1609,19 @@
             latestHint = hint;
             messages.Add($"{DateTime.Now:HH:mm:ss} - Hint received: {hint}");
             InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<int>("CodeCrackerHintApplied", (hintsUsed) =>
+        {
+            // Apply a quick pop animation when hint reveals letters. Using animate.css class names if available.
+            wordHintPopClass = "animate__animated animate__fadeInUp";
+            InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                await Task.Delay(500);
+                wordHintPopClass = "";
+                StateHasChanged();
+            });
         });
 
         // Handle redirect to next story scene

@@ -440,7 +440,15 @@ public class GameHub : Hub
             if (hint != null)
             {
                 await Clients.Caller.SendAsync("CodeCrackerHintReceived", hint);
+                // Notify both players that a hint was applied so clients can adjust animations/UI
+                await Clients.Group(roomId).SendAsync("CodeCrackerHintApplied", game.HintsUsed);
                 await Clients.Group(roomId).SendAsync("CodeCrackerGameStateUpdated", game.GetGameState());
+
+                // Push updated player views so both clients see newly revealed letters/clues
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("CodeCrackerPlayerViewUpdated", game.GetPlayerView(player));
+                }
             }
         }
     }
@@ -3786,6 +3794,10 @@ public class CodeCrackerGame
         if (!Players.ContainsKey(connectionId))
             return (false, "You are not in this game");
 
+        // Only Piltover (wall reader) can submit guesses
+        if (Players[connectionId] != PlayerRole.Piltover)
+            return (false, "Only the Piltover player can submit guesses");
+
         guess = guess.Trim().ToLower();
         AttemptHistory.Add($"{PlayerNames[connectionId]}: {guess}");
 
@@ -3814,16 +3826,17 @@ public class CodeCrackerGame
 
     public string? GetHint(string connectionId)
     {
-        if (!Players.ContainsKey(connectionId) || HintsUsed >= 3)
+        if (!Players.ContainsKey(connectionId) || HintsUsed >= 2)
             return null;
 
         HintsUsed++;
         
         return HintsUsed switch
         {
-            1 => $"Word length: {CurrentWord.Answer.Length} letters",
-            2 => $"First letter: {CurrentWord.Answer[0].ToString().ToUpper()}",
-            3 => $"Category hint: This word is related to {GetCategoryHint()}",
+            // After first hint: reveal an additional letter and unlock translation
+            1 => $"Revealed another letter. Translation unlocked.",
+            // After second hint: reveal one more letter and unlock synonym
+            2 => $"Revealed another letter. Synonym unlocked.",
             _ => null
         };
     }
@@ -3846,6 +3859,47 @@ public class CodeCrackerGame
         };
     }
 
+    private string BuildDisplayedWord()
+    {
+        // Reveal 1 letter by default, plus one per hint (max 3 letters revealed)
+        var answer = (CurrentWord.Answer ?? string.Empty).ToUpperInvariant();
+        if (string.IsNullOrEmpty(answer)) return string.Empty;
+
+        int revealCount = Math.Clamp(1 + HintsUsed, 1, Math.Min(3, answer.Length));
+
+        var revealIndices = new List<int>();
+        // First: first letter
+        revealIndices.Add(0);
+        // Second: middle letter
+        if (revealCount >= 2)
+        {
+            int mid = answer.Length / 2;
+            if (!revealIndices.Contains(mid)) revealIndices.Add(mid);
+            else if (answer.Length > 1) revealIndices.Add(1);
+        }
+        // Third: last letter
+        if (revealCount >= 3)
+        {
+            int last = answer.Length - 1;
+            if (!revealIndices.Contains(last)) revealIndices.Add(last);
+            else if (answer.Length > 2)
+            {
+                // pick next best unique index
+                for (int i = answer.Length - 2; i >= 0; i--)
+                {
+                    if (!revealIndices.Contains(i)) { revealIndices.Add(i); break; }
+                }
+            }
+        }
+
+        var chars = answer.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+        {
+            if (!revealIndices.Contains(i)) chars[i] = '_';
+        }
+        return new string(chars);
+    }
+
     public PlayerViewData GetPlayerView(string connectionId)
     {
         if (!Players.TryGetValue(connectionId, out var role))
@@ -3857,7 +3911,7 @@ public class CodeCrackerGame
             {
                 Role = "Piltover",
                 DisplayName = "Wall Reader",
-                DistortedWord = CurrentWord.DistortedWord,
+                DistortedWord = BuildDisplayedWord(),
                 Instruction = "Read Renni's message on the wall and fill in the missing letters:",
                 AttemptHistory = AttemptHistory.TakeLast(3).ToList()
             };
@@ -3869,8 +3923,8 @@ public class CodeCrackerGame
                 Role = "Zaunite", 
                 DisplayName = "Code Helper",
                 Definition = CurrentWord.Definition,
-                GermanTranslation = CurrentWord.GermanTranslation,
-                Synonym = CurrentWord.Synonym,
+                GermanTranslation = HintsUsed >= 1 ? CurrentWord.GermanTranslation : null,
+                Synonym = HintsUsed >= 2 ? CurrentWord.Synonym : null,
                 Instruction = "Use Renni's definitions to help decode the missing words:",
                 AttemptHistory = AttemptHistory.TakeLast(3).ToList()
             };
