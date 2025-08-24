@@ -1645,9 +1645,9 @@ new DialogueLine
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
-                        { CharacterExpression.Default, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Kira/kira_default.png" }
+                        { CharacterExpression.Default, "/images/Characters/Kira/Kira_default.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Kira/Kira_worried.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Kira/Kira_determined.png" }
                     }
                 },
                 new VisualNovelCharacter

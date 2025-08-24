@@ -13,7 +13,7 @@
         @if (isFromStory)
         {
             <h2 class="game-title">🔐 Decode Renni's Message</h2>
-            <p class="game-subtitle">Emergency Protocol - Decrypt Renni's hidden location</p>
+            <p class="game-subtitle">Dr. Renni Stiltner's Coded Message - Find her before Jinx does</p>
             <div class="story-context">
                 <div class="story-badge @GetRoleThemeClass()">
                     <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
@@ -24,7 +24,7 @@
         else
         {
             <h2 class="game-title">🔐 Code Cracker: Lexical Puzzle</h2>
-            <p class="game-subtitle">Caitlyn vs Vi - Decode the Corrupted Archives</p>
+            <p class="game-subtitle">Decode Renni's Hidden Message - Cooperative Word Puzzle</p>
         }
     </div>
     
@@ -39,7 +39,7 @@
     {
         <div class="instructions-panel">
             <div class="instruction-header">
-                <h3>🎮 How to Play Code Cracker</h3>
+                <h3>🎮 How to Decode Renni's Message</h3>
             </div>
             <div class="instruction-content">
                 <div class="step-by-step">
@@ -61,21 +61,21 @@
                         <div class="step-number">3</div>
                         <div class="step-content">
                             <h4>Collaborate to Solve</h4>
-                            <p><strong>Piltover</strong> sees distorted words, <strong>Zaunite</strong> gets clues. Work together via chat to decode all 10 words!</p>
+                            <p><strong>Wall Reader</strong> sees corrupted message on the wall, <strong>Code Helper</strong> has Renni's definitions. Work together to decode her location!</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="role-preview">
                     <div class="role-card piltover-preview">
-                        <h4>🏛️ Caitlyn (Piltover)</h4>
-                        <p>You see corrupted data like:</p>
+                        <h4>📝 Wall Reader</h4>
+                        <p>You see Renni's message on the wall:</p>
                         <div class="preview-word">m_r_u_</div>
-                        <small>Decode the missing letters</small>
+                        <small>Fill in the missing letters</small>
                     </div>
                     <div class="role-card zaunite-preview">
-                        <h4>⚡ Vi (Zaunite)</h4>
-                        <p>You get intelligence clues:</p>
+                        <h4>📚 Code Helper</h4>
+                        <p>You have Renni's definitions:</p>
                         <ul class="preview-clues">
                             <li><strong>Definition:</strong> a soft, low sound</li>
                             <li><strong>German:</strong> Flüstern</li>
@@ -119,8 +119,8 @@
     {
         <div class="game-section">
             <div class="loading-container" style="text-align: center; padding: 50px;">
-                <h3>🔐 Initializing Decryption System...</h3>
-                <p>Connecting to Renni's coded message...</p>
+                <h3>🔐 Accessing Renni's Hidden Message...</h3>
+                <p>Preparing wall graffiti and definition notes...</p>
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
@@ -157,7 +157,7 @@
                 {
                     <div class="piltover-section">
                         <div class="distorted-word">
-                            <h3>Corrupted Archive Data:</h3>
+                            <h3>Message on the Wall:</h3>
                             <div class="word-display @(wordTransitioning ? "word-transition" : "")">@(playerView?.DistortedWord ?? "")</div>
                         </div>
                     </div>
@@ -167,9 +167,9 @@
                     <div class="zaunite-section">
                         <div class="zaunite-header">
                             <h3 class="intelligence-title">
-                                <span class="hacker-symbol">⚡</span>
-                                INTELLIGENCE GATHERED
-                                <span class="hacker-symbol">⚡</span>
+                                <span class="hacker-symbol">📚</span>
+                                RENNI'S DEFINITIONS
+                                <span class="hacker-symbol">📚</span>
                             </h3>
                             <div class="hacker-lines">
                                 <div class="line"></div>
@@ -274,7 +274,7 @@
 </div>
 
 <style>
-    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&family=Kalam:wght@400;700&family=Permanent+Marker&family=Shadows+Into+Light:wght@400&family=Caveat:wght@400;700&family=Creepster&family=Rubik+Spray+Paint&display=swap');
 
     /* Load Arcane Nine font */
     @@font-face {
@@ -588,10 +588,33 @@
     }
 
     .piltover-section {
-        background: linear-gradient(135deg, var(--piltover-primary) 0%, var(--piltover-secondary) 50%, var(--piltover-accent) 100%);
+        /* Graffiti wall look: concrete/brick texture with stains */
+        background:
+            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04) 0%, transparent 35%),
+            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.03) 0%, transparent 45%),
+            radial-gradient(circle at 30% 80%, rgba(0,0,0,0.25) 0%, transparent 40%),
+            repeating-linear-gradient(
+                0deg,
+                rgba(255,255,255,0.03) 0px,
+                rgba(255,255,255,0.03) 2px,
+                transparent 3px,
+                transparent 22px
+            ),
+            repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 49px,
+                rgba(255,255,255,0.02) 50px,
+                rgba(255,255,255,0.02) 51px
+            ),
+            linear-gradient(180deg, #2e2e2e 0%, #222 100%);
         color: var(--neutral-light);
         text-align: center;
         position: relative;
+        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        font-size: 1.1em;
+        border-radius: 8px;
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.6), inset 0 2px 24px rgba(0,0,0,0.5);
     }
 
     .piltover-section::before {
@@ -601,9 +624,22 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at 30% 70%, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+        background: 
+            radial-gradient(circle at 30% 70%, rgba(255, 215, 0, 0.1) 0%, transparent 70%),
+            radial-gradient(circle at 70% 30%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
         animation: piltoverPulse 6s ease-in-out infinite alternate;
         pointer-events: none;
+    }
+    
+    .piltover-section .distorted-word h3 {
+        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        color: #e0e0e0;
+        font-size: 1.2rem;
+        letter-spacing: 1px;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        opacity: 0.9;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
     }
 
     @@keyframes piltoverPulse {
@@ -612,20 +648,40 @@
     }
 
     .zaunite-section {
-        background: linear-gradient(135deg, var(--zaun-dark) 0%, var(--zaun-primary) 50%, var(--zaun-secondary) 100%);
-        color: var(--neutral-light);
+        /* Notebook page look for Renni's definitions */
+        background:
+            /* red margin line */
+            linear-gradient(90deg, transparent 68px, rgba(220, 22, 60, 0.35) 69px, transparent 70px),
+            /* blue ruled lines */
+            repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 23px,
+                rgba(30, 90, 200, 0.18) 24px,
+                rgba(30, 90, 200, 0.18) 24px
+            ),
+            /* paper base */
+            linear-gradient(180deg, #fffdf3 0%, #fbf5df 100%);
+        color: #222;
         position: relative;
+        font-family: 'Kalam', 'Shadows Into Light', cursive;
+        text-shadow: none;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+        padding-left: 84px; /* allow space before margin line */
     }
 
     .zaunite-section::before {
+        /* subtle paper vignette */
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at 70% 30%, rgba(0, 255, 200, 0.1) 0%, transparent 70%);
-        animation: zaunitePulse 8s ease-in-out infinite alternate;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0.08) 0%, transparent 60%);
         pointer-events: none;
     }
 
@@ -635,21 +691,60 @@
     }
 
     .word-display {
-        font-family: 'Orbitron', monospace;
+        font-family: 'Permanent Marker', cursive;
         font-size: 4rem;
-        font-weight: 900;
-        letter-spacing: 0.3em;
+        font-weight: 400;
+        letter-spacing: 0.1em;
         margin: 2rem 0;
         padding: 2rem;
-        background: rgba(0,0,0,0.4);
-        border: 2px solid rgba(255,255,255,0.3);
-        border-radius: 12px;
+        background: 
+            linear-gradient(135deg, rgba(255, 248, 220, 0.95) 0%, rgba(245, 230, 163, 0.9) 100%),
+            radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
+        border: none;
+        border-radius: 8px;
         text-transform: uppercase;
-        text-shadow: 0 0 20px rgba(255,255,255,0.5);
-        backdrop-filter: blur(10px);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        color: var(--piltover-primary);
         position: relative;
         z-index: 2;
+        box-shadow: 
+            0 4px 8px rgba(0,0,0,0.2),
+            inset 0 1px 0 rgba(255,255,255,0.8);
     }
+    
+    .word-display::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 29px,
+                rgba(200, 170, 110, 0.3) 30px,
+                rgba(200, 170, 110, 0.3) 31px,
+                transparent 32px
+            );
+        pointer-events: none;
+        border-radius: 8px;
+    }
+
+    /* Graffiti-style overrides for Piltover word display */
+    .piltover-section .word-display {
+        background: transparent;
+        border-radius: 0;
+        color: #f5f5f5;
+        font-family: 'Rubik Spray Paint', 'Permanent Marker', cursive;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 18px rgba(255, 0, 128, 0.55), 0 0 26px rgba(0, 212, 170, 0.45);
+        box-shadow: none;
+        transform: rotate(-1.5deg);
+    }
+    .piltover-section .word-display::before { content: none; }
 
     .clue-cards {
         display: grid;
@@ -659,24 +754,40 @@
     }
 
     .clue-card {
-        background: rgba(0,0,0,0.4);
-        border-left: 4px solid var(--zaun-accent);
-        padding: 1.5rem;
-        border-radius: 10px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
+        background: transparent;
+        border: none;
+        padding: 1rem 1rem;
+        border-radius: 0;
+        margin: 0.25rem 0;
+        transition: color 0.2s ease;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
+        font-family: 'Kalam', 'Shadows Into Light', cursive;
+        font-size: 1.25rem;
+        font-weight: 400;
+        color: #222;
+        text-shadow: none;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        border-bottom: 1px dashed rgba(0,0,0,0.15);
     }
+    
+    .clue-card:nth-child(1) { color: #1f2a44; }
+    .clue-card:nth-child(2) { color: #2c3b1f; }
+    .clue-card:nth-child(3) { color: #3a1e2d; }
+    
+    .zaunite-section .clue-card::before,
+    .zaunite-section .clue-card::after { content: none; }
 
     /* Fly-in animation classes */
     .clue-card.updating {
-        animation: clueOut 0.3s ease-in forwards;
+        animation: none;
+        opacity: 0.5;
     }
 
     .clue-card.updated {
-        animation: clueIn 0.5s ease-out forwards;
+        animation: none;
+        opacity: 1;
     }
 
     .clue-card:nth-child(1).updated { animation-delay: 0.1s; }
@@ -706,57 +817,89 @@
     }
 
     .clue-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 6px 20px rgba(0, 212, 170, 0.3);
+        transform: none;
+        filter: none;
+    }
+    
+    .clue-card:hover::before { opacity: 1; }
+    
+    .clue-card:hover::after { opacity: 1; }
+    
+    @@keyframes spraypaintGlow {
+        0% { 
+            opacity: 0.05; 
+            transform: scale(0.95); 
+        }
+        100% { 
+            opacity: 0.15; 
+            transform: scale(1.05); 
+        }
     }
 
     .clue-card strong {
-        color: var(--zaun-glow);
-        text-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
-        font-family: 'Orbitron', monospace;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        color: #7a2a2a;
+        text-shadow: none;
+        font-family: 'Permanent Marker', cursive;
+        font-size: 1.05em;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 3;
+        font-weight: 700;
+        margin-right: 0.25rem;
     }
 
     /* Enhanced Zaunite Header */
     .zaunite-header {
-        text-align: center;
-        margin-bottom: 2rem;
+        text-align: left;
+        margin-bottom: 1rem;
         position: relative;
         z-index: 3;
+        padding-top: 0.5rem;
     }
 
     .intelligence-title {
-        font-family: 'Orbitron', monospace;
-        font-size: 1.8rem;
+        font-family: 'Kalam', 'Shadows Into Light', cursive;
+        font-size: 2rem;
         font-weight: 700;
-        color: var(--zaun-glow);
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        margin-bottom: 1rem;
-        text-shadow: 0 0 15px rgba(0, 255, 200, 0.5);
+        color: #333;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.5rem;
+        text-shadow: none;
         position: relative;
+        filter: none;
+    }
+    
+    .intelligence-title::before { content: none; }
+    
+    @@keyframes titleSprayGlow {
+        0% { 
+            opacity: 0.05; 
+            transform: scale(0.9); 
+        }
+        100% { 
+            opacity: 0.2; 
+            transform: scale(1.1); 
+        }
     }
 
     .hacker-symbol {
-        display: inline-block;
-        margin: 0 1rem;
-        font-size: 2rem;
-        color: var(--zaun-accent);
+        display: none;
     }
 
     .hacker-lines {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 0.5rem;
-        margin-top: 1rem;
+        margin: 0.25rem 0 0 0;
+        padding-left: 0.25rem;
     }
 
     .hacker-lines .line {
-        width: 60px;
+        width: 80px;
         height: 2px;
-        background: linear-gradient(90deg, transparent, var(--zaun-accent), transparent);
+        background: linear-gradient(90deg, transparent, rgba(0,0,0,0.25), transparent);
         opacity: 0.6;
     }
 
@@ -1482,11 +1625,11 @@
                 // Set appropriate status message
                 if (isFromStory)
                 {
-                    gameStatus = "Message decryption system initializing...";
+                    gameStatus = "Accessing Renni's coded message...";
                 }
                 else
                 {
-                    gameStatus = "Auto-connecting to your squad...";
+                    gameStatus = "Auto-connecting to decode Renni's message...";
                 }
                 
                 StateHasChanged();

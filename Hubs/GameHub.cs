@@ -3856,9 +3856,9 @@ public class CodeCrackerGame
             return new PlayerViewData
             {
                 Role = "Piltover",
-                DisplayName = "Caitlyn (Piltover Enforcer)",
+                DisplayName = "Wall Reader",
                 DistortedWord = CurrentWord.DistortedWord,
-                Instruction = "Decode this corrupted word from Piltover's archives:",
+                Instruction = "Read Renni's message on the wall and fill in the missing letters:",
                 AttemptHistory = AttemptHistory.TakeLast(3).ToList()
             };
         }
@@ -3867,11 +3867,11 @@ public class CodeCrackerGame
             return new PlayerViewData
             {
                 Role = "Zaunite", 
-                DisplayName = "Vi (Zaunite Hacker)",
+                DisplayName = "Code Helper",
                 Definition = CurrentWord.Definition,
                 GermanTranslation = CurrentWord.GermanTranslation,
                 Synonym = CurrentWord.Synonym,
-                Instruction = "Help decode the word using these clues:",
+                Instruction = "Use Renni's definitions to help decode the missing words:",
                 AttemptHistory = AttemptHistory.TakeLast(3).ToList()
             };
         }
