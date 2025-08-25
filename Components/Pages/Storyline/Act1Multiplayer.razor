@@ -1180,17 +1180,22 @@
         
         try
         {
+            // Persist mute state in JS so queued/resumed audio respects it
+            await AudioManager.SetMusicMutedAsync(musicMuted);
+            
             if (musicMuted)
             {
-                // Immediately mute currently playing music
+                // Also ensure any current music is silent immediately
                 await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
-                Console.WriteLine("[Act1Multiplayer] Music muted - set volume to 0");
+                Console.WriteLine("[Act1Multiplayer] Music muted - set volume to 0 and persisted");
             }
             else
             {
                 // Restore original volume immediately
                 await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
-                Console.WriteLine($"[Act1Multiplayer] Music unmuted - restored volume to {originalMusicVolume}");
+                // Ensure existing track resumes if it was paused/stopped
+                await AudioManager.ResumeBackgroundMusicIfAnyAsync(originalMusicVolume);
+                Console.WriteLine($"[Act1Multiplayer] Music unmuted - restored/resumed to {originalMusicVolume} and persisted");
             }
         }
         catch (Exception ex)
@@ -1210,15 +1215,17 @@
         
         try
         {
+            // Persist mute state first
+            await AudioManager.SetSfxMutedAsync(sfxMuted);
             if (sfxMuted)
             {
                 // Stop all currently playing sound effects immediately
                 await AudioManager.StopAllSoundEffectsAsync();
-                Console.WriteLine("[Act1Multiplayer] SFX muted - stopped all current sound effects");
+                Console.WriteLine("[Act1Multiplayer] SFX muted - stopped all current sound effects and persisted");
             }
             else
             {
-                Console.WriteLine("[Act1Multiplayer] SFX unmuted - new sound effects will play");
+                Console.WriteLine("[Act1Multiplayer] SFX unmuted - new sound effects will play and persisted");
             }
         }
         catch (Exception ex)
@@ -1238,15 +1245,17 @@
         
         try
         {
+            // Persist mute state first
+            await AudioManager.SetVoiceMutedAsync(voiceMuted);
             if (voiceMuted)
             {
                 // Stop all currently playing voice lines immediately
                 await AudioManager.StopAllVoiceLinesAsync();
-                Console.WriteLine("[Act1Multiplayer] Voice muted - stopped all current voice lines");
+                Console.WriteLine("[Act1Multiplayer] Voice muted - stopped all current voice lines and persisted");
             }
             else
             {
-                Console.WriteLine("[Act1Multiplayer] Voice unmuted - new voice lines will play");
+                Console.WriteLine("[Act1Multiplayer] Voice unmuted - new voice lines will play and persisted");
             }
         }
         catch (Exception ex)
@@ -1273,7 +1282,8 @@
                 sfxMuted = true;
                 voiceMuted = true;
                 
-                // Stop all currently playing audio immediately
+                // Persist global mute and immediately stop current audio
+                await AudioManager.SetAllMutedAsync(true);
                 await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
                 await AudioManager.StopAllSoundEffectsAsync();
                 await AudioManager.StopAllVoiceLinesAsync();
@@ -1287,8 +1297,10 @@
                 sfxMuted = false;
                 voiceMuted = false;
                 
-                // Restore music volume
+                // Clear global mute and restore music volume
+                await AudioManager.SetAllMutedAsync(false);
                 await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
+                await AudioManager.ResumeBackgroundMusicIfAnyAsync(originalMusicVolume);
                 
                 Console.WriteLine("[Act1Multiplayer] All audio unmuted - restored music volume");
             }

@@ -288,6 +288,10 @@ Modern browsers block audio until user interaction. The system handles this auto
 | `StopAllAsync()` | Stop all audio | None |
 | `SetGlobalVolumeAsync()` | Set master volume | `volume` (0.0 - 1.0) |
 | `SetBackgroundMusicVolumeAsync()` | Set music volume | `volume` (0.0 - 1.0) |
+| `SetMusicMutedAsync(muted)` | Persistently mute/unmute background music | `muted` (bool) |
+| `SetSfxMutedAsync(muted)` | Persistently mute/unmute SFX | `muted` (bool) |
+| `SetVoiceMutedAsync(muted)` | Persistently mute/unmute voice lines | `muted` (bool) |
+| `SetAllMutedAsync(muted)` | Persistently mute/unmute all audio | `muted` (bool) |
 | `PauseAllAsync()` | Pause all audio | None |
 | `ResumeAllAsync()` | Resume all audio | None |
 | `PreloadAsync()` | Preload audio files | `string[] urls` |
@@ -303,6 +307,10 @@ Modern browsers block audio until user interaction. The system handles this auto
 | `playVoiceLine(src, options)` | Play voice line |
 | `stopAll()` | Stop all audio |
 | `setGlobalVolume(volume)` | Set master volume |
+| `setMusicMuted(muted)` | Persistently mute/unmute background music (gates queued plays) |
+| `setSfxMuted(muted)` | Persistently mute/unmute SFX (gates queued plays) |
+| `setVoiceMuted(muted)` | Persistently mute/unmute voice lines (gates queued plays) |
+| `setAllMuted(muted)` | Persistently mute/unmute all audio; also calls Howler.mute |
 | `getStatus()` | Get audio system status |
 | `manualUnlock()` | Manually unlock audio context |
 
@@ -342,6 +350,7 @@ Modern browsers block audio until user interaction. The system handles this auto
 
 #### 4. Audio Delays or Stuttering
 **Problem**: Audio playback is choppy or delayed.
+- If muted audio resumes unexpectedly after tab focus or user interaction, ensure you call the persistent mute APIs (`SetMusicMutedAsync`, `SetSfxMutedAsync`, `SetVoiceMutedAsync`, or `SetAllMutedAsync`). The JS layer now gates queued and resume behaviors by these flags.
 
 **Solution**:
 - Use smaller file sizes (compress audio)

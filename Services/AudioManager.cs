@@ -19,9 +19,15 @@ namespace Arcane_Coop.Services
         Task SetBackgroundMusicVolumeAsync(float volume);
         Task PauseAllAsync();
         Task ResumeAllAsync();
+        Task ResumeBackgroundMusicIfAnyAsync(float? volume = null);
         Task<bool> IsBackgroundMusicPlayingAsync();
         Task PreloadAsync(string[] urls);
         Task DisposeAsync();
+        // Mute control APIs
+        Task SetMusicMutedAsync(bool muted);
+        Task SetSfxMutedAsync(bool muted);
+        Task SetVoiceMutedAsync(bool muted);
+        Task SetAllMutedAsync(bool muted);
     }
 
     public class AudioManager : IAudioManager, IAsyncDisposable
@@ -211,6 +217,66 @@ namespace Arcane_Coop.Services
             }
         }
 
+        public async Task SetMusicMutedAsync(bool muted)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setMusicMuted", muted);
+                Console.WriteLine($"[AudioManager] Music muted set to: {muted}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting music mute: {ex.Message}");
+            }
+        }
+
+        public async Task SetSfxMutedAsync(bool muted)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setSfxMuted", muted);
+                Console.WriteLine($"[AudioManager] SFX muted set to: {muted}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting sfx mute: {ex.Message}");
+            }
+        }
+
+        public async Task SetVoiceMutedAsync(bool muted)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setVoiceMuted", muted);
+                Console.WriteLine($"[AudioManager] Voice muted set to: {muted}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting voice mute: {ex.Message}");
+            }
+        }
+
+        public async Task SetAllMutedAsync(bool muted)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setAllMuted", muted);
+                Console.WriteLine($"[AudioManager] All muted set to: {muted}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting global mute: {ex.Message}");
+            }
+        }
+
         public async Task PauseAllAsync()
         {
             if (!_isInitialized) return;
@@ -238,6 +304,28 @@ namespace Arcane_Coop.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[AudioManager] Error resuming audio: {ex.Message}");
+            }
+        }
+
+        public async Task ResumeBackgroundMusicIfAnyAsync(float? volume = null)
+        {
+            if (!_isInitialized) return;
+
+            try
+            {
+                if (volume.HasValue)
+                {
+                    await _jsRuntime.InvokeVoidAsync("audioManager.resumeBackgroundMusicIfAny", volume.Value);
+                }
+                else
+                {
+                    await _jsRuntime.InvokeVoidAsync("audioManager.resumeBackgroundMusicIfAny", (object?)null);
+                }
+                Console.WriteLine("[AudioManager] Resume background music if available");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error resuming background music: {ex.Message}");
             }
         }
 

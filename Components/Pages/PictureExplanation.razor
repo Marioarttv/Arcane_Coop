@@ -69,7 +69,7 @@
                 
                 <div class="role-preview">
                     <div class="role-card zaunite-preview">
-                        <h4>🕵️ Vi (Database Access)</h4>
+                        <h4>🕵️ Database Access</h4>
                         <p>You have visual access to the corrupted files:</p>
                         <ul class="preview-clues">
                             <li><strong>📁 File Access:</strong> View photos from Marcus's hidden files</li>
@@ -78,7 +78,7 @@
                         </ul>
                     </div>
                     <div class="role-card piltover-preview">
-                        <h4>📋 Caitlyn (Street Knowledge)</h4>
+                        <h4>📋 Your Memory</h4>
                         <p>You know these faces from the underground:</p>
                         <ul class="preview-clues">
                             <li><strong>👥 Recognition:</strong> Match descriptions to known faces</li>
@@ -198,10 +198,10 @@
                             <div class="voice-description-panel">
                                 <div class="voice-instructions">
                                     <h5>⚠️ Describe this person's features quickly</h5>
-                                    <p>This file is corrupting - describe their face, hair, clothing, and any distinguishing features. Caitlyn might recognize them from the underground. Press below when done.</p>
+                                    <p>This is your memory of the pictures - describe their face, hair, clothing, and any distinguishing features. Your partner might recognize them. Press below when done.</p>
                                 </div>
                                 <button class="arcane-btn arcane-btn-warning" @onclick="FinishDescribing">
-                                    📁 Lock File & Send to Caitlyn
+                                    📁 Lock File & Send to Partner
                                 </button>
                             </div>
                         }
@@ -235,7 +235,7 @@
                         {
                             <div class="waiting-description">
                                 <div class="loading-spinner">👂</div>
-                                <p>Vi is accessing the corrupted file...</p>
+                                <p>Your Partner is trying to remember the pictures...</p>
                                 <small class="voice-reminder">⚠️ Listen for descriptions - these people are marked for elimination!</small>
                             </div>
                         }

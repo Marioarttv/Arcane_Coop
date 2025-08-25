@@ -22,6 +22,14 @@ window.audioManager = (function () {
     let isUnlocked = false;
     let pendingActions = [];
     
+    // Persistent mute state per channel and global
+    let muteState = {
+        music: false,
+        sfx: false,
+        voice: false,
+        all: false
+    };
+    
     // Initialize the audio manager
     function init() {
         // Check if Howler loaded correctly
@@ -90,6 +98,12 @@ window.audioManager = (function () {
         
         console.log(`[AudioManager] Playing background music: ${src}`);
         
+        // Respect mute state
+        if (muteState.all || muteState.music) {
+            console.log('[AudioManager] Music play suppressed due to mute');
+            return;
+        }
+        
         // If audio is not unlocked yet, queue this action
         if (!isUnlocked && Howler.ctx && Howler.ctx.state === 'suspended') {
             console.log('[AudioManager] Audio not unlocked yet, queueing background music');
@@ -138,7 +152,9 @@ window.audioManager = (function () {
                 console.error(`[AudioManager] Playback error for background music: ${src}`, error);
                 // Try to unlock and play again
                 tracks.backgroundMusic.once('unlock', function() {
-                    tracks.backgroundMusic.play();
+                    if (!(muteState.all || muteState.music)) {
+                        tracks.backgroundMusic.play();
+                    }
                 });
             },
             onplay: function() {
@@ -185,6 +201,12 @@ window.audioManager = (function () {
         
         console.log(`[AudioManager] Playing sound effect: ${src}`);
         
+        // Respect mute state
+        if (muteState.all || muteState.sfx) {
+            console.log('[AudioManager] SFX play suppressed due to mute');
+            return;
+        }
+        
         // If audio is not unlocked yet, queue this action
         if (!isUnlocked && Howler.ctx && Howler.ctx.state === 'suspended') {
             console.log('[AudioManager] Audio not unlocked yet, queueing sound effect');
@@ -218,7 +240,9 @@ window.audioManager = (function () {
                 console.error(`[AudioManager] Playback error for sound effect: ${src}`, error);
                 // Try to unlock and play again
                 tracks.soundEffects[id].once('unlock', function() {
-                    tracks.soundEffects[id].play();
+                    if (!(muteState.all || muteState.sfx)) {
+                        tracks.soundEffects[id].play();
+                    }
                 });
             }
         });
@@ -236,6 +260,12 @@ window.audioManager = (function () {
         } = options;
         
         console.log(`[AudioManager] Playing voice line: ${src}`);
+        
+        // Respect mute state
+        if (muteState.all || muteState.voice) {
+            console.log('[AudioManager] Voice play suppressed due to mute');
+            return;
+        }
         
         // If audio is not unlocked yet, queue this action
         if (!isUnlocked && Howler.ctx && Howler.ctx.state === 'suspended') {
@@ -274,7 +304,9 @@ window.audioManager = (function () {
                 console.error(`[AudioManager] Playback error for voice line: ${src}`, error);
                 // Try to unlock and play again
                 tracks.voiceLines[id].once('unlock', function() {
-                    tracks.voiceLines[id].play();
+                    if (!(muteState.all || muteState.voice)) {
+                        tracks.voiceLines[id].play();
+                    }
                 });
             }
         });
@@ -333,13 +365,36 @@ window.audioManager = (function () {
         Object.values(tracks.soundEffects).forEach(track => track.pause());
     }
     
+    // Ensure background music is playing if available and not muted
+    function resumeBackgroundMusicIfAny(volume) {
+        if (!tracks.backgroundMusic) return;
+        if (typeof volume === 'number') {
+            tracks.backgroundMusic.volume(Math.max(0, Math.min(1, volume)));
+        }
+        if (!(muteState.all || muteState.music)) {
+            if (!tracks.backgroundMusic.playing()) {
+                tracks.backgroundMusic.play();
+            }
+        }
+    }
+
     // Resume all audio
     function resumeAll() {
         if (tracks.backgroundMusic) {
-            tracks.backgroundMusic.play();
+            if (!(muteState.all || muteState.music)) {
+                tracks.backgroundMusic.play();
+            }
         }
-        Object.values(tracks.voiceLines).forEach(track => track.play());
-        Object.values(tracks.soundEffects).forEach(track => track.play());
+        Object.values(tracks.voiceLines).forEach(track => {
+            if (!(muteState.all || muteState.voice)) {
+                track.play();
+            }
+        });
+        Object.values(tracks.soundEffects).forEach(track => {
+            if (!(muteState.all || muteState.sfx)) {
+                track.play();
+            }
+        });
     }
     
     // Check if background music is playing
@@ -409,7 +464,8 @@ window.audioManager = (function () {
             isUnlocked: isUnlocked,
             pendingActions: pendingActions.length,
             backgroundMusic: currentBackgroundMusic,
-            isPlaying: isBackgroundMusicPlaying()
+            isPlaying: isBackgroundMusicPlaying(),
+            muteState: { ...muteState }
         };
     }
     
@@ -444,11 +500,60 @@ window.audioManager = (function () {
         setBackgroundMusicVolume,
         pauseAll,
         resumeAll,
+        resumeBackgroundMusicIfAny,
         isBackgroundMusicPlaying,
         preload,
         dispose,
         getStatus,
-        manualUnlock
+        manualUnlock,
+        // Mute controls
+        setMusicMuted: function(muted) {
+            muteState.music = !!muted;
+            if (tracks.backgroundMusic) {
+                if (muted) {
+                    // Reduce to silence but keep state so it can resume instantly
+                    tracks.backgroundMusic.volume(0);
+                }
+                // On unmute, the app will set the desired volume explicitly
+            }
+            // Recompute all flag and clear global mute if any channel is unmuted
+            muteState.all = !!(muteState.music && muteState.sfx && muteState.voice);
+            if (!muteState.all && typeof Howler !== 'undefined') {
+                Howler.mute(false);
+            }
+        },
+        setSfxMuted: function(muted) {
+            muteState.sfx = !!muted;
+            if (muted) {
+                stopAllSoundEffects();
+            }
+            // Recompute all flag and clear global mute if any channel is unmuted
+            muteState.all = !!(muteState.music && muteState.sfx && muteState.voice);
+            if (!muteState.all && typeof Howler !== 'undefined') {
+                Howler.mute(false);
+            }
+        },
+        setVoiceMuted: function(muted) {
+            muteState.voice = !!muted;
+            if (muted) {
+                stopAllVoiceLines();
+            }
+            // Recompute all flag and clear global mute if any channel is unmuted
+            muteState.all = !!(muteState.music && muteState.sfx && muteState.voice);
+            if (!muteState.all && typeof Howler !== 'undefined') {
+                Howler.mute(false);
+            }
+        },
+        setAllMuted: function(muted) {
+            muteState.all = !!muted;
+            // Update per-channel as well
+            this.setMusicMuted(muted);
+            this.setSfxMuted(muted);
+            this.setVoiceMuted(muted);
+            if (typeof Howler !== 'undefined') {
+                Howler.mute(!!muted);
+            }
+        }
     };
 })();
 

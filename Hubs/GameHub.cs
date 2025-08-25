@@ -2227,9 +2227,88 @@ public class GameHub : Hub
                 };
             }
             
-            // Start game when 2 players joined
+            // If both players are now present, refresh the current scene so dynamic player names/avatars are applied for both roles
             if (game.Players.Count == 2)
             {
+                try
+                {
+                    var preserveIndex = game.GameState?.CurrentDialogueIndex ?? 0;
+                    var currentPhase = game.CurrentSceneIndex < game.StoryProgression.Count 
+                        ? game.StoryProgression[game.CurrentSceneIndex] 
+                        : "emergency_briefing";
+
+                    if (currentPhase == "emergency_briefing")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "database_revelation")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateDatabaseRevelationScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "radio_decoded")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateRadioDecodedScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "renni_apartment")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateRenniApartmentScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "code_decoded")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateCodeDecodedScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "shimmer_factory_entrance")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateShimmerFactoryEntranceScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "empty_cells")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmptyCellsScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "tracer_complete")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateTracerCompleteScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "following_jinx_trail")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateFollowingJinxTrailScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "jayce_workshop_arrival")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateJayceWorkshopArrivalScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "bomb_discovery")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateBombDiscoveryScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "bomb_defused")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateBombDefusedScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "gauntlets_complete")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateGauntletsCompleteScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "warehouse_approach")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateWarehouseApproachScene(originalSquadName, game);
+                    }
+                    else if (currentPhase == "truth_revealed")
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateTruthRevealedScene(originalSquadName, game);
+                    }
+                    else
+                    {
+                        game.CurrentScene = _act1StoryEngine.CreateEmergencyBriefingScene(originalSquadName, game);
+                    }
+
+                    if (game.GameState != null && game.CurrentScene != null)
+                    {
+                        game.GameState.CurrentDialogueIndex = Math.Min(preserveIndex, Math.Max(0, game.CurrentScene.DialogueLines.Count - 1));
+                    }
+                }
+                catch { }
+
                 game.Status = Act1GameStatus.InProgress;
                 game.IsTextAnimating = true;
                 game.TextAnimationStartTime = DateTime.UtcNow;
