@@ -352,7 +352,9 @@ new DialogueLine
     Text = "They hurry to the service entrance, where a figure waits in the shadows...",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
-    BackgroundImage = "/images/Backgrounds/ServiceEntrance.png"
+    BackgroundImage = "/images/Backgrounds/ServiceEntrance.png",
+    SoundEffect = "/audio/sfx/11L-multiple_people_with-1756102153798.mp3",
+    SoundEffectVolume = 0.8f
 },
 new DialogueLine
 {
@@ -618,7 +620,8 @@ new DialogueLine
     Text = "Heavy enforcer boots echo down the alley. Deputy Stanton appears with two officers.",
     AnimationType = TextAnimationType.FadeIn,
     TypewriterSpeed = 30,
-   
+    SoundEffect = "/audio/sfx/11L-Heavy_Boots_walking_-1756101801729.mp3",
+    SoundEffectVolume = 0.8f
 },
 new DialogueLine
 {
@@ -1017,7 +1020,9 @@ new DialogueLine
                     Text = "What do you mean? Who are they?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/Line55.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1032,7 +1037,9 @@ new DialogueLine
                     Text = "Never heard of it. What's Project Safeguard?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Confused
+                    SpeakerExpression = CharacterExpression.Confused,
+                    VoiceLine = "/audio/voicelines/Line69.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1040,7 +1047,9 @@ new DialogueLine
                     Text = "Wait... I recognize these names. My mother mentioned them once at a Council dinner. They're all former apprentices of Heimerdinger.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Surprised,
+                    VoiceLine = "/audio/voicelines/line68.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1056,7 +1065,9 @@ new DialogueLine
                     Text = "These aren't random targets... they all worked on early Hextech prototypes before the technology was regulated. Before Jayce's breakthrough.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/Line67.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1064,7 +1075,9 @@ new DialogueLine
                     Text = "But why would Powder... why would Jinx care about old scientists?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    VoiceLine = "/audio/voicelines/Line66.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1080,7 +1093,9 @@ new DialogueLine
                     Text = "The warehouse. The night Vander died.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Surprised,
+                    VoiceLine = "/audio/voicelines/Line65.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 
                 // The Revelation section
@@ -1090,7 +1105,9 @@ new DialogueLine
                     Text = "According to these records, Project Safeguard was an attempt to create stable Hextech cores for industrial use. But it was deemed too dangerous and shut down.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/Line64.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1103,10 +1120,12 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "vi",
-                    Text = "That's impossible. The explosion was... it was Powder's bomb. The hex crystals she put in it.",
+                    Text = "That's impossible. The explosion was... it was Powder's bomb. She put the hex crystals in it.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    VoiceLine = "/audio/voicelines/Line63.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1114,7 +1133,9 @@ new DialogueLine
                     Text = "Vi... what if someone told her otherwise? What if someone made her believe—",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/Line62.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1122,7 +1143,9 @@ new DialogueLine
                     Text = "Silco. That bastard. He's been lying to her.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Surprised,
+                    VoiceLine = "/audio/voicelines/Line61.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 
                 // Radio Interruption section
@@ -1131,15 +1154,11 @@ new DialogueLine
                     CharacterId = "narrator",
                     Text = "The enforcer radio suddenly crackles to life...",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/sfx/EnforcerRadio.mp3",
+                    SoundEffectVolume = 0.8f
                 },
-                new DialogueLine
-                {
-                    CharacterId = "narrator",
-                    Text = "...incident at... street... blue hair seen fleeing...",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 25
-                },
+                
                 new DialogueLine
                 {
                     CharacterId = "playerA",
@@ -1154,7 +1173,9 @@ new DialogueLine
                     Text = "Quick, we need to hear this. But the signal's breaking up.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/Line59.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1170,7 +1191,9 @@ new DialogueLine
                     Text = "We need to decode this. If it's about Jinx, we need to know what happened.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/Line58.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 
                 // Setting Up Signal Decoder section
@@ -1191,10 +1214,12 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "caitlyn",
-                    Text = $"Perfect. {piltoverPlayerName}, you listen to the audio transmission. {zaunPlayerName}, you read what's on the transcript.",
+                    Text = $"Perfect. {zaunPlayerName}, you listen to the audio transmission. {piltoverPlayerName}, you read what's on the transcript.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/Line57.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1202,41 +1227,11 @@ new DialogueLine
                     Text = "Work together - fill in the gaps. We need to know what's happening out there.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/Line56.mp3",
+                    VoiceLineVolume = 1.0f
                 },
-                new DialogueLine
-                {
-                    CharacterId = "playerA",
-                    Text = "I'm getting clearer audio now. Ready when you are.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "playerB",
-                    Text = "Transcript's up. There are blanks everywhere but I can see the structure.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Whatever you're about to hear... it might tell us where these scientists are. Or if we're already too late.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "Focus on any mention of locations, names, or Deputy Stanton. He's covering something up and we need to know what.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                
+
                 // Transition to Signal Decoder Puzzle
                 new DialogueLine
                 {
