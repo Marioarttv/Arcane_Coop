@@ -4361,9 +4361,10 @@ public class NavigationMazeGame
             LocationId = 0,
             Name = "Sewer Entrance",
             Description = "Dark stone sewer entrance with three tunnel openings. Choose your path carefully...",
-            ImagePath = "images/navigation/sewer-entrance.jpg",
+            ImagePath = "/images/NavigationMaze/Area1Nav.png",
             CorrectChoiceIndex = 2, // FORWARD
             SuccessMessage = "The central tunnel leads deeper into the undercity!",
+            Tags = new[] { "sewer", "three-tunnels", "slime", "rats", "faint-light" },
             Choices = new[]
             {
                 new NavigationChoice { Direction = "LEFT", Description = "Green chemical glow emanates from this tunnel", IsCorrect = false, GameOverMessage = "Vi got overwhelmed by toxic fumes! Even Vi needs backup sometimes... Try again!" },
@@ -4376,9 +4377,10 @@ public class NavigationMazeGame
             LocationId = 1,
             Name = "Industrial Pipe Junction",
             Description = "Large underground chamber filled with massive pipes. Steam hisses from various joints.",
-            ImagePath = "images/navigation/industrial-pipes.jpg",
+            ImagePath = "/images/NavigationMaze/Area2Nav.png",
             CorrectChoiceIndex = 2, // AROUND right
             SuccessMessage = "Smart choice - avoiding the dangerous pipes led to safety!",
+            Tags = new[] { "pipes", "steam", "valves", "gauges" },
             Choices = new[]
             {
                 new NavigationChoice { Direction = "THROUGH the large pipe", Description = "The main pipe looks old but passable", IsCorrect = false, GameOverMessage = "The old pipe couldn't hold Vi's weight! Jinx would have blown that up too... Reset and try again!" },
@@ -4391,9 +4393,10 @@ public class NavigationMazeGame
             LocationId = 2,
             Name = "Chemical Processing Plant",
             Description = "Industrial chemical processing area with large vats of bubbling green chemicals.",
-            ImagePath = "images/navigation/chemical-plant.jpg",
+            ImagePath = "/images/NavigationMaze/Area3Nav.png",
             CorrectChoiceIndex = 2, // BESIDE
             SuccessMessage = "Staying beside the main tank avoided the dangerous areas!",
+            Tags = new[] { "chemical-vats", "green-glow", "hazard-signs" },
             Choices = new[]
             {
                 new NavigationChoice { Direction = "BETWEEN the chemical vats", Description = "Narrow path between bubbling containers", IsCorrect = false, GameOverMessage = "Chemtech spilled everywhere! Vi had to evacuate! The Undercity has claimed another victim... Restart?" },
@@ -4406,9 +4409,10 @@ public class NavigationMazeGame
             LocationId = 3,
             Name = "Underground Market",
             Description = "Bustling underground marketplace built in a converted mine with multiple levels.",
-            ImagePath = "images/navigation/underground-market.jpg",
+            ImagePath = "/images/NavigationMaze/Area4Nav.png",
             CorrectChoiceIndex = 2, // ACROSS OVER
             SuccessMessage = "The rope bridge was the secret route to freedom!",
+            Tags = new[] { "market", "crowd", "hanging-lights", "rope-bridge" },
             Choices = new[]
             {
                 new NavigationChoice { Direction = "UP THROUGH the busy market", Description = "Stairs leading through the crowded marketplace", IsCorrect = false, GameOverMessage = "Enforcers were waiting in the crowd! That path was more dangerous than a Piltover Enforcer raid!" },
@@ -4421,12 +4425,39 @@ public class NavigationMazeGame
             LocationId = 4,
             Name = "Bridge to Piltover",
             Description = "You've reached the magnificent bridge spanning between the cities! Piltover's golden spires shine in the distance.",
-            ImagePath = "images/navigation/bridge-to-piltover.jpg",
+            ImagePath = "/images/NavigationMaze/Area5Nav.png",
             CorrectChoiceIndex = 0, // Victory location
             SuccessMessage = "ESCAPE SUCCESSFUL - Welcome to Piltover! You've successfully navigated through the dangerous undercity!",
+            Tags = new[] { "bridge", "piltover-spires", "sunlight" },
             Choices = Array.Empty<NavigationChoice>()
         }
     };
+
+    // Jumbled notes available to the Piltover player; match by tags and suggest a direction
+    private static readonly NavigationNote[] NotesBank = new[]
+    {
+        new NavigationNote { Id = 1, Text = "If the central tunnel has a faint light while others glow green or are pitch black, go FORWARD.", AppliesWhenTags = new[] { "sewer", "three-tunnels", "faint-light" }, Direction = "FORWARD" },
+        new NavigationNote { Id = 2, Text = "When gauges rattle and steam hisses around big pipes, do NOT crawl under—go AROUND to the RIGHT.", AppliesWhenTags = new[] { "pipes", "steam", "gauges" }, Direction = "AROUND the pipes to the right" },
+        new NavigationNote { Id = 3, Text = "If vats glow a toxic green, avoid weaving BETWEEN them—hug the walkway BESIDE the main tank.", AppliesWhenTags = new[] { "chemical-vats", "green-glow" }, Direction = "BESIDE the main tank" },
+        new NavigationNote { Id = 4, Text = "Crowded market? Avoid the steps and the deep shafts—use the ROPE BRIDGE ACROSS OVER the chasm.", AppliesWhenTags = new[] { "market", "rope-bridge" }, Direction = "ACROSS OVER the rope bridge" },
+        // Decoys to increase difficulty
+        new NavigationNote { Id = 5, Text = "Go STRAIGHT when you see active conveyor belts.", AppliesWhenTags = new[] { "conveyor" }, Direction = "FORWARD" },
+        new NavigationNote { Id = 6, Text = "If you spot shimmer canisters stacked in crates, take the LEFT ramp.", AppliesWhenTags = new[] { "crates", "shimmer" }, Direction = "LEFT" },
+        new NavigationNote { Id = 7, Text = "Broken catwalk above a coolant river? Take the stairs DOWN and hug the wall.", AppliesWhenTags = new[] { "catwalk", "coolant" }, Direction = "DOWN" },
+        new NavigationNote { Id = 8, Text = "If sunlight hits golden spires ahead, you're at the BRIDGE—mission complete.", AppliesWhenTags = new[] { "bridge", "piltover-spires", "sunlight" }, Direction = "" },
+    };
+
+    private NavigationNotePublic[]? _shuffledPublicNotes;
+    private NavigationNotePublic[] GetPublicNotes()
+    {
+        if (_shuffledPublicNotes != null) return _shuffledPublicNotes;
+        var rnd = Guid.NewGuid();
+        _shuffledPublicNotes = NotesBank
+            .OrderBy(_ => Guid.NewGuid())
+            .Select(n => new NavigationNotePublic { Id = n.Id, Text = n.Text })
+            .ToArray();
+        return _shuffledPublicNotes;
+    }
     
     public ConcurrentDictionary<string, PlayerRole> Players { get; set; } = new();
     public ConcurrentDictionary<string, string> PlayerNames { get; set; } = new();
@@ -4578,8 +4609,8 @@ public class NavigationMazeGame
                 DisplayName = "Caitlyn (Navigator)",
                 Instruction = IsGameOver ? "Game Over! Guide your partner to restart." : 
                              IsCompleted ? "Mission Accomplished! You successfully guided Vi to safety!" :
-                             "Guide Vi through the dangerous undercity using your map:",
-                MapData = GetMapData(),
+                             "Use your jumbled field notes to guide Vi through the undercity:",
+                Notes = GetPublicNotes(),
                 IsGameOver = IsGameOver,
                 GameOverMessage = GameOverMessage
             };
@@ -4605,71 +4636,6 @@ public class NavigationMazeGame
         }
     }
     
-    private NavigationMapData GetMapData()
-    {
-        return new NavigationMapData
-        {
-            CurrentLocationId = CurrentLocationId,
-            Locations = LocationBank.Select((loc, index) => new NavigationMapLocation
-            {
-                LocationId = loc.LocationId,
-                Name = loc.Name,
-                X = GetLocationX(index),
-                Y = GetLocationY(index),
-                IsCurrentLocation = index == CurrentLocationId,
-                IsCompleted = index < CurrentLocationId || IsCompleted
-            }).ToArray(),
-            CorrectPath = GetCorrectPathData()
-        };
-    }
-    
-    private NavigationMapPath[] GetCorrectPathData()
-    {
-        var paths = new List<NavigationMapPath>();
-        
-        // Define the correct path through all locations
-        for (int i = 0; i < LocationBank.Length - 1; i++)
-        {
-            var location = LocationBank[i];
-            var correctChoice = location.Choices[location.CorrectChoiceIndex];
-            
-            paths.Add(new NavigationMapPath
-            {
-                FromLocationId = i,
-                ToLocationId = i + 1,
-                Direction = correctChoice.Direction
-            });
-        }
-        
-        return paths.ToArray();
-    }
-    
-    // Position locations on the map (as percentages for responsive design)
-    private float GetLocationX(int locationIndex)
-    {
-        return locationIndex switch
-        {
-            0 => 20f,  // Sewer Entrance - left side
-            1 => 35f,  // Industrial Pipes - moving right and down
-            2 => 50f,  // Chemical Plant - center
-            3 => 65f,  // Underground Market - right side
-            4 => 80f,  // Bridge to Piltover - far right
-            _ => 50f
-        };
-    }
-    
-    private float GetLocationY(int locationIndex)
-    {
-        return locationIndex switch
-        {
-            0 => 80f,  // Sewer Entrance - bottom (underground)
-            1 => 65f,  // Industrial Pipes - moving up
-            2 => 50f,  // Chemical Plant - middle level
-            3 => 35f,  // Underground Market - higher up
-            4 => 20f,  // Bridge to Piltover - top (surface level)
-            _ => 50f
-        };
-    }
     
     public NavigationGameState GetGameState()
     {

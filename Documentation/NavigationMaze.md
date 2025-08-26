@@ -1,13 +1,13 @@
-# NavigationMaze - Underground Escape
+# NavigationMaze - Underground Escape (Notes + First-Person v2)
 
 ## Overview
-NavigationMaze is a cooperative spatial reasoning puzzle where players must navigate through the dangerous shimmer factory using Dr. Renni's hand-drawn map. After decoding Renni's message revealing she went to "SHIMMER FACTORY LEVEL THREE," the team arrives at the abandoned facility to find an explosion has occurred. One player (Piltover/Caitlyn) reads Renni's tactical map with route annotations, while the other (Zaunite/Vi) navigates through the unstable factory interior, avoiding hazards and Silco's remaining guards.
+NavigationMaze is now a cooperative deduction puzzle based on jumbled field notes and first-person visuals. After decoding Renni's message revealing she went to "SHIMMER FACTORY LEVEL THREE," the team reaches the abandoned facility. One player (Piltover/Caitlyn) receives a shuffled set of Renni's cryptic notes. The other (Zaunite/Vi) sees a first-person view of the current area. By describing what they see (features/landmarks), the Navigator selects the relevant note to call the correct direction and guide the Explorer through 5 levels.
 
 ## Game Mechanics
 
 ### Player Roles
-- **Piltover (Caitlyn - Map Reader)**: Studies Renni's hand-drawn factory map with route annotations, safe passages, and hazard warnings
-- **Zaunite (Vi - Factory Explorer)**: Sees first-person view of the damaged factory interior and makes navigation choices through unstable areas
+- **Piltover (Caitlyn - Notes Navigator)**: Reads a shuffled list of Renni's notes. Must match notes to Vi's described landmarks and call the correct direction.
+- **Zaunite (Vi - Factory Explorer)**: Sees first-person images with distinct features (tags) and makes choices based on the Navigator's guidance.
 
 ### Objective
 Guide Vi safely through the shimmer factory's 5 levels to reach Level 3 where the holding cells are located, using Renni's map annotations and avoiding structural damage, chemical hazards, and remaining guards.
@@ -19,51 +19,47 @@ Guide Vi safely through the shimmer factory's 5 levels to reach Level 3 where th
 - On completion, hub `ContinueStoryAfterNavigationMaze(roomId)` redirects both players to Scene 8 (`empty_cells`, `sceneIndex=10`)
 
 ### Gameplay Flow
-1. Both players join the same room using a shared room ID
-2. First player becomes Caitlyn (Navigator), second becomes Vi (Explorer)
-3. Navigator sees tactical intelligence and safe route information
-4. Explorer sees immersive location imagery and must choose direction
-5. Players communicate via chat to coordinate navigation decisions
+1. Both players join the same room (`{squad}_{transition}` in story mode)
+2. Roles assign: Piltover = Notes, Zaun = First-person
+3. Navigator reads jumbled notes; Explorer describes the scene (landmarks/features)
+4. Navigator identifies the matching note and calls the direction; Explorer selects it
+5. Correct directions advance to next level; wrong directions end the run
 6. Progress through 5 increasingly challenging locations
 
-## Factory Navigation Progression
+## Factory Navigation Progression (5 Levels)
 
-### Level 1: Main Processing Floor (Beginner)
-**ESL Focus**: Basic factory directions (left, right, forward)
-**Scenario**: Large industrial floor with conveyor belts and processing equipment, purple shimmer residue everywhere
-**Correct Path**: FORWARD through the main walkway (leads to Storage Tanks)
-**Wrong Choices**:
-- LEFT: Collapsed ceiling from recent explosion → Game Over
-- RIGHT: Active shimmer leak creating toxic fumes → Game Over
+Each level includes: visual features (tags), available choices (displayed to Zaun), and one correct move implied by a note. The Piltover player sees a shuffled list of notes (see Prompts below) and must match by features.
+ - Design constraint: Each first-person scene must clearly depict three distinct path options to choose from (except the final victory view).
 
-### Level 2: Storage Tank Area (Intermediate)
-**ESL Focus**: Directional prepositions (through, under, around)
-**Scenario**: Massive shimmer storage tanks with leaking purple chemical and steam
-**Correct Path**: AROUND the leaking tank to avoid toxic exposure (leads to Maintenance Corridor)
-**Wrong Choices**:
-- THROUGH tank corridor: Chemical exposure from shimmer leak → Game Over
-- UNDER main pipes: Steam burst from damaged systems → Game Over
+### Level 1: Sewer Entrance (Beginner)
+- **Visual tags**: sewer, three-tunnels, slime, rats, faint-light
+- **Choices**: LEFT (green glow), RIGHT (pitch black), FORWARD (faint light)
+- **Correct**: FORWARD
+- **Story beat**: Entry into shimmer tunnels beneath the factory
 
-### Level 3: Maintenance Corridor (Intermediate+)
-**ESL Focus**: Spatial relationships (between, behind, beside)
-**Scenario**: Narrow maintenance area with electrical hazards and damaged machinery
-**Correct Path**: BESIDE the main electrical panel to avoid live wires (leads to Guard Station)
-**Wrong Choices**:
-- BETWEEN electrical panels: Electrical shock from damaged wiring → Game Over
-- BEHIND machinery: Structural collapse from explosion damage → Game Over
+### Level 2: Industrial Pipe Junction (Easy)
+- **Visual tags**: pipes, steam, valves, gauges
+- **Choices**: THROUGH the large pipe, UNDER the main pipe, AROUND the pipes to the RIGHT
+- **Correct**: AROUND the pipes to the RIGHT
+- **Story beat**: Avoiding failing steam pipes after prior explosions
 
-### Level 4: Abandoned Guard Station (Advanced)
-**ESL Focus**: Combined spatial vocabulary (up through, down into, across over)
-**Scenario**: Multi-level security area with catwalks, stairs, and surveillance equipment
-**Correct Path**: ACROSS OVER the metal catwalk (leads to Holding Cells Level 3)
-**Wrong Choices**:
-- UP THROUGH guard tower: Remaining Silco guards spot movement → Game Over
-- DOWN INTO basement: Flooded area with chemical contamination → Game Over
+### Level 3: Pump Room Junction (Normal)
+- **Visual tags**: pump-room, green-glow, hazard-signs
+- **Choices**: BETWEEN the vats, BEHIND the machinery, BESIDE the main tank
+- **Correct**: BESIDE the main tank
+- **Story beat**: Simple pump chamber with a clear safe walkway
 
-### Level 5: Holding Cells - Level 3 (Discovery)
-**ESL Focus**: Success vocabulary and discovery terms
-**Scenario**: The destination from Renni's message - prison cells and laboratory equipment
-**Outcome**: SUCCESS - Team reaches the holding cells but finds them empty, leading to the discovery of the adjacent laboratory
+### Level 4: Catwalk Junction (Hard)
+- **Visual tags**: catwalk, stairwell, maintenance-ramp, handrails
+- **Choices**: UP the STAIRS, DOWN the RAMP, ACROSS the CATWALK
+- **Correct**: ACROSS the CATWALK
+- **Story beat**: Cross the maintenance catwalk to reach the service bridge
+
+### Level 5: Storage Access Bay (Victory)
+- **Visual tags**: storage-bay, roll-up-door, keypad, warning-signs
+- **Choices**: LEFT (blocked storage aisle), RIGHT (blocked forklift lane), FORWARD (secured storage door - destination)
+- **Outcome**: Mission complete; continue story
+- **Story beat**: Arrive at secured storage access where hostages are suspected; transition to `empty_cells`
 
 ## Educational Value
 
@@ -89,19 +85,20 @@ Guide Vi safely through the shimmer factory's 5 levels to reach Level 3 where th
 
 ### Key Components
 - **First-Person Imagery**: High-resolution location visuals for Explorer
-- **Tactical Map Display**: Strategic overview and route planning for Navigator
+- ~~Tactical Map Display: Strategic overview and route planning for Navigator~~
+- **Jumbled Notes Display**: Shuffled list of field notes for Navigator
 - **Choice Validation**: Server-side verification of navigation decisions
 - **Atmospheric Storytelling**: Immersive Zaun environment with thematic game-over messages
 
-### Data Models
-- **Location**: Contains imagery, descriptions, available choices, and correct paths
-- **NavigationChoice**: Represents available directions with outcomes
-- **GameProgress**: Tracks current location and player decisions
-- **PlayerView**: Role-specific information (tactical maps vs. first-person view)
+### Data Models (v2)
+- **NavigationLocation**: imagery, descriptions, choices, `Tags`
+- **NavigationNote/NavigationNotePublic**: jumbled notes (server/client)
+- **NavigationPlayerView**: Piltover gets `Notes`; Zaun gets first-person fields
+- **NavigationGameState**: unchanged
 
 ### User Interface
-- **Immersive Location Display**: Full-screen atmospheric imagery for Explorer
-- **Tactical Map Interface**: Strategic overview with route indicators for Navigator
+- **Immersive Location Display**: Full-screen first-person imagery for Explorer with three clear path options
+- **Jumbled Notes List (Navigator)**: Shuffled field notes to match against described features
 - **Choice Selection**: Clear directional options with preposition labels
 - **Progress Tracking**: Visual indicators showing advancement through locations
 
@@ -185,36 +182,27 @@ Guide Vi safely through the shimmer factory's 5 levels to reach Level 3 where th
 ## File Structure
 - **Component**: `Components/Pages/NavigationMaze.razor`
 - **Location Data**: Detailed progression information (see navigation-locations.md)
-- **Visual Assets**: Location imagery in `wwwroot/images/locations/`
+- **Visual Assets**: Location imagery in `wwwroot/images/navigation/`
 - **Hub Methods**: Implemented in `GameHub.cs`
 - **Documentation**: This file (`NavigationMaze.md`) and `navigation-locations.md`
 
-## Renni's Hand-Drawn Map (Navigator View)
+## Image Prompts (for artists or generators)
+Use these prompts to create consistent, recognizably distinct first-person images that match the tags and support the notes.
 
-### Factory Map Layout
-```
-[START: Main Processing Floor]
-        |
-        ↓ (FORWARD through walkway)
-[Storage Tank Area]
-        |
-        ↓ (AROUND leaking tank)
-[Maintenance Corridor]
-        |
-        ↓ (BESIDE electrical panel)
-[Guard Station]
-        |
-        ↓ (ACROSS OVER catwalk)
-[HOLDING CELLS LEVEL 3 - TARGET!]
-```
+1) Sewer Entrance — first-person view
+- Prompt: "Arcane-inspired undercity sewer entrance at night, first-person perspective. Three stone tunnels ahead (show three distinct path options): left tunnel glows toxic green, right tunnel is pitch black, center tunnel shows a faint distant light. Wet stone, puddles, subtle rats, green slime. Cinematic rim lighting, moody teal/purple palette."
 
-### Renni's Map Annotations
-- **Safe Route**: Hand-drawn red arrows indicating Renni's tested path
-- **Hazard Warnings**: Skull symbols marking dangerous areas (chemical leaks, structural damage)
-- **Current Position**: Player's location marked with "YOU ARE HERE" in Renni's handwriting
-- **Wrong Paths**: X marks over dangerous routes with notes like "TOXIC!" or "UNSTABLE!"
-- **Objective**: Large circle around "HOLDING CELLS - LEVEL 3" with question marks indicating uncertainty
-- **Personal Notes**: Renni's worried annotations like "Where are they?" and "Too quiet..."
+2) Industrial Pipe Junction — first-person view
+- Prompt: "Massive rusted industrial pipes crisscross a low chamber, first-person. Steam vents hiss; analog gauges rattle; valve wheels drip. Present three path options: THROUGH the main pipe, UNDER the main pipe, AROUND to the RIGHT on a safer walkway. Harsh side-light, volumetric steam, cyan highlights, brass accents."
+
+3) Pump Room Junction — first-person view
+- Prompt: "Simple industrial pump room, first-person. One big cylindrical tank on the left with a sturdy walkway BESIDE it, a cramped gap BETWEEN two small tanks ahead, and a cluttered space BEHIND basic machinery on the right. Clear signage, soft green glow, minimal clutter. Three obvious path options."
+
+4) Catwalk Junction — first-person view
+- Prompt: "Industrial catwalk junction inside a factory, first-person. Three clear path options: UP a metal STAIRWELL to a higher platform, DOWN a gentle MAINTENANCE RAMP, and ACROSS a straight CATWALK with handrails. No people, clean composition, yellow safety paint, overhead piping."
+
+5) Storage Access Bay — first-person view
+- Prompt: "Factory storage access bay, first-person. Present three clear path options: LEFT into a blocked STORAGE AISLE (yellow caution tape/barrier), RIGHT into a blocked FORKLIFT LANE (cones or barrier), and FORWARD toward a WIDE ROLL-UP STORAGE DOOR with an industrial KEYPAD panel (destination). Concrete floor markings, pallet racks to the sides, overhead strip lights. Clean, no people, minimal clutter, lore-neutral."
 
 ## Future Enhancements
 - **Dynamic Locations**: Procedurally generated maze layouts

@@ -167,14 +167,14 @@
         <div class="game-interface @playerView.Role.ToLower()">
             @if (playerView.Role == "Piltover")
             {
-                <!-- Piltover Player: Map View -->
+                <!-- Piltover Player: Notes View -->
                 <div class="piltover-interface">
                     <div class="interface-header">
                         <div class="character-info">
                             <img src="/images/cait.jpeg" alt="Caitlyn" class="character-portrait" />
                             <div class="character-details">
                                 <h3>@playerView.DisplayName</h3>
-                                <p class="role-subtitle">Tactical Navigator</p>
+                                <p class="role-subtitle">Field Notes Navigator</p>
                             </div>
                         </div>
                         <div class="mission-status">
@@ -202,86 +202,27 @@
                     <div class="instruction-panel piltover-instruction">
                         <p>@playerView.Instruction</p>
                     </div>
-                    
-                    @if (playerView.MapData != null)
+                    @if (playerView.Notes != null)
                     {
                         <div class="tactical-map">
                             <div class="file-browser">
                                 <div class="file-browser-header">
-                                    <h4>📁 Reconnaissance Files</h4>
-                                    <p>Select location intel to view tactical data</p>
+                                    <h4>📒 Jumbled Field Notes</h4>
+                                    <p>Find the note that matches Vi's view and call the direction</p>
                                 </div>
-                                
                                 <div class="file-grid">
-                                    @foreach (var location in playerView.MapData.Locations)
+                                    @foreach (var note in playerView.Notes)
                                     {
-                                        <div class="file-item @(location.IsCurrentLocation ? "current-file" : "") @(location.IsCompleted ? "completed-file" : "") @(selectedLocationId == location.LocationId ? "selected-file" : "")"
-                                             @onclick="() => SelectLocation(location.LocationId)">
-                                            <div class="file-icon">
-                                                @GetLocationIcon(location.LocationId)
-                                            </div>
+                                        <div class="file-item">
+                                            <div class="file-icon">📝</div>
                                             <div class="file-info">
-                                                <div class="file-name">@location.Name.Replace(" ", "_").ToUpper().Substring(0, Math.Min(location.Name.Replace(" ", "").Length, 8))_INTEL.dat</div>
-                                                <div class="file-status">
-                                                    @if (location.IsCompleted)
-                                                    {
-                                                        <span class="status-completed">✅ CLEARED</span>
-                                                    }
-                                                    else if (location.IsCurrentLocation)
-                                                    {
-                                                        <span class="status-current">🎯 ACTIVE</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="status-pending">📋 PENDING</span>
-                                                    }
-                                                </div>
+                                                <div class="file-name">@($"NOTE_{note.Id}.txt")</div>
+                                                <div class="file-status">@note.Text</div>
                                             </div>
                                         </div>
                                     }
                                 </div>
                             </div>
-                            
-                            @if (selectedLocationId != -1)
-                            {
-                                var selectedLocation = playerView.MapData.Locations.FirstOrDefault(l => l.LocationId == selectedLocationId);
-                                if (selectedLocation != null)
-                                {
-                                    <div class="file-preview">
-                                        <div class="preview-header">
-                                            <h4>📸 @selectedLocation.Name - Tactical Overview</h4>
-                                            <button class="close-preview" @onclick="ClosePreview">✕</button>
-                                        </div>
-                                        
-                                        <div class="preview-content">
-                                            <div class="location-image-preview">
-                                                <!-- Show the same image as Zaun player sees with your Photoshop arrows -->
-                                                <div class="tactical-image" style="background-image: url('@GetLocationImagePath(selectedLocationId)');">
-                                                    <!-- Optional: Simple overlay text for current path -->
-                                                    @{
-                                                        var correctPath = playerView.MapData.CorrectPath.FirstOrDefault(p => p.FromLocationId == selectedLocationId);
-                                                        if (correctPath != null && selectedLocation.IsCurrentLocation)
-                                                        {
-                                                            <div class="safe-route-overlay">
-                                                                <div class="route-label">✅ SAFE ROUTE: @correctPath.Direction</div>
-                                                            </div>
-                                                        }
-                                                    }
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="tactical-notes">
-                                                <h5>📋 Intelligence Notes:</h5>
-                                                <ul>
-                                                    <li><strong>Status:</strong> @(selectedLocation.IsCompleted ? "Area Secured" : selectedLocation.IsCurrentLocation ? "Active Zone" : "Pending Infiltration")</li>
-                                                    <li><strong>Threat Level:</strong> @GetThreatLevel(selectedLocationId)</li>
-                                                    <li><strong>Recommended Action:</strong> @GetRecommendedAction(selectedLocationId)</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            }
                         </div>
                     }
                     
@@ -1613,7 +1554,7 @@
 
 .location-image-placeholder {
     width: 100%;
-    height: 250px;
+    height: 50vh;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 8px;
     border: 1px solid #00c8c8;
@@ -1621,7 +1562,8 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    background-size: cover;
+    background-size: contain; /* show full image */
+    background-repeat: no-repeat;
     background-position: center;
 }
 
@@ -1671,6 +1613,7 @@
 
 .choice-grid {
     display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
 }
 

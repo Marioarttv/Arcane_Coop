@@ -12,6 +12,7 @@ public class NavigationLocation
     public NavigationChoice[] Choices { get; set; } = Array.Empty<NavigationChoice>();
     public int CorrectChoiceIndex { get; set; }
     public string SuccessMessage { get; set; } = "";
+    public string[] Tags { get; set; } = Array.Empty<string>();
 }
 
 public class NavigationChoice
@@ -34,36 +35,12 @@ public class NavigationPlayerView
     public string? LocationImage { get; set; }
     public NavigationChoice[]? AvailableChoices { get; set; }
     
-    // Piltover player (map view)
-    public NavigationMapData? MapData { get; set; }
+    // Piltover player (notes view)
+    public NavigationNotePublic[]? Notes { get; set; }
     
     // Shared
     public string? GameOverMessage { get; set; }
     public bool IsGameOver { get; set; }
-}
-
-public class NavigationMapData
-{
-    public int CurrentLocationId { get; set; }
-    public NavigationMapLocation[] Locations { get; set; } = Array.Empty<NavigationMapLocation>();
-    public NavigationMapPath[] CorrectPath { get; set; } = Array.Empty<NavigationMapPath>();
-}
-
-public class NavigationMapLocation
-{
-    public int LocationId { get; set; }
-    public string Name { get; set; } = "";
-    public float X { get; set; } // Position on map (percentage)
-    public float Y { get; set; } // Position on map (percentage)
-    public bool IsCurrentLocation { get; set; }
-    public bool IsCompleted { get; set; }
-}
-
-public class NavigationMapPath
-{
-    public int FromLocationId { get; set; }
-    public int ToLocationId { get; set; }
-    public string Direction { get; set; } = "";
 }
 
 public class NavigationGameState
@@ -75,4 +52,22 @@ public class NavigationGameState
     public int PlayerCount { get; set; }
     public int PlayersNeeded { get; set; }
     public string? GameOverMessage { get; set; }
+}
+
+/// <summary>
+/// Internal note definition with matching tags and intended direction.
+/// Only Text and Id are sent to Piltover client.
+/// </summary>
+public class NavigationNote
+{
+    public int Id { get; set; }
+    public string Text { get; set; } = "";
+    public string[] AppliesWhenTags { get; set; } = Array.Empty<string>();
+    public string Direction { get; set; } = ""; // Human-readable (e.g., LEFT, FORWARD, AROUND RIGHT)
+}
+
+public class NavigationNotePublic
+{
+    public int Id { get; set; }
+    public string Text { get; set; } = "";
 }
