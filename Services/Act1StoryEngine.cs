@@ -268,7 +268,9 @@ new DialogueLine
     CharacterId = "narrator",
     Text = "Hurried footsteps echo through the marble hallway...",
     AnimationType = TextAnimationType.FadeIn,
-    TypewriterSpeed = 30
+    TypewriterSpeed = 30,
+    SoundEffect = "/audio/sfx/11L-Hurried_footsteps_ec-1756165540763.mp3",
+    SoundEffectVolume = 0.8f,
 },
 new DialogueLine
 {

@@ -369,6 +369,7 @@
     // Voice line management
     private bool isHandlingAudio = false;
     private string? lastPlayedVoiceLine = null;
+    private int? lastAudioHandledDialogueIndex = null;
 
     // DTO for choice events to avoid dynamic binder issues
     private class ChoiceMadeDto
@@ -461,6 +462,8 @@
                     animatingCharacters.Clear();
                     disappearingCharacters.Clear();
                     previousCharacterVisibility.Clear();
+                    // Reset audio gating for new scene
+                    lastAudioHandledDialogueIndex = null;
                 }
                 
                 playerView = view;
@@ -686,9 +689,14 @@
             Console.WriteLine($"[Act1Multiplayer] Dialogue #{playerView.GameState.CurrentDialogueIndex}: {speaker}{dialogueId}{choiceInfo} - \"{currentDialogue.Text}\"");
             
             UpdateCharacterStates();
-            
-            // Handle audio for this dialogue line (prevent overlapping calls)
-            _ = HandleDialogueAudioSafe();
+
+            // Handle audio once per dialogue index to avoid duplicate SFX on continue events
+            var currentIdx = playerView.GameState.CurrentDialogueIndex;
+            if (lastAudioHandledDialogueIndex != currentIdx)
+            {
+                lastAudioHandledDialogueIndex = currentIdx;
+                _ = HandleDialogueAudioSafe();
+            }
         }
     }
     
