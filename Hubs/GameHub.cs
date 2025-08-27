@@ -4362,14 +4362,16 @@ public class NavigationMazeGame
             Name = "Sewer Entrance",
             Description = "Dark stone sewer entrance with three tunnel openings. Choose your path carefully...",
             ImagePath = "/images/NavigationMaze/Area1Nav.png",
-            CorrectChoiceIndex = 2, // FORWARD
+            CorrectChoiceIndex = 1, // FORWARD
             SuccessMessage = "The central tunnel leads deeper into the undercity!",
             Tags = new[] { "sewer", "three-tunnels", "slime", "rats", "faint-light" },
             Choices = new[]
             {
-                new NavigationChoice { Direction = "LEFT", Description = "Green chemical glow emanates from this tunnel", IsCorrect = false, GameOverMessage = "Vi got overwhelmed by toxic fumes! Even Vi needs backup sometimes... Try again!" },
-                new NavigationChoice { Direction = "RIGHT", Description = "Completely dark with suspicious sounds", IsCorrect = false, GameOverMessage = "Something big lives down here... Vi had to retreat! That path was more dangerous than a Piltover Enforcer raid!" },
-                new NavigationChoice { Direction = "FORWARD", Description = "Faint light visible at the end", IsCorrect = true, GameOverMessage = "" }
+                new NavigationChoice { Direction = "LEFT", Description = "Green chemical glow emanates from this tunnel", IsCorrect = false, GameOverMessage = "The shimmer fumes are too toxic! Try another route!" },
+                new NavigationChoice { Direction = "FORWARD", Description = "Faint light visible at the end", IsCorrect = true, GameOverMessage = "" },
+                new NavigationChoice { Direction = "RIGHT", Description = "Completely dark with suspicious sounds", IsCorrect = false, GameOverMessage = "Something big lives down there... Retreat and try again!" }
+     
+                
             }
         },
         new NavigationLocation
@@ -4383,68 +4385,89 @@ public class NavigationMazeGame
             Tags = new[] { "pipes", "steam", "valves", "gauges" },
             Choices = new[]
             {
-                new NavigationChoice { Direction = "THROUGH the large pipe", Description = "The main pipe looks old but passable", IsCorrect = false, GameOverMessage = "The old pipe couldn't hold Vi's weight! Jinx would have blown that up too... Reset and try again!" },
-                new NavigationChoice { Direction = "UNDER the main pipe", Description = "Low crawl space beneath the pipes", IsCorrect = false, GameOverMessage = "Hot steam blocked Vi's path! Not even Vander could have survived that route!" },
-                new NavigationChoice { Direction = "AROUND the pipes to the right", Description = "Safe path around the pipe system", IsCorrect = true, GameOverMessage = "" }
+                new NavigationChoice { Direction = "THROUGH the large pipe", Description = "The main pipe looks old but passable", IsCorrect = false, GameOverMessage = "The old pipe couldn't hold – it collapsed! Reset and try again!" },
+                new NavigationChoice { Direction = "UNDER the main pipe", Description = "Low crawl space beneath the pipes", IsCorrect = false, GameOverMessage = "Hot steam blocked your path! Not even Vander could have survived that route!" },
+                new NavigationChoice { Direction = "AROUND the pipes to the RIGHT", Description = "path around the pipe system", IsCorrect = true, GameOverMessage = "" }
             }
         },
         new NavigationLocation
         {
             LocationId = 2,
-            Name = "Chemical Processing Plant",
-            Description = "Industrial chemical processing area with large vats of bubbling green chemicals.",
+            Name = "Pump Room Junction",
+            Description = "Simple industrial pump room with tanks and equipment. Watch for hazards.",
             ImagePath = "/images/NavigationMaze/Area3Nav.png",
-            CorrectChoiceIndex = 2, // BESIDE
-            SuccessMessage = "Staying beside the main tank avoided the dangerous areas!",
-            Tags = new[] { "chemical-vats", "green-glow", "hazard-signs" },
+            CorrectChoiceIndex = 0, // Between tanks
+            SuccessMessage = "You kept a safe distance along the main tank walkway.",
+            Tags = new[] { "pump-room", "green-glow", "hazard-signs" },
             Choices = new[]
             {
-                new NavigationChoice { Direction = "BETWEEN the chemical vats", Description = "Narrow path between bubbling containers", IsCorrect = false, GameOverMessage = "Chemtech spilled everywhere! Vi had to evacuate! The Undercity has claimed another victim... Restart?" },
-                new NavigationChoice { Direction = "BEHIND the machinery", Description = "Path behind the processing equipment", IsCorrect = false, GameOverMessage = "Vi got trapped behind broken equipment! Even Vi needs backup sometimes... Try again!" },
-                new NavigationChoice { Direction = "BESIDE the main tank", Description = "Safe walkway beside the primary tank", IsCorrect = true, GameOverMessage = "" }
+                new NavigationChoice { Direction = "BETWEEN the two tanks", Description = "Narrow path between two tanks", IsCorrect = true, GameOverMessage = "" },
+                new NavigationChoice { Direction = "BEHIND the machinery on the RIGHT", Description = "Path behind processing equipment", IsCorrect = false, GameOverMessage = "Structural collapse from explosion damage – Game over!" },
+                new NavigationChoice { Direction = "UP the stairs", Description = "They look sturdy.", IsCorrect = false, GameOverMessage = "The stairs break down and you fall, weren't as sturdy as you thought!" }
             }
         },
         new NavigationLocation
         {
             LocationId = 3,
-            Name = "Underground Market",
-            Description = "Bustling underground marketplace built in a converted mine with multiple levels.",
+            Name = "Catwalk Junction",
+            Description = "Industrial catwalk junction inside a factory.",
             ImagePath = "/images/NavigationMaze/Area4Nav.png",
-            CorrectChoiceIndex = 2, // ACROSS OVER
-            SuccessMessage = "The rope bridge was the secret route to freedom!",
-            Tags = new[] { "market", "crowd", "hanging-lights", "rope-bridge" },
+            CorrectChoiceIndex = 2, // ACROSS the CATWALK
+            SuccessMessage = "Crossed the maintenance catwalk toward the service bridge.",
+            Tags = new[] { "catwalk", "stairwell", "maintenance-ramp", "handrails" },
             Choices = new[]
             {
-                new NavigationChoice { Direction = "UP THROUGH the busy market", Description = "Stairs leading through the crowded marketplace", IsCorrect = false, GameOverMessage = "Enforcers were waiting in the crowd! That path was more dangerous than a Piltover Enforcer raid!" },
-                new NavigationChoice { Direction = "DOWN INTO the old mines", Description = "Tunnel leading deeper into abandoned mines", IsCorrect = false, GameOverMessage = "The mines weren't stable... rocks are falling! Not even Vander could have survived that route!" },
-                new NavigationChoice { Direction = "ACROSS OVER the rope bridge", Description = "Rope bridge spanning across the chasm", IsCorrect = true, GameOverMessage = "" }
+                new NavigationChoice { Direction = "UP the STAIRS", Description = "Metal stairwell to a higher platform", IsCorrect = false, GameOverMessage = "Enforcers spotted movement above – Game over!" },
+                new NavigationChoice { Direction = "DOWN the RAMP", Description = "Gentle maintenance ramp", IsCorrect = false, GameOverMessage = "Flooded lower level – unsafe. Restart the mission!" },
+                new NavigationChoice { Direction = "ACROSS the CATWALK", Description = "Straight catwalk with handrails", IsCorrect = true, GameOverMessage = "" }
             }
         },
         new NavigationLocation
         {
             LocationId = 4,
-            Name = "Bridge to Piltover",
-            Description = "You've reached the magnificent bridge spanning between the cities! Piltover's golden spires shine in the distance.",
+            Name = "Storage Access Bay",
+            Description = "Secured storage access with a roll-up door and keypad. Some aisles look blocked.",
             ImagePath = "/images/NavigationMaze/Area5Nav.png",
-            CorrectChoiceIndex = 0, // Victory location
-            SuccessMessage = "ESCAPE SUCCESSFUL - Welcome to Piltover! You've successfully navigated through the dangerous undercity!",
-            Tags = new[] { "bridge", "piltover-spires", "sunlight" },
-            Choices = Array.Empty<NavigationChoice>()
+            CorrectChoiceIndex = 0, // LEFT is correct
+            SuccessMessage = "Hidden access behind the blocked aisle – you've found the way in.",
+            Tags = new[] { "storage-bay", "roll-up-door", "keypad", "warning-signs" },
+            Choices = new[]
+            {
+                new NavigationChoice { Direction = "LEFT", Description = "Blocked storage aisle with yellow‑black tape", IsCorrect = true, GameOverMessage = "" },
+                new NavigationChoice { Direction = "FORWARD", Description = "Roll‑up storage door with keypad", IsCorrect = false, GameOverMessage = "Keypad locked and no code – cannot proceed." },
+                new NavigationChoice { Direction = "RIGHT", Description = "Forklift lane blocked with cones", IsCorrect = false, GameOverMessage = "Blocked route – dead end. Restart!" }
+                
+            }
         }
     };
 
     // Jumbled notes available to the Piltover player; match by tags and suggest a direction
     private static readonly NavigationNote[] NotesBank = new[]
     {
-        new NavigationNote { Id = 1, Text = "If the central tunnel has a faint light while others glow green or are pitch black, go FORWARD.", AppliesWhenTags = new[] { "sewer", "three-tunnels", "faint-light" }, Direction = "FORWARD" },
-        new NavigationNote { Id = 2, Text = "When gauges rattle and steam hisses around big pipes, do NOT crawl under—go AROUND to the RIGHT.", AppliesWhenTags = new[] { "pipes", "steam", "gauges" }, Direction = "AROUND the pipes to the right" },
-        new NavigationNote { Id = 3, Text = "If vats glow a toxic green, avoid weaving BETWEEN them—hug the walkway BESIDE the main tank.", AppliesWhenTags = new[] { "chemical-vats", "green-glow" }, Direction = "BESIDE the main tank" },
-        new NavigationNote { Id = 4, Text = "Crowded market? Avoid the steps and the deep shafts—use the ROPE BRIDGE ACROSS OVER the chasm.", AppliesWhenTags = new[] { "market", "rope-bridge" }, Direction = "ACROSS OVER the rope bridge" },
-        // Decoys to increase difficulty
-        new NavigationNote { Id = 5, Text = "Go STRAIGHT when you see active conveyor belts.", AppliesWhenTags = new[] { "conveyor" }, Direction = "FORWARD" },
-        new NavigationNote { Id = 6, Text = "If you spot shimmer canisters stacked in crates, take the LEFT ramp.", AppliesWhenTags = new[] { "crates", "shimmer" }, Direction = "LEFT" },
-        new NavigationNote { Id = 7, Text = "Broken catwalk above a coolant river? Take the stairs DOWN and hug the wall.", AppliesWhenTags = new[] { "catwalk", "coolant" }, Direction = "DOWN" },
-        new NavigationNote { Id = 8, Text = "If sunlight hits golden spires ahead, you're at the BRIDGE—mission complete.", AppliesWhenTags = new[] { "bridge", "piltover-spires", "sunlight" }, Direction = "" },
+        // Level 1: Sewer Entrance — correct = FORWARD (faint light)
+        new NavigationNote { Id = 1, Text = "Green glow on the stone? That tunnel reeks of shimmer—avoid that side.", AppliesWhenTags = new[] { "sewer", "three-tunnels", "slime" }, Direction = "" },
+        new NavigationNote { Id = 2, Text = "Pitch‑black tunnels hide the worst surprises. Don't choose the dark one.", AppliesWhenTags = new[] { "sewer", "three-tunnels" }, Direction = "" },
+        new NavigationNote { Id = 3, Text = "Maintenance paths show a faint light—take the center and go FORWARD.", AppliesWhenTags = new[] { "sewer", "three-tunnels", "faint-light" }, Direction = "FORWARD" },
+
+        // Level 2: Industrial Pipe Junction — correct = AROUND the pipes to the RIGHT
+        new NavigationNote { Id = 4, Text = "Hollow main pipes look tempting until they collapse—do NOT go THROUGH.", AppliesWhenTags = new[] { "pipes" }, Direction = "" },
+        new NavigationNote { Id = 5, Text = "Steam hissing under the big line? Crawling UNDER is a burn waiting to happen.", AppliesWhenTags = new[] { "steam", "valves" }, Direction = "" },
+        new NavigationNote { Id = 6, Text = "Rattling gauges mark the safe catwalk—go AROUND the pipes to the RIGHT.", AppliesWhenTags = new[] { "gauges", "valves", "steam" }, Direction = "AROUND the pipes to the RIGHT" },
+
+        // Level 3: Pump Room Junction — correct = BESIDE the main tank
+        new NavigationNote { Id = 7, Text = "Follow the dirtpath that goes BETWEEN two large tanks.", AppliesWhenTags = new[] { "pump-room", "green-glow" }, Direction = "" },
+        new NavigationNote { Id = 8, Text = "Behind the machinery is all loose panels and live wires—skip BEHIND.", AppliesWhenTags = new[] { "hazard-signs" }, Direction = "" },
+        new NavigationNote { Id = 9, Text = "If you see stairs by a big tank, avoid going up there.", AppliesWhenTags = new[] { "pump-room" }, Direction = "BESIDE the main tank" },
+
+        // Level 4: Catwalk Junction — correct = ACROSS the CATWALK
+        new NavigationNote { Id = 10, Text = "Stairwells invite attention from above—avoid the STAIRS.", AppliesWhenTags = new[] { "stairwell" }, Direction = "" },
+        new NavigationNote { Id = 11, Text = "Maintenance ramps lead down to flooded bays—don't take the RAMP.", AppliesWhenTags = new[] { "maintenance-ramp" }, Direction = "" },
+        new NavigationNote { Id = 12, Text = "Yellow Handrails in a straight line? That's the safe route—go ACROSS the CATWALK.", AppliesWhenTags = new[] { "catwalk", "handrails" }, Direction = "ACROSS the CATWALK" },
+
+        // Level 5: Storage Access Bay — correct = LEFT (blocked aisle concealment)
+        new NavigationNote { Id = 13, Text = "Left lane is blocked with yellow and black tape. Maybe they are hiding something important there?", AppliesWhenTags = new[] { "storage-bay", "warning-signs" }, Direction = "LEFT" },
+        new NavigationNote { Id = 14, Text = "Right lane has orange and white cones? Don't go that way.", AppliesWhenTags = new[] { "storage-bay", "warning-signs" }, Direction = "" },
+        new NavigationNote { Id = 15, Text = "Keypad by a roll‑up door but we don't have the code...", AppliesWhenTags = new[] { "roll-up-door", "keypad" }, Direction = "" },
     };
 
     private NavigationNotePublic[]? _shuffledPublicNotes;

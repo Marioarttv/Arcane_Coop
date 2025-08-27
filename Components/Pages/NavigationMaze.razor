@@ -9,31 +9,23 @@
 <PageTitle>Navigation Maze: Underground Escape</PageTitle>
 
 <div class="navigation-maze-container">
+    <div class="connection-chip @(IsConnected ? "online" : "offline")">
+        @(IsConnected ? "Connected" : "Disconnected")
+    </div>
     <div class="header-section">
         @if (isFromStory)
         {
             <h2 class="game-title">🗺️ Navigation Maze</h2>
             <p class="game-subtitle">Underground Escape - Navigate to safety through dangerous terrain</p>
-            <div class="story-context">
-                <div class="story-badge @GetRoleThemeClass()">
-                    <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
-                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
-                </div>
-            </div>
         }
         else
         {
             <h2 class="game-title">🗺️ Navigation Maze</h2>
-            <p class="game-subtitle">Caitlyn vs Vi - Navigate the Underground Escape Route</p>
+            <p class="game-subtitle">Co-op Navigation - Underground Escape Route</p>
         }
     </div>
     
-    <div class="connection-status mb-3">
-        <strong>Connection Status:</strong> 
-        <span class="@(IsConnected ? "text-success" : "text-danger")">
-            @(IsConnected ? "Connected" : "Disconnected")
-        </span>
-    </div>
+    
 
     @if (!inGame && !isFromStory)
     {
@@ -54,35 +46,35 @@
                         <div class="step-number">2</div>
                         <div class="step-content">
                             <h4>Join Together</h4>
-                            <p>Click <strong>"Join Room"</strong> then <strong>"Start Mission"</strong>. First player becomes Caitlyn (Navigator), second becomes Vi (Explorer).</p>
+                            <p>Click <strong>"Join Room"</strong> then <strong>"Start Mission"</strong>. First player becomes Piltover (Navigator), second becomes Zaunite (Explorer).</p>
                         </div>
                     </div>
                     <div class="instruction-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
                             <h4>Navigate Together</h4>
-                            <p><strong>Caitlyn</strong> sees tactical maps and intel, <strong>Vi</strong> makes navigation choices. Work together to reach Piltover safely!</p>
+                            <p><strong>Piltover</strong> sees field notes and intel, <strong>Zaunite</strong> makes navigation choices. Work together to reach Piltover safely!</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="role-preview">
                     <div class="role-card piltover-preview">
-                        <h4>🏛️ Caitlyn (Navigator)</h4>
+                        <h4>🏛️ Piltover (Navigator)</h4>
                         <p>You see tactical intelligence:</p>
                         <ul class="preview-clues">
                             <li><strong>📁 Intel Files:</strong> Location data and threat levels</li>
                             <li><strong>🗺️ Tactical Maps:</strong> Safe routes and hazards</li>
-                            <li><strong>📊 Reconnaissance:</strong> Guide Vi to safety</li>
+                            <li><strong>📊 Reconnaissance:</strong> Guide your partner to safety</li>
                         </ul>
                     </div>
                     <div class="role-card zaunite-preview">
-                        <h4>⚡ Vi (Explorer)</h4>
+                        <h4>⚡ Zaunite (Explorer)</h4>
                         <p>You navigate dangerous terrain:</p>
                         <ul class="preview-clues">
                             <li><strong>👁️ First-Person View:</strong> See locations directly</li>
                             <li><strong>🚶 Path Choices:</strong> Choose which way to go</li>
-                            <li><strong>💬 Team Communication:</strong> Coordinate with Caitlyn</li>
+                            <li><strong>💬 Team Communication:</strong> Coordinate with your partner</li>
                         </ul>
                     </div>
                 </div>
@@ -171,9 +163,8 @@
                 <div class="piltover-interface">
                     <div class="interface-header">
                         <div class="character-info">
-                            <img src="/images/cait.jpeg" alt="Caitlyn" class="character-portrait" />
                             <div class="character-details">
-                                <h3>@playerView.DisplayName</h3>
+                                <h3>Partner</h3>
                                 <p class="role-subtitle">Field Notes Navigator</p>
                             </div>
                         </div>
@@ -208,17 +199,13 @@
                             <div class="file-browser">
                                 <div class="file-browser-header">
                                     <h4>📒 Jumbled Field Notes</h4>
-                                    <p>Find the note that matches Vi's view and call the direction</p>
+                                    <p>Find the note that matches your partner's view and call the direction</p>
                                 </div>
                                 <div class="file-grid">
                                     @foreach (var note in playerView.Notes)
                                     {
-                                        <div class="file-item">
-                                            <div class="file-icon">📝</div>
-                                            <div class="file-info">
-                                                <div class="file-name">@($"NOTE_{note.Id}.txt")</div>
-                                                <div class="file-status">@note.Text</div>
-                                            </div>
+                                        <div class="note-card">
+                                            <div class="note-text">@note.Text</div>
                                         </div>
                                     }
                                 </div>
@@ -240,7 +227,7 @@
                             {
                                 <div class="victory-message">
                                     <h3>🎉 Mission Accomplished!</h3>
-                                    <p>You successfully guided Vi to safety in Piltover!</p>
+                                    <p>You successfully guided your partner to safety in Piltover!</p>
                                 </div>
                             }
                             
@@ -266,9 +253,8 @@
                 <div class="zaunite-interface">
                     <div class="interface-header">
                         <div class="character-info">
-                            <img src="/images/vi.jpeg" alt="Vi" class="character-portrait" />
                             <div class="character-details">
-                                <h3>@playerView.DisplayName</h3>
+                                <h3>Partner</h3>
                                 <p class="role-subtitle">Underground Explorer</p>
                             </div>
                         </div>
@@ -487,7 +473,7 @@
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string>("RedirectToNextStoryScene", async (url) =>
+        hubConnection.On<string>("RedirectToNextScene", async (url) =>
         {
             Console.WriteLine($"[NavigationMaze] Received redirect to next scene: {url}");
             ShowStatus("Continuing story - Loading next scene...", "info");
@@ -780,6 +766,33 @@
     padding: 20px;
 }
 
+/* Small connection status chip at top-right */
+.connection-chip {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1100;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid #c8aa6e;
+    background: rgba(26, 26, 46, 0.85);
+    backdrop-filter: blur(6px);
+    font-weight: 600;
+}
+
+.connection-chip.online {
+    color: #00ff88;
+    border-color: #00ff88;
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+}
+
+.connection-chip.offline {
+    color: #ff4444;
+    border-color: #ff4444;
+    box-shadow: 0 0 12px rgba(255, 68, 68, 0.25);
+}
+
 /* Header styling similar to other prototypes */
 .header-section {
     text-align: center;
@@ -835,17 +848,7 @@
     box-shadow: 0 0 20px rgba(200, 170, 110, 0.3);
 }
 
-.connection-status {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: rgba(26, 26, 46, 0.8);
-    border-radius: 10px;
-    border: 2px solid #c8aa6e;
-    backdrop-filter: blur(10px);
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 600;
-}
+/* legacy connection-status panel removed in favor of connection-chip */
 
 .text-success {
     color: #00ff88 !important;
@@ -1359,6 +1362,49 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 0.75rem;
     margin-bottom: 1rem;
+}
+
+/* Paper-like note cards */
+.note-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(253,245,230,0.96), rgba(247,237,210,0.96)),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.06), rgba(0,0,0,0.06) 1px, transparent 1px, transparent 28px);
+    border: 1px solid rgba(180, 160, 100, 0.6);
+    border-radius: 6px;
+    padding: 0.9rem 0.9rem 1rem 0.9rem;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    transform: rotate(-0.25deg);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.note-card:nth-child(2n) { transform: rotate(0.35deg); }
+.note-card:nth-child(3n) { transform: rotate(-0.6deg); }
+
+.note-card:hover {
+    transform: translateY(-2px) rotate(0deg);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.3);
+}
+
+.note-card:before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 64px;
+    height: 16px;
+    background: rgba(255, 255, 180, 0.9);
+    border: 1px solid rgba(180, 160, 100, 0.6);
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.note-text {
+    color: #2b2b2b;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
 }
 
 .file-item {

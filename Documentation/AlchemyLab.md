@@ -1,35 +1,35 @@
-# Alchemy Lab: Shimmer Residue Tracer
+# Alchemy Lab: Vi's Healing Potion
 
 ## Overview
 
-The **Alchemy Lab** is a premium cooperative puzzle game where two players work together to brew a Shimmer Residue Tracer using an intuitive drag-and-drop interface. After discovering the empty holding cells, the team finds Renni's laboratory with equipment and a formula for tracking shimmer exposure. This puzzle combines recipe reading, ingredient processing, and precise collaboration to create the tracer that will reveal Jinx's movements.
+The **Alchemy Lab** is a premium cooperative puzzle game where two players work together to brew Vi's healing potion using an intuitive drag-and-drop interface. This puzzle combines recipe reading, ingredient processing, and precise collaboration to create an engaging educational experience.
 
 ## Game Concept
 
 ### Narrative Theme
-Act 1 Scene 8 integration: After successfully navigating through the shimmer factory and discovering the empty holding cells, the team finds Renni's adjacent laboratory filled with equipment and research papers. Among the documents is a formula for "Shimmer Residue Tracer - For tracking subjects exposed to concentrated shimmer." Realizing that Jinx has been micro-dosing shimmer, the team decides to brew this tracer to follow her trail. Caitlyn (Piltover) reads Renni's complex formula while Vi (Zaunite) handles the dangerous shimmer-based ingredients.
+Act 1 integration: After the Navigation Maze and the discovery in Scene 8 (Empty Holding Cells), the team prepares a Shimmer Residue Tracer to track Jinx. Caitlyn (Piltover) reads the lab recipe; Vi (Zaunite) executes the steps. The two must collaborate to successfully brew the tracer potion.
 
 ### Player Roles
 
-#### **Piltover Player (Caitlyn) - Formula Analyst**
-- **Visual Theme**: Clean, golden hextech aesthetics with enforcer precision
-- **Role**: Scientific Analysis Specialist reading Renni's research notes
+#### **Piltover Player (Caitlyn) - Recipe Reader**
+- **Visual Theme**: Clean, golden hextech aesthetics
+- **Role**: Master Alchemist with access to recipe scrolls
 - **Capabilities**:
-  - Deciphers Renni's handwritten formula with detailed step-by-step instructions
-  - Understands ingredient properties and shimmer volatility warnings
-  - Provides safety guidance for handling dangerous shimmer compounds
-  - Monitors tracer potency and chemical stability during brewing process
+  - Views the complete recipe with detailed step-by-step instructions
+  - Sees ingredient requirements, processing stations, and final states
+  - Provides guidance and troubleshooting for mistakes
+  - Monitors overall brewing progress and potion potency score
 
-#### **Zaunite Player (Vi) - Chemical Handler**
-- **Visual Theme**: Underground laboratory with teal accents and shimmer contamination warnings
-- **Role**: Experienced hands-on operative familiar with dangerous Zaun chemistry
+#### **Zaunite Player (Vi) - Lab Assistant**
+- **Visual Theme**: Underground laboratory with teal accents
+- **Role**: Hands-on alchemist performing the brewing process
 - **Capabilities**:
-  - Safely manipulates volatile shimmer-based ingredients using drag-and-drop
-  - Access to 4 processing stations (Shimmer Mixing, Grinding, Heating, Preparation)
-  - Advanced shimmer combination mechanics for creating tracking compounds
-  - Cauldron management with careful ingredient sequencing to prevent explosions
-  - Reset functionality for safe experimentation with dangerous chemicals
-  - Real-time feedback on chemical reactions and safety warnings
+  - Drag-and-drop ingredient manipulation
+  - Access to 4 processing stations (Mixing, Mortar & Pestle, Heating, Cutting Board)
+  - Advanced combination mechanics for creating new ingredients
+  - Cauldron management with 3-ingredient capacity
+  - Reset functionality for experimentation
+  - Real-time feedback on processing actions and mistakes
 
 ## Game Mechanics
 
@@ -87,42 +87,40 @@ Four specialized stations arranged horizontally for maximum efficiency:
 - **Visual Feedback**: Golden drop zone with hover effects
 - **Submission**: "Brew Potion" button appears when ingredients are added
 
-### Shimmer Residue Tracer Formula
+### Recipe Solution
 
-**Renni's Shimmer Residue Tracer** requires a complex 4-step process with dangerous shimmer chemistry:
+**Tracer Potion** now requires a complex 4-step process with ingredient combination:
 
-#### **Step 1: Shimmer Base Creation**
-- **Ingredients**: Raw Shimmer Crystal + Stabilizing Agent
-- **Station**: ⚗️ Shimmer Mixing Station (HAZARDOUS!)
-- **Action**: Carefully combine volatile ingredients → Click "⚗️ Stabilize"
-- **Result**: Creates **Diluted Shimmer Base** (Mixed state)
-- **Warning**: Improper mixing can cause toxic vapors
+#### **Step 1: Magical Combination**
+- **Ingredients**: Shimmer Crystal + Hex Berries
+- **Station**: ⚗️ Mixing Station (NEW!)
+- **Action**: Drag both ingredients to mixing station → Click "✨ Combine"
+- **Result**: Creates **Shimmer Essence** (Mixed state)
 
-#### **Step 2: Base Concentration**
-- **Ingredient**: Diluted Shimmer Base (from Step 1)
+#### **Step 2: Essence Stabilization**
+- **Ingredient**: Shimmer Essence (from Step 1)
 - **Station**: 🔥 Heating Station
-- **Action**: Carefully heat to concentrate the shimmer compounds without triggering volatility
-- **Result**: **Concentrated Shimmer Tracer**
+- **Action**: Heat the volatile essence to stabilize it
+- **Result**: **Heated Shimmer Essence**
 
-#### **Step 3: Catalyst Preparation**
-- **Ingredient**: Detection Mineral
-- **Station**: 🔪 Preparation Station
-- **Action**: Precisely cut the mineral to release detection properties
-- **Result**: **Prepared Detection Catalyst**
+#### **Step 3: Mushroom Preparation**
+- **Ingredient**: Zaun Grey Mushroom
+- **Station**: 🔪 Cutting Board
+- **Action**: Precisely chop into uniform pieces
+- **Result**: **Chopped Zaun Grey**
 
-#### **Step 4: Final Tracer Synthesis**
+#### **Step 4: Final Brewing**
 - **Cauldron Contents** (in order):
-  1. Concentrated Shimmer Tracer
-  2. Prepared Detection Catalyst
-  3. Chemical Activator (Raw - triggers the detection reaction)
-- **Action**: Click "🔬 Synthesize Tracer"
+  1. Heated Shimmer Essence
+  2. Chopped Zaun Grey  
+  3. Vial of Tears (Raw - acts as catalyst)
+- **Action**: Click "✨ Brew Potion"
 
 **Success Criteria**:
-- Must complete shimmer stabilization step first (2 dangerous ingredients → 1 safe compound)
-- Stabilized compound must be concentrated through careful heating
-- All 3 final components must be added to cauldron in precise order to prevent reaction failure
+- Must complete combination step first (2 ingredients → 1 combined ingredient)
+- Combined ingredient must be further processed (heated)
+- All 3 final ingredients must be added to cauldron in correct order
 - Server validates the complete 4-step process
-- **Story Result**: Successfully creating the tracer reveals glowing purple footprints throughout the lab - Jinx has been here!
 
 ## Technical Implementation
 
@@ -222,12 +220,11 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 - **Flexbox Architecture**: Stations use flexible layouts preventing UI cutoff
 
 ### Educational Value
-- **Chemical Safety**: Learn about handling dangerous substances and following safety protocols
-- **Collaboration Under Pressure**: Requires clear communication when working with volatile materials
-- **Following Complex Instructions**: Practice reading and implementing multi-step scientific procedures
-- **Problem Solving**: Troubleshoot chemical reactions and understand why certain sequences matter
-- **Scientific Method**: Understanding how chemical compounds interact and the importance of precision in laboratory work
-- **Story Integration**: See how character motivations drive scientific investigation and discovery
+- **Complex Process Understanding**: Learn multi-step ingredient transformation
+- **Collaboration Skills**: Requires clear communication between players
+- **Following Instructions**: Practice reading and implementing complex procedures
+- **Problem Solving**: Troubleshoot mistakes and retry failed attempts
+- **Chemical Combination Logic**: Understanding how ingredients interact
 
 ## Development Lessons Learned
 
