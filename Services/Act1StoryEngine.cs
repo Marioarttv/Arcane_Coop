@@ -1989,30 +1989,8 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
                 },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "Work fast. If Renni went to all this trouble, it means she knew someone would come looking.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
-                },
-                new DialogueLine
-                {
-                    CharacterId = "kira",
-                    Text = "Please... just find her. She's all I have left.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "We will. I promise.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
+             
+             
 
                 // Transition to Code Cracker
                 new DialogueLine
@@ -2286,7 +2264,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "radio",
-                    Text = "Explosion at old Shimmer refinement facility, level three. Blue-haired suspect seen entering...",
+                    Text = "Explosion at the old Shimmer refinement facility.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 35
                 },
@@ -2317,7 +2295,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "kira",
-                    Text = "Wait! Take me with you!",
+                    Text = "Wait! Take me with you please!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Worried
@@ -2404,28 +2382,13 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
                 },
-                new DialogueLine
-                {
-                    CharacterId = "caitlyn",
-                    Text = "We need to be smart about this. If Jinx set off explosions, the place could be unstable.",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
-                },
-                new DialogueLine
-                {
-                    CharacterId = "vi",
-                    Text = "I don't care. Renni might be in there. The other scientists too. And Jinx...",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
-                },
+               
 
                 // Transition to Shimmer Factory
                 new DialogueLine
                 {
                     CharacterId = "narrator",
-                    Text = "The team arrives at the abandoned shimmer factory. Next: Infiltrating the factory using Renni's map - Navigation Maze puzzle where Player A guides Player B through the factory.",
+                    Text = "The team arrives at the abandoned shimmer factory.",
                     AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30
                 }
