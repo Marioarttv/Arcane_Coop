@@ -1661,6 +1661,8 @@ new DialogueLine
                     DisplayName = "Kira",
                     ImagePath = "/images/Characters/Kira/kira_default.png",
                     Position = CharacterPosition.Center,
+                    HiddenUntilFirstLine = true,  // She won't appear until she speaks
+                    IsVisible = false,  // Initially hidden
                     ThemeColor = "#00d4aa",
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
@@ -1702,7 +1704,9 @@ new DialogueLine
                     Text = "Place looks abandoned. Shop's been closed for days by the look of it.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/line70.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1710,7 +1714,9 @@ new DialogueLine
                     Text = "The lock's been forced. Recently. Someone's been here.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line115.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1726,14 +1732,18 @@ new DialogueLine
                     Text = "Only one way to find out.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/line72.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
                     CharacterId = "narrator",
                     Text = "They climb the stairs to the apartment. Vi knocks firmly",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/sfx/11L-knocks_firmly_on_a_w-1756345446801.mp3",
+                    SoundEffectVolume = 0.8f
                 },
                 new DialogueLine
                 {
@@ -1741,14 +1751,18 @@ new DialogueLine
                     Text = "Hello? Anyone home? We're looking for Renni Stiltner!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line73.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
                     CharacterId = "narrator",
                     Text = "Footsteps inside. A young woman opens the door - eyes red from crying",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/SFX75.mp3",
+                    SoundEffectVolume = 0.8f
                 },
 
                 // Meeting Kira
@@ -1758,7 +1772,9 @@ new DialogueLine
                     Text = "Who are you? What do you want?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line76.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1766,7 +1782,9 @@ new DialogueLine
                     Text = "I'm Caitlyn Kiramman. We're here about your sister.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line75.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1774,7 +1792,9 @@ new DialogueLine
                     Text = "You're too late. She's gone. Left three days ago after someone torched her workshop.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line78.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1782,7 +1802,9 @@ new DialogueLine
                     Text = "Three days? Where did she go?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line79.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1790,7 +1812,9 @@ new DialogueLine
                     Text = "If I knew that, would I be standing here? First Werner gets attacked, then the enforcers show up offering 'protection,' and Renni just... vanishes.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line80.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1806,7 +1830,9 @@ new DialogueLine
                     Text = "Trust them? Deputy Stanton couldn't even look me in the eye. Kept talking about 'containing the situation.' Renni was right not to go with them.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line81.mp3",
+                    VoiceLineVolume = 1.0f
                 },
 
                 // The Discovery
@@ -1824,7 +1850,9 @@ new DialogueLine
                     Text = "In danger? She's probably already dead! Just like Werner, just like the others!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line82.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1832,7 +1860,9 @@ new DialogueLine
                     Text = "Hey. Look at me. We're not with Stanton. We're trying to stop whoever's hunting them.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line83.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1840,7 +1870,9 @@ new DialogueLine
                     Text = "You're from down here. I can tell. Why do you care?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Confused
+                    SpeakerExpression = CharacterExpression.Confused,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line84.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1848,7 +1880,9 @@ new DialogueLine
                     Text = "Because the person doing this... she's my sister. And I need to stop her before she does something she can't take back.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line85.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1856,7 +1890,9 @@ new DialogueLine
                     Text = "Your sister? I... I'm sorry.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line86.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1864,7 +1900,9 @@ new DialogueLine
                     Text = "Kira, did Renni leave anything? Any clue about where she might go?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line87.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1872,14 +1910,18 @@ new DialogueLine
                     Text = "She... wait. She was paranoid, but smart. Said if anything happened, she'd leave me a way to find her.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Surprised,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line88.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
                     CharacterId = "narrator",
                     Text = "Kira retrieves a crumpled paper from a drawer",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/SFX89.mp3",
+                    SoundEffectVolume = 0.8f
                 },
                 new DialogueLine
                 {
@@ -1887,7 +1929,9 @@ new DialogueLine
                     Text = "Found this under my door yesterday. Just looks like her old study notes - definitions, word games we used to play as kids. Made no sense to me.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Confused
+                    SpeakerExpression = CharacterExpression.Confused,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line90.mp3",
+                    VoiceLineVolume = 1.0f
                 },
 
                 // Discovering the Wall
@@ -1905,7 +1949,9 @@ new DialogueLine
                     Text = "That's what I thought! But why would she—",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Confused
+                    SpeakerExpression = CharacterExpression.Confused,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line91.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1920,7 +1966,9 @@ new DialogueLine
                     CharacterId = "narrator",
                     Text = "They rush to Renni's bedroom",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/sfx/11L-People_rushing_somew-1756346412189.mp3",
+                    SoundEffectVolume = 1.4f
                 },
                 new DialogueLine
                 {
@@ -1928,7 +1976,9 @@ new DialogueLine
                     Text = "The wall... it's covered in graffiti.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
+                    SpeakerExpression = CharacterExpression.Surprised,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line92.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1936,7 +1986,9 @@ new DialogueLine
                     Text = "Not graffiti. It's a message. Look - words with missing letters.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line93.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1963,7 +2015,9 @@ new DialogueLine
                     Text = "You can solve it? You can find her?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line94.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -1971,7 +2025,9 @@ new DialogueLine
                     Text = $"We'll figure it out. {zaunPlayerName}, you have the definitions. {piltoverPlayerName}, you can see the wall clearly.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line95.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2179,7 +2235,9 @@ new DialogueLine
                     Text = "Why would she go there?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Confused
+                    SpeakerExpression = CharacterExpression.Confused,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line96.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2187,7 +2245,9 @@ new DialogueLine
                     Text = "She wasn't leaving you a hideout location...",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line98.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2195,16 +2255,11 @@ new DialogueLine
                     Text = "She was telling you where she was going. She went to investigate.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line99.mp3",
+                    VoiceLineVolume = 1.0f
                 },
-                new DialogueLine
-                {
-                    CharacterId = "kira",
-                    Text = "Wait, that's... she wouldn't. That message wasn't FOR me to follow. It's where she was heading!",
-                    AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Surprised
-                },
+               
                 new DialogueLine
                 {
                     CharacterId = "playerA",
@@ -2219,7 +2274,9 @@ new DialogueLine
                     Text = "She figured out where the others were taken and she... oh no, Renni, you brave fool.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line100.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2227,7 +2284,9 @@ new DialogueLine
                     Text = "She went alone? When?",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line101.mp3",
+                    VoiceLineVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2235,7 +2294,9 @@ new DialogueLine
                     Text = "The note appeared yesterday morning, so... she's been gone at least a day.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    VoiceLine = "/audio/voicelines/PostCodeCracker/Line102.mp3",
+                    VoiceLineVolume = 1.0f
                 },
 
                 // The Explosion
@@ -2244,7 +2305,9 @@ new DialogueLine
                     CharacterId = "narrator",
                     Text = "A distant explosion rattles the windows. Orange glow on the horizon",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/SFX103.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2259,14 +2322,18 @@ new DialogueLine
                     CharacterId = "narrator",
                     Text = "Player A's radio crackles to life",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                    SoundEffect = "/audio/sfx/11L-A_radio_crackling_to-1756346684887.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
                     CharacterId = "radio",
-                    Text = "Explosion at the old Shimmer refinement facility.",
+                    Text = "Explosion at the old Shimmer refinement...",
                     AnimationType = TextAnimationType.Typewriter,
-                    TypewriterSpeed = 35
+                    TypewriterSpeed = 35,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/ElevenLabs_2025-08-28T02_06_58_Sound Effect.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2274,7 +2341,9 @@ new DialogueLine
                     Text = "Jinx. She's there!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line105.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2282,7 +2351,9 @@ new DialogueLine
                     Text = "If Renni's there too...",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line106.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2290,7 +2361,9 @@ new DialogueLine
                     Text = "We go. NOW!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line107.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2298,7 +2371,9 @@ new DialogueLine
                     Text = "Wait! Take me with you please!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line108.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2306,7 +2381,9 @@ new DialogueLine
                     Text = "No. It's too dangerous. Stay here, lock the doors.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line109.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2322,7 +2399,9 @@ new DialogueLine
                     Text = "Please... save her. Please.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line110.mp3",
+                    SoundEffectVolume = 1.0f
                 },
 
                 // Racing to the Factory
@@ -2340,7 +2419,9 @@ new DialogueLine
                     Text = "Jinx is there. After all this time... she's right there.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line111.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2348,7 +2429,9 @@ new DialogueLine
                     Text = "Vi, remember - she's not the Powder you knew. She's dangerous now.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line112.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2356,7 +2439,9 @@ new DialogueLine
                     Text = "I know. But she's still my sister. I have to try.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Sad
+                    SpeakerExpression = CharacterExpression.Sad,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line113.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2372,7 +2457,9 @@ new DialogueLine
                     Text = "They're not. They can't be. Silco needs them alive for something.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Angry
+                    SpeakerExpression = CharacterExpression.Angry,
+                    SoundEffect = "/audio/voicelines/PostCodeCracker/Line114.mp3",
+                    SoundEffectVolume = 1.0f
                 },
                 new DialogueLine
                 {
@@ -2413,7 +2500,7 @@ new DialogueLine
             {
                 Id = "shimmer_factory_entrance",
                 Name = "The Shimmer Factory",
-                Layout = SceneLayout.DualCharacters,
+                Layout = SceneLayout.FourCharacters,
                 Theme = NovelTheme.Zaun
             };
 
@@ -3402,7 +3489,8 @@ new DialogueLine
             var player = game.GetPlayer(playerId);
             if (player == null) return new Act1PlayerView();
 
-            var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
+            var playersSnapshot = game.Players.ToArray();
+            var connectedPlayers = playersSnapshot.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
 
             // Pending choice detection
             DialogueLine? pendingChoice = null;
@@ -3455,7 +3543,7 @@ new DialogueLine
                 ChoiceHistory = game.ChoiceHistory,
                 StatusMessage = game.Status switch
                 {
-                    Act1GameStatus.WaitingForPlayers => $"Waiting for players... ({game.Players.Count}/2)",
+                    Act1GameStatus.WaitingForPlayers => $"Waiting for players... ({playersSnapshot.Length}/2)",
                     Act1GameStatus.InProgress => isWaitingForOtherPlayer ? "Waiting for partner's choice..." : "Story in progress",
                     Act1GameStatus.SceneTransition => $"Transitioning to {game.NextGameName}...",
                     Act1GameStatus.Completed => "Act 1 completed",
@@ -3503,7 +3591,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Signal Decoder
                         var signalDecoderUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot1 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot1)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromScene3";
@@ -3548,7 +3637,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Code Cracker
                         var codeCrackerUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot2 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot2)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromRenniApartment";
@@ -3593,7 +3683,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Navigation Maze
                         var navigationMazeUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot3 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot3)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromCodeDecoded";
@@ -3614,7 +3705,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Picture Explanation
                         var pictureUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot4 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot4)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromScene1and2";
@@ -3647,7 +3739,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Alchemy Lab
                         var alchemyUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot5 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot5)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromEmptyCells";
@@ -3716,7 +3809,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Rune Protocol
                         var runeUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot6 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot6)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromJayceWorkshop";
@@ -3749,7 +3843,8 @@ new DialogueLine
 
                         // Build per-player redirect URLs to Word Forge
                         var wordForgeUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot7 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot7)
                         {
                             var parameters =
                                 $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromBombDefused";
@@ -3793,7 +3888,8 @@ new DialogueLine
                         result.NextGameName = game.NextGameName;
 
                         var finalPuzzleUrls = new Dictionary<string, string>();
-                        foreach (var p in game.Players)
+                        var playersSnapshot8 = game.Players.ToArray();
+                        foreach (var p in playersSnapshot8)
                         {
                             var parameters = $"role={p.PlayerRole}&avatar={p.PlayerAvatar}&name={Uri.EscapeDataString(p.PlayerName)}&squad={Uri.EscapeDataString(p.OriginalSquadName)}&story=true&transition=FromWarehouse";
                             finalPuzzleUrls[p.PlayerId] = $"/finalpuzzle?{parameters}";

@@ -1817,11 +1817,14 @@ public class GameHub : Hub
     {
         if (!_visualNovelGames.TryGetValue(roomId, out var game)) return;
         
-        foreach (var player in game.Players)
+        var playersSnapshot = game.Players.ToArray();
+        var tasks = new List<Task>(playersSnapshot.Length);
+        foreach (var player in playersSnapshot)
         {
             var playerView = CreatePlayerView(game, player.PlayerId);
-            await Clients.Client(player.PlayerId).SendAsync("VisualNovelPlayerViewUpdated", playerView);
+            tasks.Add(Clients.Client(player.PlayerId).SendAsync("VisualNovelPlayerViewUpdated", playerView));
         }
+        await Task.WhenAll(tasks);
     }
 
     private VisualNovelPlayerView CreatePlayerView(VisualNovelMultiplayerGame game, string playerId)
@@ -1829,7 +1832,8 @@ public class GameHub : Hub
         var player = game.GetPlayer(playerId);
         if (player == null) return new VisualNovelPlayerView();
         
-        var connectedPlayers = game.Players.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
+        var playersSnapshot = game.Players.ToArray();
+        var connectedPlayers = playersSnapshot.Where(p => p.IsConnected).Select(p => p.PlayerName).ToList();
         
         return new VisualNovelPlayerView
         {
@@ -2728,11 +2732,14 @@ public class GameHub : Hub
     {
         if (!_act1Games.TryGetValue(roomId, out var game)) return;
         
-        foreach (var player in game.Players)
+        var playersSnapshot = game.Players.ToArray();
+        var tasks = new List<Task>(playersSnapshot.Length);
+        foreach (var player in playersSnapshot)
         {
             var playerView = CreateAct1PlayerView(game, player.PlayerId);
-            await Clients.Client(player.PlayerId).SendAsync("Act1PlayerViewUpdated", playerView);
+            tasks.Add(Clients.Client(player.PlayerId).SendAsync("Act1PlayerViewUpdated", playerView));
         }
+        await Task.WhenAll(tasks);
     }
 
     private Act1PlayerView CreateAct1PlayerView(Act1MultiplayerGame game, string playerId)
