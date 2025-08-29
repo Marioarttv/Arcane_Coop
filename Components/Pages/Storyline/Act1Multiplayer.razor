@@ -184,6 +184,11 @@
                         <span class="audio-icon">🎵</span>
                     </button>
                     <span class="audio-label">Music</span>
+                    <div class="audio-slider-wrap">
+                        <input type="range" min="0" max="100" step="1" value="@musicLevel" class="audio-slider"
+                               @oninput="HandleMusicInput" />
+                        <span class="audio-slider-value">@((int)musicLevel)%</span>
+                    </div>
                 </div>
                 <div class="audio-control-item">
                     <button class="audio-btn @GetThemeClass() @(sfxMuted ? "muted" : "")" 
@@ -192,6 +197,11 @@
                         <span class="audio-icon">🔊</span>
                     </button>
                     <span class="audio-label">SFX</span>
+                    <div class="audio-slider-wrap">
+                        <input type="range" min="0" max="100" step="1" value="@sfxLevel" class="audio-slider"
+                               @oninput="HandleSfxInput" />
+                        <span class="audio-slider-value">@((int)sfxLevel)%</span>
+                    </div>
                 </div>
                 <div class="audio-control-item">
                     <button class="audio-btn @GetThemeClass() @(voiceMuted ? "muted" : "")" 
@@ -200,6 +210,11 @@
                         <span class="audio-icon">🎤</span>
                     </button>
                     <span class="audio-label">Voice</span>
+                    <div class="audio-slider-wrap">
+                        <input type="range" min="0" max="100" step="1" value="@voiceLevel" class="audio-slider"
+                               @oninput="HandleVoiceInput" />
+                        <span class="audio-slider-value">@((int)voiceLevel)%</span>
+                    </div>
                 </div>
                 <div class="audio-control-item">
                     <button class="audio-btn @GetThemeClass() @(allMuted ? "muted" : "")" 
@@ -365,6 +380,14 @@
     private float originalMusicVolume = 0.7f;
     private float originalSfxVolume = 0.8f;
     private float originalVoiceVolume = 1.0f;
+    // Slider UI state: 0-100 display levels, persisted via JS localStorage in audioManager
+    private double musicLevel = 100;
+    private double sfxLevel = 100;
+    private double voiceLevel = 100;
+    // Remember last non-zero slider levels for restoring after unmute
+    private double lastNonZeroMusicLevel = 100;
+    private double lastNonZeroSfxLevel = 100;
+    private double lastNonZeroVoiceLevel = 100;
     
     // Voice line management
     private bool isHandlingAudio = false;
@@ -394,6 +417,46 @@
         SetupSignalRHandlers();
         await hubConnection.StartAsync();
         
+        // Initialize slider values from JS status if available
+        try
+        {
+            var status = await JSRuntime.InvokeAsync<object>("audioManager.getStatus");
+            if (status is not null)
+            {
+                // Using JS interop dynamic would require dynamic binder; instead query localStorage directly
+                var music = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_music");
+                var sfx = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_sfx");
+                var voice = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_voice");
+                if (double.TryParse(music, out var m)) musicLevel = Math.Clamp(m * 100.0, 0, 100);
+                if (double.TryParse(sfx, out var s)) sfxLevel = Math.Clamp(s * 100.0, 0, 100);
+                if (double.TryParse(voice, out var v)) voiceLevel = Math.Clamp(v * 100.0, 0, 100);
+            }
+        }
+        catch { }
+
+        // If URL carries explicit volume params, override and apply them
+        try
+        {
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            if (double.TryParse(query["musicVol"], out var mv))
+            {
+                musicLevel = Math.Clamp(mv * 100.0, 0, 100);
+                await AudioManager.SetMusicVolumeMultiplierAsync((float)mv);
+            }
+            if (double.TryParse(query["sfxVol"], out var sv))
+            {
+                sfxLevel = Math.Clamp(sv * 100.0, 0, 100);
+                await AudioManager.SetSfxVolumeMultiplierAsync((float)sv);
+            }
+            if (double.TryParse(query["voiceVol"], out var vv))
+            {
+                voiceLevel = Math.Clamp(vv * 100.0, 0, 100);
+                await AudioManager.SetVoiceVolumeMultiplierAsync((float)vv);
+            }
+        }
+        catch { }
+
         // Auto-join the game room
         if (!string.IsNullOrEmpty(currentRoomId))
         {
@@ -538,11 +601,13 @@
 
         hubConnection.On<string>("Act1RedirectToNextGame", async (url) =>
         {
+            // Append current volume settings as URL parameters before navigating
+            var finalUrl = AppendVolumeParams(url);
             await InvokeAsync(() =>
             {
-                Console.WriteLine($"[Act1Multiplayer] Redirecting to next game: {url}");
+                Console.WriteLine($"[Act1Multiplayer] Redirecting to next game: {finalUrl}");
                 hasNavigatedToNextGame = true;
-                NavigationManager.NavigateTo(url);
+                NavigationManager.NavigateTo(finalUrl);
             });
         });
 
@@ -1139,6 +1204,20 @@
         Console.WriteLine($"[Act1Multiplayer] Using ultimate fallback - nextSceneIndex {nextSceneIndex} >= storyProgression.Length {storyProgression.Length}");
         return $"/picture-explanation?role={playerRole}&avatar={playerAvatar}&name={nameParam}&squad={squadParam}&story=true&transition=FromScene1and2";
     }
+
+    // Append current per-channel volumes to an existing URL (0-1 floats)
+    private string AppendVolumeParams(string url)
+    {
+        try
+        {
+            var sep = url.Contains("?") ? "&" : "?";
+            var mv = Math.Clamp(musicLevel / 100.0, 0, 1);
+            var sv = Math.Clamp(sfxLevel / 100.0, 0, 1);
+            var vv = Math.Clamp(voiceLevel / 100.0, 0, 1);
+            return $"{url}{sep}musicVol={mv:F2}&sfxVol={sv:F2}&voiceVol={vv:F2}";
+        }
+        catch { return url; }
+    }
     
     // Choice-related methods
     private async Task MakeChoice(string choiceId)
@@ -1195,10 +1274,20 @@
             {
                 // Also ensure any current music is silent immediately
                 await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
+                // Zero slider and multiplier when muting
+                musicLevel = 0;
+                await AudioManager.SetMusicVolumeMultiplierAsync(0f);
                 Console.WriteLine("[Act1Multiplayer] Music muted - set volume to 0 and persisted");
             }
             else
             {
+                // If slider is at 0, restore to last non-zero level
+                if (musicLevel <= 0)
+                {
+                    if (lastNonZeroMusicLevel <= 0) lastNonZeroMusicLevel = 100;
+                    musicLevel = lastNonZeroMusicLevel;
+                    await AudioManager.SetMusicVolumeMultiplierAsync((float)(musicLevel / 100.0));
+                }
                 // Restore original volume immediately
                 await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
                 // Ensure existing track resumes if it was paused/stopped
@@ -1217,6 +1306,41 @@
         StateHasChanged();
     }
 
+    private async Task HandleMusicInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        musicLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(musicLevel / 100.0);
+        try
+        {
+            await AudioManager.SetMusicVolumeMultiplierAsync(multiplier);
+            if (musicLevel <= 0)
+            {
+                musicMuted = true;
+                await AudioManager.SetMusicMutedAsync(true);
+            }
+            else
+            {
+                lastNonZeroMusicLevel = musicLevel;
+                if (musicMuted)
+                {
+                    musicMuted = false;
+                    await AudioManager.SetMusicMutedAsync(false);
+                }
+                // Ensure active music reflects multiplier combined with original base volume
+                await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
+                await AudioManager.ResumeBackgroundMusicIfAnyAsync(originalMusicVolume);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error setting music slider: {ex.Message}");
+        }
+        allMuted = musicMuted && sfxMuted && voiceMuted;
+        StateHasChanged();
+    }
+
     private async Task ToggleSfxMute()
     {
         sfxMuted = !sfxMuted;
@@ -1229,10 +1353,19 @@
             {
                 // Stop all currently playing sound effects immediately
                 await AudioManager.StopAllSoundEffectsAsync();
+                // Zero slider and multiplier when muting
+                sfxLevel = 0;
+                await AudioManager.SetSfxVolumeMultiplierAsync(0f);
                 Console.WriteLine("[Act1Multiplayer] SFX muted - stopped all current sound effects and persisted");
             }
             else
             {
+                if (sfxLevel <= 0)
+                {
+                    if (lastNonZeroSfxLevel <= 0) lastNonZeroSfxLevel = 100;
+                    sfxLevel = lastNonZeroSfxLevel;
+                    await AudioManager.SetSfxVolumeMultiplierAsync((float)(sfxLevel / 100.0));
+                }
                 Console.WriteLine("[Act1Multiplayer] SFX unmuted - new sound effects will play and persisted");
             }
         }
@@ -1244,6 +1377,38 @@
         // Update allMuted state based on individual states
         allMuted = musicMuted && sfxMuted && voiceMuted;
         
+        StateHasChanged();
+    }
+
+    private async Task HandleSfxInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        sfxLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(sfxLevel / 100.0);
+        try
+        {
+            await AudioManager.SetSfxVolumeMultiplierAsync(multiplier);
+            if (sfxLevel <= 0)
+            {
+                sfxMuted = true;
+                await AudioManager.SetSfxMutedAsync(true);
+            }
+            else
+            {
+                lastNonZeroSfxLevel = sfxLevel;
+                if (sfxMuted)
+                {
+                    sfxMuted = false;
+                    await AudioManager.SetSfxMutedAsync(false);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error setting sfx slider: {ex.Message}");
+        }
+        allMuted = musicMuted && sfxMuted && voiceMuted;
         StateHasChanged();
     }
 
@@ -1259,10 +1424,19 @@
             {
                 // Stop all currently playing voice lines immediately
                 await AudioManager.StopAllVoiceLinesAsync();
+                // Zero slider and multiplier when muting
+                voiceLevel = 0;
+                await AudioManager.SetVoiceVolumeMultiplierAsync(0f);
                 Console.WriteLine("[Act1Multiplayer] Voice muted - stopped all current voice lines and persisted");
             }
             else
             {
+                if (voiceLevel <= 0)
+                {
+                    if (lastNonZeroVoiceLevel <= 0) lastNonZeroVoiceLevel = 100;
+                    voiceLevel = lastNonZeroVoiceLevel;
+                    await AudioManager.SetVoiceVolumeMultiplierAsync((float)(voiceLevel / 100.0));
+                }
                 Console.WriteLine("[Act1Multiplayer] Voice unmuted - new voice lines will play and persisted");
             }
         }
@@ -1274,6 +1448,38 @@
         // Update allMuted state based on individual states
         allMuted = musicMuted && sfxMuted && voiceMuted;
         
+        StateHasChanged();
+    }
+
+    private async Task HandleVoiceInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        voiceLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(voiceLevel / 100.0);
+        try
+        {
+            await AudioManager.SetVoiceVolumeMultiplierAsync(multiplier);
+            if (voiceLevel <= 0)
+            {
+                voiceMuted = true;
+                await AudioManager.SetVoiceMutedAsync(true);
+            }
+            else
+            {
+                lastNonZeroVoiceLevel = voiceLevel;
+                if (voiceMuted)
+                {
+                    voiceMuted = false;
+                    await AudioManager.SetVoiceMutedAsync(false);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error setting voice slider: {ex.Message}");
+        }
+        allMuted = musicMuted && sfxMuted && voiceMuted;
         StateHasChanged();
     }
 
@@ -1352,9 +1558,10 @@
                 
                 // Determine the correct next game URL based on the current scene progression
                 var url = GetFallbackTransitionUrl(nameParam, squadParam);
-                Console.WriteLine($"[Act1Multiplayer] Fallback redirect triggering to: {url}");
+                var finalUrl = AppendVolumeParams(url);
+                Console.WriteLine($"[Act1Multiplayer] Fallback redirect triggering to: {finalUrl}");
                 hasNavigatedToNextGame = true;
-                NavigationManager.NavigateTo(url);
+                NavigationManager.NavigateTo(finalUrl);
             }
             else
             {
@@ -2813,6 +3020,60 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
+}
+
+.audio-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 140px;
+}
+
+.audio-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 110px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    outline: none;
+    border-radius: 2px;
+}
+
+.audio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8aa6e;
+    border: 1px solid rgba(0,0,0,0.4);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.zaun .audio-slider::-webkit-slider-thumb {
+    background: #00d4aa;
+}
+
+.audio-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8aa6e;
+    border: 1px solid rgba(0,0,0,0.4);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.zaun .audio-slider::-moz-range-thumb {
+    background: #00d4aa;
+}
+
+.audio-slider-value {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    width: 30px;
+    text-align: right;
 }
 
 .audio-btn {

@@ -2,6 +2,8 @@
 @page "/visual-novel/{theme}"
 @using Arcane_Coop.Models
 @inject IJSRuntime JSRuntime
+@inject Arcane_Coop.Services.IAudioManager AudioManager
+@inject NavigationManager NavigationManager
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -19,6 +21,35 @@
 <div class="visual-novel @GetThemeClass()">
     @if (currentScene != null)
     {
+        @* Apply incoming volume parameters (if any) on first render *@
+        
+        <!-- Audio Controls -->
+        <div class="audio-controls @GetThemeClass()">
+            <div class="audio-control-item">
+                <span class="audio-label">Music</span>
+                <div class="audio-slider-wrap">
+                    <input type="range" min="0" max="100" step="1" value="@musicLevel" class="audio-slider"
+                           @oninput="HandleMusicInput" />
+                    <span class="audio-slider-value">@((int)musicLevel)%</span>
+                </div>
+            </div>
+            <div class="audio-control-item">
+                <span class="audio-label">SFX</span>
+                <div class="audio-slider-wrap">
+                    <input type="range" min="0" max="100" step="1" value="@sfxLevel" class="audio-slider"
+                           @oninput="HandleSfxInput" />
+                    <span class="audio-slider-value">@((int)sfxLevel)%</span>
+                </div>
+            </div>
+            <div class="audio-control-item">
+                <span class="audio-label">Voice</span>
+                <div class="audio-slider-wrap">
+                    <input type="range" min="0" max="100" step="1" value="@voiceLevel" class="audio-slider"
+                           @oninput="HandleVoiceInput" />
+                    <span class="audio-slider-value">@((int)voiceLevel)%</span>
+                </div>
+            </div>
+        </div>
         <!-- Background -->
         <div class="scene-background @GetBackgroundClass() @GetBackgroundTransitionClass()">
             @if (!string.IsNullOrEmpty(GetCurrentBackgroundImage()))
@@ -167,6 +198,10 @@
     private HashSet<string> preloadedBackgrounds = new();
     private readonly object backgroundLock = new();
     private string? lastSceneId = null;
+    // Audio sliders state (0-100)
+    private double musicLevel = 100;
+    private double sfxLevel = 100;
+    private double voiceLevel = 100;
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,6 +215,18 @@
             if (Enum.TryParse<NovelTheme>(Theme, true, out var themeEnum))
                 config.Theme = themeEnum;
         }
+
+        // Initialize persisted audio slider values
+        try
+        {
+            var music = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_music");
+            var sfx = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_sfx");
+            var voice = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_voice");
+            if (double.TryParse(music, out var m)) musicLevel = Math.Clamp(m * 100.0, 0, 100);
+            if (double.TryParse(sfx, out var s)) sfxLevel = Math.Clamp(s * 100.0, 0, 100);
+            if (double.TryParse(voice, out var v)) voiceLevel = Math.Clamp(v * 100.0, 0, 100);
+        }
+        catch { }
 
         // Initialize scene
         if (Scene != null)
@@ -208,12 +255,82 @@
         }
     }
 
+    private async Task HandleMusicInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        musicLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(musicLevel / 100.0);
+        try
+        {
+            await AudioManager.SetMusicVolumeMultiplierAsync(multiplier);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[VisualNovel] Error setting music slider: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSfxInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        sfxLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(sfxLevel / 100.0);
+        try
+        {
+            await AudioManager.SetSfxVolumeMultiplierAsync(multiplier);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[VisualNovel] Error setting sfx slider: {ex.Message}");
+        }
+    }
+
+    private async Task HandleVoiceInput(ChangeEventArgs e)
+    {
+        if (e.Value is null) return;
+        if (!double.TryParse(e.Value.ToString(), out var val)) return;
+        voiceLevel = Math.Clamp(val, 0, 100);
+        var multiplier = (float)(voiceLevel / 100.0);
+        try
+        {
+            await AudioManager.SetVoiceVolumeMultiplierAsync(multiplier);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[VisualNovel] Error setting voice slider: {ex.Message}");
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             // Small delay to ensure proper rendering before starting text animation
             await Task.Delay(100);
+            // If query contains musicVol/sfxVol/voiceVol, apply to AudioManager and UI
+            try
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                if (double.TryParse(query["musicVol"], out var mv))
+                {
+                    musicLevel = Math.Clamp(mv * 100.0, 0, 100);
+                    await AudioManager.SetMusicVolumeMultiplierAsync((float)mv);
+                }
+                if (double.TryParse(query["sfxVol"], out var sv))
+                {
+                    sfxLevel = Math.Clamp(sv * 100.0, 0, 100);
+                    await AudioManager.SetSfxVolumeMultiplierAsync((float)sv);
+                }
+                if (double.TryParse(query["voiceVol"], out var vv))
+                {
+                    voiceLevel = Math.Clamp(vv * 100.0, 0, 100);
+                    await AudioManager.SetVoiceVolumeMultiplierAsync((float)vv);
+                }
+            }
+            catch { }
             if (currentDialogue != null && !isDisposed)
             {
                 await StartTextAnimation();
@@ -814,6 +931,93 @@
 
 .visual-novel.zaun {
     background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+}
+
+/********************************************
+ * Audio Controls (sliders)
+ ********************************************/
+.audio-controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.audio-control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.audio-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.audio-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 150px;
+}
+
+.audio-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 120px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    outline: none;
+    border-radius: 2px;
+}
+
+.audio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8aa6e;
+    border: 1px solid rgba(0,0,0,0.4);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.visual-novel.zaun .audio-slider::-webkit-slider-thumb {
+    background: #00d4aa;
+}
+
+.audio-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8aa6e;
+    border: 1px solid rgba(0,0,0,0.4);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.visual-novel.zaun .audio-slider::-moz-range-thumb {
+    background: #00d4aa;
+}
+
+.audio-slider-value {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    width: 34px;
+    text-align: right;
 }
 
 /********************************************

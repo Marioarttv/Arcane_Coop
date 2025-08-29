@@ -4604,10 +4604,10 @@ public class NavigationMazeGame
             // Correct choice - advance to next location
             CurrentLocationId++;
             
-            if (CurrentLocationId >= LocationBank.Length - 1)
+            if (CurrentLocationId >= LocationBank.Length)
             {
-                // Reached the final location - victory!
-                CurrentLocationId = LocationBank.Length - 1; // Bridge to Piltover
+                // Completed all locations - victory!
+                CurrentLocationId = LocationBank.Length - 1; // Set to final location for display
                 IsCompleted = true;
                 return (true, LocationBank[CurrentLocationId].SuccessMessage);
             }

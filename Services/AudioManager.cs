@@ -17,6 +17,10 @@ namespace Arcane_Coop.Services
         Task StopAllAsync();
         Task SetGlobalVolumeAsync(float volume);
         Task SetBackgroundMusicVolumeAsync(float volume);
+        // Per-channel volume multipliers (persisted, override per-line volumes)
+        Task SetMusicVolumeMultiplierAsync(float multiplier);
+        Task SetSfxVolumeMultiplierAsync(float multiplier);
+        Task SetVoiceVolumeMultiplierAsync(float multiplier);
         Task PauseAllAsync();
         Task ResumeAllAsync();
         Task ResumeBackgroundMusicIfAnyAsync(float? volume = null);
@@ -214,6 +218,51 @@ namespace Arcane_Coop.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[AudioManager] Error setting background music volume: {ex.Message}");
+            }
+        }
+
+        public async Task SetMusicVolumeMultiplierAsync(float multiplier)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setMusicVolumeMultiplier", multiplier);
+                Console.WriteLine($"[AudioManager] Set music volume multiplier to: {multiplier}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting music volume multiplier: {ex.Message}");
+            }
+        }
+
+        public async Task SetSfxVolumeMultiplierAsync(float multiplier)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setSfxVolumeMultiplier", multiplier);
+                Console.WriteLine($"[AudioManager] Set sfx volume multiplier to: {multiplier}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting sfx volume multiplier: {ex.Message}");
+            }
+        }
+
+        public async Task SetVoiceVolumeMultiplierAsync(float multiplier)
+        {
+            if (!_isInitialized) await InitializeAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("audioManager.setVoiceVolumeMultiplier", multiplier);
+                Console.WriteLine($"[AudioManager] Set voice volume multiplier to: {multiplier}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AudioManager] Error setting voice volume multiplier: {ex.Message}");
             }
         }
 

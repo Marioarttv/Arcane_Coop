@@ -29,6 +29,28 @@ window.audioManager = (function () {
         voice: false,
         all: false
     };
+
+    // Persistent per-channel volume multipliers (0.0 - 1.0) that override per-line volumes
+    // Load from localStorage if available
+    function readStoredVolume(key, fallback) {
+        const raw = localStorage.getItem(key);
+        const num = raw !== null ? parseFloat(raw) : NaN;
+        if (isNaN(num)) return fallback;
+        return Math.max(0, Math.min(1, num));
+    }
+
+    const volumeMultipliers = {
+        music: readStoredVolume('audioVolume_music', 1.0),
+        sfx: readStoredVolume('audioVolume_sfx', 1.0),
+        voice: readStoredVolume('audioVolume_voice', 1.0)
+    };
+
+    // Base volume for current background music (pre-multiplier)
+    let baseMusicVolume = 1.0;
+
+    function clamp01(value) {
+        return Math.max(0, Math.min(1, value));
+    }
     
     // Initialize the audio manager
     function init() {
@@ -133,11 +155,14 @@ window.audioManager = (function () {
             tracks.backgroundMusic.unload();
         }
         
+        // Track and base volume (pre-multiplier)
+        baseMusicVolume = clamp01(volume);
+
         // Create and play new track
         tracks.backgroundMusic = new Howl({
             src: [src],
             loop: loop,
-            volume: fadeIn > 0 ? 0 : volume,
+            volume: fadeIn > 0 ? 0 : clamp01(baseMusicVolume * volumeMultipliers.music),
             html5: true, // Use HTML5 audio for better streaming
             preload: true,
             autoplay: false, // Don't autoplay, we'll call play() manually
@@ -160,13 +185,15 @@ window.audioManager = (function () {
             onplay: function() {
                 console.log(`[AudioManager] Background music started: ${src}`);
                 if (fadeIn > 0) {
-                    tracks.backgroundMusic.fade(0, volume, fadeIn);
+                    tracks.backgroundMusic.fade(0, clamp01(baseMusicVolume * volumeMultipliers.music), fadeIn);
                 }
             }
         });
         
         tracks.backgroundMusic.play();
         currentBackgroundMusic = src;
+        // Attach base volume so multiplier changes can be applied later
+        try { tracks.backgroundMusic._baseVolume = baseMusicVolume; } catch {}
     }
     
     // Stop background music with optional fade-out
@@ -217,9 +244,10 @@ window.audioManager = (function () {
         // Create unique ID for this sound effect instance
         const id = `sfx_${Date.now()}_${Math.random()}`;
         
+        const baseVolume = clamp01(volume);
         tracks.soundEffects[id] = new Howl({
             src: [src],
-            volume: volume,
+            volume: clamp01(baseVolume * volumeMultipliers.sfx),
             rate: rate,
             html5: false, // Use Web Audio for sound effects (better for short sounds)
             onend: function() {
@@ -248,6 +276,7 @@ window.audioManager = (function () {
         });
         
         tracks.soundEffects[id].play();
+        try { tracks.soundEffects[id]._baseVolume = baseVolume; } catch {}
         return id;
     }
     
@@ -282,9 +311,10 @@ window.audioManager = (function () {
         // Create unique ID for this voice line
         const id = `voice_${Date.now()}_${Math.random()}`;
         
+        const baseVolume = clamp01(volume);
         tracks.voiceLines[id] = new Howl({
             src: [src],
-            volume: volume,
+            volume: clamp01(baseVolume * volumeMultipliers.voice),
             html5: false, // Use Web Audio for voice lines
             onend: function() {
                 console.log(`[AudioManager] Voice line ended: ${src}`);
@@ -312,6 +342,7 @@ window.audioManager = (function () {
         });
         
         tracks.voiceLines[id].play();
+        try { tracks.voiceLines[id]._baseVolume = baseVolume; } catch {}
         return id;
     }
     
@@ -351,8 +382,11 @@ window.audioManager = (function () {
     
     // Set background music volume
     function setBackgroundMusicVolume(volume) {
+        // Update base (pre-multiplier) volume and apply multiplier
+        baseMusicVolume = clamp01(volume);
         if (tracks.backgroundMusic) {
-            tracks.backgroundMusic.volume(Math.max(0, Math.min(1, volume)));
+            try { tracks.backgroundMusic._baseVolume = baseMusicVolume; } catch {}
+            tracks.backgroundMusic.volume(clamp01(baseMusicVolume * volumeMultipliers.music));
         }
     }
     
@@ -369,11 +403,17 @@ window.audioManager = (function () {
     function resumeBackgroundMusicIfAny(volume) {
         if (!tracks.backgroundMusic) return;
         if (typeof volume === 'number') {
-            tracks.backgroundMusic.volume(Math.max(0, Math.min(1, volume)));
+            baseMusicVolume = clamp01(volume);
+            try { tracks.backgroundMusic._baseVolume = baseMusicVolume; } catch {}
+            tracks.backgroundMusic.volume(clamp01(baseMusicVolume * volumeMultipliers.music));
         }
         if (!(muteState.all || muteState.music)) {
             if (!tracks.backgroundMusic.playing()) {
                 tracks.backgroundMusic.play();
+            } else if (typeof volume !== 'number') {
+                // Ensure current volume reflects multiplier if no explicit volume provided
+                const effective = clamp01((tracks.backgroundMusic._baseVolume ?? baseMusicVolume) * volumeMultipliers.music);
+                tracks.backgroundMusic.volume(effective);
             }
         }
     }
@@ -465,7 +505,8 @@ window.audioManager = (function () {
             pendingActions: pendingActions.length,
             backgroundMusic: currentBackgroundMusic,
             isPlaying: isBackgroundMusicPlaying(),
-            muteState: { ...muteState }
+            muteState: { ...muteState },
+            volumeMultipliers: { ...volumeMultipliers }
         };
     }
     
@@ -506,6 +547,40 @@ window.audioManager = (function () {
         dispose,
         getStatus,
         manualUnlock,
+        // Per-channel master volume multipliers (persisted)
+        setMusicVolumeMultiplier: function(multiplier) {
+            const m = clamp01(parseFloat(multiplier));
+            volumeMultipliers.music = m;
+            try { localStorage.setItem('audioVolume_music', String(m)); } catch {}
+            if (tracks.backgroundMusic) {
+                const base = typeof tracks.backgroundMusic._baseVolume === 'number' ? tracks.backgroundMusic._baseVolume : baseMusicVolume;
+                tracks.backgroundMusic.volume(clamp01(base * volumeMultipliers.music));
+            }
+        },
+        setSfxVolumeMultiplier: function(multiplier) {
+            const m = clamp01(parseFloat(multiplier));
+            volumeMultipliers.sfx = m;
+            try { localStorage.setItem('audioVolume_sfx', String(m)); } catch {}
+            // Update currently playing SFX volumes
+            Object.keys(tracks.soundEffects).forEach(id => {
+                const howl = tracks.soundEffects[id];
+                if (!howl) return;
+                const base = typeof howl._baseVolume === 'number' ? howl._baseVolume : howl.volume();
+                howl.volume(clamp01(base * volumeMultipliers.sfx));
+            });
+        },
+        setVoiceVolumeMultiplier: function(multiplier) {
+            const m = clamp01(parseFloat(multiplier));
+            volumeMultipliers.voice = m;
+            try { localStorage.setItem('audioVolume_voice', String(m)); } catch {}
+            // Update currently playing voice line volumes
+            Object.keys(tracks.voiceLines).forEach(id => {
+                const howl = tracks.voiceLines[id];
+                if (!howl) return;
+                const base = typeof howl._baseVolume === 'number' ? howl._baseVolume : howl.volume();
+                howl.volume(clamp01(base * volumeMultipliers.voice));
+            });
+        },
         // Mute controls
         setMusicMuted: function(muted) {
             muteState.music = !!muted;

@@ -415,8 +415,9 @@
         // Handle story redirects (server-triggered)
         hubConnection.On<string>("RedirectToNextScene", (url) =>
         {
-            Console.WriteLine($"[RuneProtocol] Redirecting to next scene: {url}");
-            Navigation.NavigateTo(url, forceLoad: true);
+            var finalUrl = AppendVolumeParams(url);
+            Console.WriteLine($"[RuneProtocol] Redirecting to next scene: {finalUrl}");
+            Navigation.NavigateTo(finalUrl, forceLoad: true);
         });
 
         hubConnection.On<Arcane_Coop.Models.RuneProtocolGameState>("RuneProtocolGameStateUpdated", (newGameState) =>
@@ -473,6 +474,21 @@
             // Build unique roomId if 'transition' present
             await AutoConnect();
         }
+    }
+
+    private string AppendVolumeParams(string url)
+    {
+        try
+        {
+            var sep = url.Contains("?") ? "&" : "?";
+            var current = new Uri(Navigation.Uri);
+            var q = System.Web.HttpUtility.ParseQueryString(current.Query);
+            var mv = q["musicVol"] ?? "1.00";
+            var sv = q["sfxVol"] ?? "1.00";
+            var vv = q["voiceVol"] ?? "1.00";
+            return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
+        }
+        catch { return url; }
     }
 
     private void ParseUrlParameters()

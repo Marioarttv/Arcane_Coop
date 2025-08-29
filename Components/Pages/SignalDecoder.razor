@@ -201,15 +201,18 @@
             }
 
             <div class="game-actions">
-                <div class="guess-section">
-                    <div class="input-group">
-                        <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
-                               class="form-control" placeholder="Enter missing word..." />
-                        <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
-                            Decode Word
-                        </button>
+                @if (playerView?.Role == "Piltover")
+                {
+                    <div class="guess-section">
+                        <div class="input-group">
+                            <input @bind="currentGuess" @onkeypress="@(async (e) => { if (e.Key == "Enter") await SubmitGuess(); })" 
+                                   class="form-control" placeholder="Enter missing word..." />
+                            <button class="btn btn-primary" @onclick="SubmitGuess" disabled="@(!IsConnected || string.IsNullOrEmpty(currentGuess))">
+                                Decode Word
+                            </button>
+                        </div>
                     </div>
-                </div>
+                }
 
                 <div class="game-controls mt-3">
                     <button class="btn btn-warning" @onclick="RestartGame" disabled="@(!IsConnected)">
@@ -1689,9 +1692,10 @@
 
         hubConnection.On<string>("RedirectToNextStoryScene", (url) =>
         {
-            Console.WriteLine($"[SignalDecoder] Redirecting to next scene: {url}");
+            var finalUrl = AppendVolumeParams(url);
+            Console.WriteLine($"[SignalDecoder] Redirecting to next scene: {finalUrl}");
             gameStatus = "Story continuing - Loading next scene...";
-            Navigation.NavigateTo(url, forceLoad: true);
+            Navigation.NavigateTo(finalUrl, forceLoad: true);
         });
 
         hubConnection.On<string>("SignalDecoderCorrectGuess", (message) =>
@@ -1718,6 +1722,21 @@
                 InvokeAsync(StateHasChanged);
             }
         });
+
+        string AppendVolumeParams(string url)
+        {
+            try
+            {
+                var sep = url.Contains("?") ? "&" : "?";
+                var current = new Uri(Navigation.Uri);
+                var q = System.Web.HttpUtility.ParseQueryString(current.Query);
+                var mv = q["musicVol"] ?? "1.00";
+                var sv = q["sfxVol"] ?? "1.00";
+                var vv = q["voiceVol"] ?? "1.00";
+                return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
+            }
+            catch { return url; }
+        }
 
 
         await hubConnection.StartAsync();

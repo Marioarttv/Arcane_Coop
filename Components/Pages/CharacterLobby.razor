@@ -1407,6 +1407,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/act1-multiplayer?{parameters}");
         }
     }
@@ -1698,6 +1699,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"roomId={Uri.EscapeDataString(testLobbyName)}&role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={Uri.EscapeDataString(squadName)}&sceneIndex={sceneIndex}";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/act1-multiplayer?{parameters}");
         }
     }
@@ -1719,6 +1721,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/picture-explanation?{parameters}");
         }
     }
@@ -1740,6 +1743,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/signal-decoder?{parameters}");
         }
     }
@@ -1761,6 +1765,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/code-cracker?{parameters}");
         }
     }
@@ -1782,6 +1787,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/navigation-maze?{parameters}");
         }
     }
@@ -1803,6 +1809,7 @@
         {
             // Fallback: direct navigation if SignalR not connected
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/alchemy-lab?{parameters}");
         }
     }
@@ -1821,6 +1828,7 @@
         else
         {
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/rune-protocol?{parameters}");
         }
     }
@@ -1839,6 +1847,7 @@
         else
         {
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/word-forge?{parameters}");
         }
     }
@@ -1857,6 +1866,7 @@
         else
         {
             var parameters = $"role={selectedRole}&avatar={selectedAvatar}&name={Uri.EscapeDataString(characterName)}&squad={testRoomName}&story=true";
+            parameters = AppendVolumeParams(parameters);
             NavigationManager.NavigateTo($"/finalpuzzle?{parameters}");
         }
     }
@@ -1883,5 +1893,17 @@
     {
         await CleanupVerificationConnection();
         await CleanupLobbyConnection();
+    }
+
+    private string AppendVolumeParams(string existing)
+    {
+        try
+        {
+            var sep = existing.Contains("&") || existing.Contains("?") ? "&" : "&";
+            // Read multipliers from localStorage if set by sliders elsewhere
+            // We cannot await here; pass-through defaults if not available
+            return existing + sep + "musicVol=1.00&sfxVol=1.00&voiceVol=1.00";
+        }
+        catch { return existing; }
     }
 }

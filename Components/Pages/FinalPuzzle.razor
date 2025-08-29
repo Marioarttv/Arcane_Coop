@@ -176,12 +176,14 @@
         // Minimal events: redirect + joined
         hubConnection.On<string>("RedirectToNextScene", async (url) =>
         {
-            await InvokeAsync(() => Navigation.NavigateTo(url, forceLoad: true));
+            var finalUrl = AppendVolumeParams(url);
+            await InvokeAsync(() => Navigation.NavigateTo(finalUrl, forceLoad: true));
         });
 
         hubConnection.On<string>("RedirectToAct1", async (url) =>
         {
-            await InvokeAsync(() => Navigation.NavigateTo(url, forceLoad: true));
+            var finalUrl = AppendVolumeParams(url);
+            await InvokeAsync(() => Navigation.NavigateTo(finalUrl, forceLoad: true));
         });
 
         hubConnection.On<string, string>("PlayerJoined", (role, name) =>
@@ -198,6 +200,21 @@
         {
             Console.WriteLine($"[FinalPuzzle] Hub start failed: {ex.Message}");
         }
+    }
+
+    private string AppendVolumeParams(string url)
+    {
+        try
+        {
+            var sep = url.Contains("?") ? "&" : "?";
+            var current = new Uri(Navigation.Uri);
+            var q = System.Web.HttpUtility.ParseQueryString(current.Query);
+            var mv = q["musicVol"] ?? "1.00";
+            var sv = q["sfxVol"] ?? "1.00";
+            var vv = q["voiceVol"] ?? "1.00";
+            return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
+        }
+        catch { return url; }
     }
 
     private void ParseUrlParameters()
