@@ -166,6 +166,7 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 **Purpose**: Process following and drag-and-drop interaction
 **Players**: Piltover (recipe reader) + Zaunite (hands-on brewer)
 **Mechanics**: Multi-step ingredient processing and combination
+**UI Update (2025)**: Piltover recipe is now a clean, high-contrast single-column list on parchment (black text); Zaun drag-and-drop UI unchanged
 **Education**: Following instructions, sequential thinking
 **Documentation**: [AlchemyLab.md](./AlchemyLab.md)
 

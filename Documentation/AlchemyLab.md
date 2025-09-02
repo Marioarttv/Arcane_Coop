@@ -1,8 +1,8 @@
-# Alchemy Lab: Vi's Healing Potion
+# Alchemy Lab: Shimmer Residue Tracer
 
 ## Overview
 
-The **Alchemy Lab** is a premium cooperative puzzle game where two players work together to brew Vi's healing potion using an intuitive drag-and-drop interface. This puzzle combines recipe reading, ingredient processing, and precise collaboration to create an engaging educational experience.
+The **Alchemy Lab** is a premium cooperative puzzle game where two players work together to brew a Shimmer Residue Tracer using an intuitive drag-and-drop interface. This puzzle combines recipe reading, ingredient processing, and precise collaboration to create an engaging educational experience.
 
 ## Game Concept
 
@@ -15,10 +15,9 @@ Act 1 integration: After the Navigation Maze and the discovery in Scene 8 (Empty
 - **Visual Theme**: Clean, golden hextech aesthetics
 - **Role**: Master Alchemist with access to recipe scrolls
 - **Capabilities**:
-  - Views the complete recipe with detailed step-by-step instructions
-  - Sees ingredient requirements, processing stations, and final states
+  - Views the complete recipe as a simple, high-contrast vertical list (black text)
   - Provides guidance and troubleshooting for mistakes
-  - Monitors overall brewing progress and potion potency score
+  - Monitors overall brewing progress and potency score
 
 #### **Zaunite Player (Vi) - Lab Assistant**
 - **Visual Theme**: Underground laboratory with teal accents
@@ -193,13 +192,10 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 
 ### Visual Polish
 - **Arcane Theme Integration**: Consistent color palette and typography
+- **Shimmer Tracer Parchment**: Piltover recipe rendered on parchment with black text, single-column
+- **Zaun Lab**: Drag-and-drop layout with stations remains unchanged
 - **Smooth Animations**: 60fps hardware-accelerated transitions
 - **State Indicators**: Clear visual feedback for all interactions
-- **Desktop-Optimized Layout**: Horizontal 4-station layout for maximum efficiency
-- **Station Color Coding**: Each station has unique visual identity
-  - Purple: Mixing Station (magical combination)
-  - Golden: Standard processing stations
-  - Amber: Cauldron (final brewing)
 
 ### Accessibility Features
 - **High Contrast**: Clear distinction between interactive elements
@@ -209,15 +205,9 @@ RestartAlchemyGame(string roomId)                     // Reset game state
 
 ### Layout Optimization
 - **Desktop-First Design**: Optimized for desktop gameplay experience
-- **Compact Single-Screen Layout**: All elements fit within 100vh viewport
-- **No Scrolling Required**: Drag-and-drop works seamlessly without page scrolling
-- **Horizontal Station Layout**: 4 stations arranged side-by-side for maximum efficiency
-- **Perfect Viewport Management**: 
-  - 25vh: Ingredient pool (top)
-  - 50vh: Processing stations (middle)
-  - 25vh: Cauldron section (bottom)
+- **Piltover**: Clean single-column recipe list for maximum readability
+- **Zaun**: Horizontal 4-station layout for efficient drag-and-drop
 - **Button Accessibility**: All process buttons always visible and clickable
-- **Flexbox Architecture**: Stations use flexible layouts preventing UI cutoff
 
 ### Educational Value
 - **Complex Process Understanding**: Learn multi-step ingredient transformation
@@ -270,7 +260,6 @@ The Alchemy Lab demonstrates how modern web technologies can create engaging, co
 ### **Key Technical Achievements**:
 - **Complex Recipe Logic**: Multi-step processes with ingredient combination
 - **Advanced Drag-and-Drop**: Multi-item dropzones with validation
-- **Perfect Layout Optimization**: Single-viewport design with no scrolling
 - **Robust State Management**: Client-server synchronization for multiplayer
 - **Sophisticated Validation**: Order-sensitive recipe checking
 
