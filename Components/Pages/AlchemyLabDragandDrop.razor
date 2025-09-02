@@ -18,7 +18,7 @@
             <div class="story-context">
                 <div class="story-badge @GetRoleThemeClass()">
                     <span class="badge-icon">@(playerRole == "zaun" ? "⚡" : "🔧")</span>
-                    <span>Squad @squadName - @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
+                    <span> @(playerRole == "zaun" ? "ZAUN OPERATIVE" : "PILTOVER AGENT")</span>
                 </div>
             </div>
         }
@@ -132,23 +132,16 @@
                         <div class="recipe-scroll old-scroll">
                             <div class="recipe-header">
                                 <h4>📜 @playerView.Recipe.Name</h4>
-                                <p class="recipe-description">@playerView.Recipe.Description</p>
+                                <p class="recipe-description" style="color:#000;">@playerView.Recipe.Description</p>
                             </div>
                             
-                            <div class="recipe-steps compact-steps">
+                            <div class="recipe-steps compact-steps piltover-list">
                                 @foreach (var step in playerView.Recipe.Steps)
                                 {
                                     <div class="recipe-step step-active">
-                                        <div class="step-icon">
-                                            @GetStepIcon(step.RequiredStation)
-                                        </div>
                                         <div class="step-content">
                                             <h5>@step.Instruction</h5>
                                             <p class="step-description">@step.DetailedDescription</p>
-                                            <div class="step-requirements">
-                                                <span class="requirement-tag station">@GetStationName(step.RequiredStation)</span>
-                                                <span class="requirement-tag state">@step.RequiredState</span>
-                                            </div>
                                         </div>
                                     </div>
                                 }
@@ -880,6 +873,211 @@
 }
 
 <style>
+.recipe-scroll, .old-scroll {
+    --parchment-bg1: #f5edd6;
+    --parchment-bg2: #ebdfbf;
+    --parchment-fiber: rgba(120, 87, 22, 0.08);
+    --ink: #2b1c0c;
+}
+
+/* Local font: Arcane Nine for headings */
+@@font-face {
+    font-family: 'Arcane Nine';
+    src: url('/fonts/Arcane Nine.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Authentic parchment look for the recipe */
+.recipe-scroll.old-scroll {
+    background:
+        radial-gradient(150% 60% at 50% -10%, rgba(0,0,0,0.12), rgba(0,0,0,0) 40%),
+        radial-gradient(120% 70% at 50% 110%, rgba(0,0,0,0.12), rgba(0,0,0,0) 45%),
+        repeating-radial-gradient( circle at 20% 30%, var(--parchment-fiber) 0 2px, transparent 2px 6px ),
+        linear-gradient(180deg, var(--parchment-bg1), var(--parchment-bg2));
+    border: 2px solid #a37b2c;
+    box-shadow:
+        inset 0 0 60px rgba(0,0,0,0.35),
+        0 12px 30px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(255, 230, 180, 0.2);
+    position: relative;
+}
+
+.recipe-scroll.old-scroll:before,
+.recipe-scroll.old-scroll:after {
+    content: "";
+    position: absolute;
+    left: 10px; right: 10px;
+    height: 14px;
+    background: linear-gradient(90deg, rgba(163,123,44,0.55), rgba(255,219,140,0.2), rgba(163,123,44,0.55));
+}
+.recipe-scroll.old-scroll:before { top: 10px; border-radius: 8px; filter: blur(0.2px); }
+.recipe-scroll.old-scroll:after { bottom: 10px; border-radius: 8px; filter: blur(0.2px); }
+
+/* Ornaments for header */
+.recipe-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+.recipe-header h4 {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #5b3a0f;
+    display: inline-block;
+    padding: 6px 14px;
+    border: 2px solid rgba(163,123,44,0.8);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(255,240,205,0.65), rgba(255,230,180,0.35));
+    box-shadow: 0 2px 0 rgba(163,123,44,0.6), inset 0 0 8px rgba(255,255,255,0.4);
+}
+.recipe-header h4:before,
+.recipe-header h4:after {
+    content: "✦";
+    color: rgba(163,123,44,0.9);
+    margin: 0 8px;
+}
+
+.recipe-description {
+    font-family: 'Georgia', 'Garamond', 'Times New Roman', serif;
+    color: #3a2a16;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+}
+.recipe-description::first-letter {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    font-size: 1.35rem;
+    color: #6a4412;
+}
+
+/* Elegant numbered steps */
+.recipe-steps {
+    counter-reset: arcane-step;
+    display: grid;
+    grid-template-columns: 1fr; /* single column vertical list */
+    gap: 1rem;
+    max-width: 980px;
+    margin: 0 auto; /* center within parchment */
+    position: relative;
+}
+.recipe-steps:before {
+    content: "";
+    position: absolute;
+    left: 1.75rem;
+    top: 0.25rem;
+    bottom: 0.25rem;
+    width: 3px;
+    background: linear-gradient(180deg, rgba(163,123,44,0.6), rgba(255,230,180,0.35), rgba(163,123,44,0.6));
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(163,123,44,0.35);
+}
+.compact-steps .recipe-step {
+    position: relative;
+    padding: 1rem 1rem 1rem 3.25rem;
+    background: linear-gradient(180deg, rgba(255,245,220,0.45), rgba(240,220,180,0.35));
+    border: 1px dashed rgba(163,123,44,0.65);
+    border-radius: 10px;
+    box-shadow: inset 0 0 12px rgba(163,123,44,0.16);
+}
+.recipe-step:before {
+    counter-increment: arcane-step;
+    content: counter(arcane-step);
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0) 50%),
+        radial-gradient(circle at 75% 75%, rgba(0,0,0,0.08), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, #f7e8b8, #e5cd8f);
+    border: 2px solid rgba(163,123,44,0.8);
+    color: #5b3a0f;
+    font-family: 'Arcane Nine', serif;
+    font-size: 1.1rem;
+    line-height: 2.2rem;
+    text-align: center;
+    box-shadow: 0 2px 0 rgba(163,123,44,0.35), inset 0 0 6px rgba(255,255,255,0.7);
+}
+.recipe-step .step-icon { display: none; }
+.recipe-step .step-content h5 {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    color: #4a3212;
+}
+.recipe-step .step-content .step-description {
+    font-family: 'Georgia', 'Garamond', 'Times New Roman', serif;
+    color: #2b1c0c;
+}
+
+/* Wax seal style for success badge */
+.status-badge.success {
+    background: radial-gradient(circle at 35% 30%, #ff6b6b, #b32626 65%);
+    color: #fff;
+    border: 2px solid #7a1111;
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.35), 0 3px 0 rgba(122,17,17,0.5);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+/* ========================= */
+/* Piltover Recipe - Clean List Overrides (do not affect Zaun UI) */
+/* ========================= */
+.piltover-interface .recipe-scroll {
+    background: linear-gradient(180deg, #fbf5e3, #f3e6c9);
+    border: 1px solid rgba(163,123,44,0.45);
+    border-radius: 10px;
+    box-shadow: inset 0 0 24px rgba(0,0,0,0.08);
+}
+
+.piltover-interface .recipe-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+}
+.piltover-interface .recipe-steps:before { display: none; }
+
+.piltover-interface .recipe-step {
+    position: relative;
+    padding: 0.85rem 1rem 0.85rem 3rem;
+    background: #fff9e9;
+    border: 1px dashed rgba(163,123,44,0.55);
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(163,123,44,0.15);
+}
+.piltover-interface .recipe-step:before { display: none; }
+
+.piltover-interface .recipe-header h4 {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    color: #000;
+}
+.piltover-interface .recipe-step .step-content h5 {
+    color: #000;
+}
+.piltover-interface .recipe-step .step-content .step-description {
+    color: #111;
+}
+.piltover-interface .recipe-description {
+    font-family: 'Georgia', 'Garamond', serif;
+    color: #000;
+}
+
+.piltover-interface .requirement-tag.station {
+    background: #e6f2f4;
+    color: #2b5b66;
+    border-color: rgba(43,91,102,0.4);
+}
+.piltover-interface .requirement-tag.state {
+    background: #fbefd5;
+    color: #7a571d;
+    border-color: rgba(122,87,29,0.4);
+}
+
 /* Simplified alchemy lab styling */
 .alchemy-container {
     min-height: 100vh;
@@ -1235,9 +1433,10 @@
 }
 
 .piltover-instruction {
-    background: linear-gradient(135deg, rgba(200, 155, 60, 0.1), rgba(240, 230, 210, 0.05));
-    border: 1px solid #c8aa6e;
-    color: #f0e6d2;
+    background: linear-gradient(135deg, rgba(255, 245, 220, 0.28), rgba(240, 230, 210, 0.08));
+    border: 1px solid rgba(163,123,44,0.6);
+    color: white;
+    font-family: 'Georgia', 'Garamond', serif;
 }
 
 .zaunite-instruction {
@@ -1275,7 +1474,10 @@
 .old-scroll:before { top: 0; }
 .old-scroll:after { bottom: 0; }
 
-.old-scroll .recipe-header h4 { color: #f3e3b0; text-shadow: 0 0 8px rgba(243,227,176,0.35); }
+        .old-scroll .recipe-header h4 {
+            color: #000000;
+            text-shadow: 0 0 8px rgba(243,227,176,0.35);
+        }
 .old-scroll .step-content h5 { color: #f1e6c8; }
 
 .recipe-header {
@@ -1307,10 +1509,10 @@
     align-items: flex-start;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(200, 155, 60, 0.1);
-    border: 1px solid #c8aa6e;
+    background: linear-gradient(180deg, rgba(255,245,220,0.35), rgba(240,220,180,0.25));
+    border: 1px solid rgba(163,123,44,0.55);
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(200, 155, 60, 0.2);
+    box-shadow: 0 2px 10px rgba(163, 123, 44, 0.18);
 }
 
 .step-icon {
@@ -1354,15 +1556,17 @@
 }
 
 .requirement-tag.station {
-    background: rgba(0, 153, 153, 0.2);
-    color: #00c8c8;
-    border: 1px solid #00c8c8;
+    background: rgba(92, 157, 173, 0.15);
+    color: #2b5b66;
+    border: 1px solid rgba(43,91,102,0.5);
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.45);
 }
 
 .requirement-tag.state {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-    border: 1px solid #ffc107;
+    background: rgba(193, 144, 51, 0.15);
+    color: #7a571d;
+    border: 1px solid rgba(122, 87, 29, 0.45);
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.45);
 }
 
 /* Drag and Drop Laboratory Layout - Compact Version */

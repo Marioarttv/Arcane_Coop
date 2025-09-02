@@ -3230,11 +3230,11 @@ public class AlchemyGame
 {
     public enum PlayerRole { Piltover, Zaunite }
     
-    // Healing Potion Recipe for Vi - Advanced 4-Ingredient Version with Combination
+    // Shimmer Residue Tracer - Advanced 4-Ingredient Version with Combination
     private static readonly AlchemyRecipe HealingPotionRecipe = new AlchemyRecipe
     {
-        Name = "Vi's Healing Potion",
-        Description = "A powerful healing elixir requiring precise combination techniques. The Shimmer Crystal and Hex Berries must be combined first, then further processed for maximum potency.",
+        Name = "Shimmer Residue Tracer",
+        Description = "A specialized detection draught for tracking subjects exposed to concentrated Shimmer. Combine, stabilize, prepare, then catalyze to reveal residual shimmer.",
         RequiredIngredients = new[] { "shimmer_crystal", "hex_berries", "zaun_grey", "vial_of_tears" },
         Steps = new[]
         {
@@ -3584,7 +3584,7 @@ public class AlchemyGame
         if (mistakes.Count == 0)
         {
             IsCompleted = true;
-            return (true, $"Perfect! Vi's healing potion is complete! Potion potency: {Score}%");
+            return (true, $"Perfect! The shimmer residue tracer is complete! Potency: {Score}%");
         }
         else
         {
@@ -3711,8 +3711,8 @@ public class AlchemyGame
             {
                 Role = "Piltover",
                 DisplayName = "Caitlyn (Master Alchemist)",
-                Instruction = IsCompleted ? "Excellent work! Vi's healing potion is ready!" : 
-                             "Guide your partner through brewing Vi's healing potion:",
+                Instruction = IsCompleted ? "Excellent work! The shimmer tracer is ready!" : 
+                             "Guide your partner through brewing the shimmer residue tracer:",
                 Recipe = HealingPotionRecipe,
                 CurrentStepIndex = 0, // Show all steps
                 IsCompleted = IsCompleted,
@@ -3728,8 +3728,8 @@ public class AlchemyGame
             {
                 Role = "Zaunite",
                 DisplayName = "Vi (Lab Assistant)",
-                Instruction = IsCompleted ? "Potion complete! Vi will recover quickly now!" :
-                             "Follow Caitlyn's recipe instructions to brew the healing potion:",
+                Instruction = IsCompleted ? "Tracer complete! Residual shimmer can now be detected." :
+                             "Follow Caitlyn's instructions to brew the shimmer residue tracer:",
                 AvailableIngredients = AvailableIngredients.Where(i => !i.IsUsed).ToArray(),
                 CauldronContents = CauldronContents.ToArray(),
                 AvailableStations = new[] { ProcessingStation.MortarPestle, ProcessingStation.HeatingStation, 
