@@ -1006,7 +1006,10 @@ new DialogueLine
                     Text = "Piltover Enforcer HQ Records Room",
                     AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30,
-                    BackgroundImage = "/images/Backgrounds/piltoverHQinside.png"
+                    BackgroundImage = "/images/Backgrounds/piltoverHQinside.png",
+                     BackgroundMusic = "/audio/music/Marble_80bpm.wav",
+                     BackgroundMusicLoop = true,
+                     BackgroundMusicVolume = 0.3f,
                 },
                 new DialogueLine
                 {
@@ -1265,7 +1268,8 @@ new DialogueLine
                 Id = "radio_decoded",
                 Name = "After Decoding the Messages",
                 Layout = SceneLayout.FourCharacters,
-                Theme = NovelTheme.Piltover
+                Theme = NovelTheme.Piltover,
+                BackgroundImage = "/images/Backgrounds/piltoverHQinside.png"
             };
 
             // Characters - reusing existing character definitions
@@ -1362,7 +1366,10 @@ new DialogueLine
                     CharacterId = "narrator",
                     Text = "After Decoding the Messages",
                     AnimationType = TextAnimationType.FadeIn,
-                    TypewriterSpeed = 30
+                    TypewriterSpeed = 30,
+                      BackgroundMusic = "/audio/music/In The Dream_full.wav",
+                        BackgroundMusicLoop = true,
+                        BackgroundMusicVolume = 0.3f,
                 },
                 new DialogueLine
                 {
@@ -1581,7 +1588,8 @@ new DialogueLine
                 Id = "renni_apartment",
                 Name = "Renni's Apartment - Finding the Clue",
                 Layout = SceneLayout.FiveCharacters,
-                Theme = NovelTheme.Zaun
+                Theme = NovelTheme.Zaun,
+                BackgroundImage = "/images/Backgrounds/RenniHouse.png"
             };
 
             // Characters - reusing existing character definitions
@@ -1696,7 +1704,10 @@ new DialogueLine
                     Text = "This is it. Kepler's Chem-Tech Repairs. Renni lives in the apartment above.",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Worried
+                    SpeakerExpression = CharacterExpression.Worried,
+                      BackgroundMusic = "/audio/music/Cursed_Locket_LONG_LOOP_78BPM.wav",
+                      BackgroundMusicLoop = true,
+                      BackgroundMusicVolume = 0.3f,
                 },
                 new DialogueLine
                 {
@@ -1892,7 +1903,8 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Worried,
                     VoiceLine = "/audio/voicelines/PostCodeCracker/Line86.mp3",
-                    VoiceLineVolume = 1.0f
+                    VoiceLineVolume = 1.0f,
+                    
                 },
                 new DialogueLine
                 {
@@ -1912,7 +1924,8 @@ new DialogueLine
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Surprised,
                     VoiceLine = "/audio/voicelines/PostCodeCracker/Line88.mp3",
-                    VoiceLineVolume = 1.0f
+                    VoiceLineVolume = 1.0f,
+                    BackgroundImage = "/images/Backgrounds/RenniInside.png"
                 },
                 new DialogueLine
                 {
@@ -1968,7 +1981,8 @@ new DialogueLine
                     AnimationType = TextAnimationType.FadeIn,
                     TypewriterSpeed = 30,
                     SoundEffect = "/audio/sfx/11L-People_rushing_somew-1756346412189.mp3",
-                    SoundEffectVolume = 1.4f
+                    SoundEffectVolume = 1.4f,
+                    BackgroundImage = "/images/Backgrounds/graffitiRoom.png"
                 },
                 new DialogueLine
                 {

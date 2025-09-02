@@ -1495,14 +1495,27 @@
                 musicMuted = true;
                 sfxMuted = true;
                 voiceMuted = true;
-                
+
+                // Remember last non-zero slider levels before zeroing
+                if (musicLevel > 0) lastNonZeroMusicLevel = musicLevel;
+                if (sfxLevel > 0) lastNonZeroSfxLevel = sfxLevel;
+                if (voiceLevel > 0) lastNonZeroVoiceLevel = voiceLevel;
+
+                // Set sliders to 0 and apply multipliers (new behavior)
+                musicLevel = 0;
+                sfxLevel = 0;
+                voiceLevel = 0;
+                await AudioManager.SetMusicVolumeMultiplierAsync(0f);
+                await AudioManager.SetSfxVolumeMultiplierAsync(0f);
+                await AudioManager.SetVoiceVolumeMultiplierAsync(0f);
+
                 // Persist global mute and immediately stop current audio
                 await AudioManager.SetAllMutedAsync(true);
                 await AudioManager.SetBackgroundMusicVolumeAsync(0.0f);
                 await AudioManager.StopAllSoundEffectsAsync();
                 await AudioManager.StopAllVoiceLinesAsync();
-                
-                Console.WriteLine("[Act1Multiplayer] All audio muted - stopped all current audio");
+
+                Console.WriteLine("[Act1Multiplayer] All audio muted - sliders set to 0 and current audio stopped");
             }
             else
             {
@@ -1510,13 +1523,26 @@
                 musicMuted = false;
                 sfxMuted = false;
                 voiceMuted = false;
-                
-                // Clear global mute and restore music volume
+
+                // Restore sliders to last non-zero values (default to 100 if none)
+                if (lastNonZeroMusicLevel <= 0) lastNonZeroMusicLevel = 100;
+                if (lastNonZeroSfxLevel <= 0) lastNonZeroSfxLevel = 100;
+                if (lastNonZeroVoiceLevel <= 0) lastNonZeroVoiceLevel = 100;
+
+                if (musicLevel <= 0) musicLevel = lastNonZeroMusicLevel;
+                if (sfxLevel <= 0) sfxLevel = lastNonZeroSfxLevel;
+                if (voiceLevel <= 0) voiceLevel = lastNonZeroVoiceLevel;
+
+                await AudioManager.SetMusicVolumeMultiplierAsync((float)(musicLevel / 100.0));
+                await AudioManager.SetSfxVolumeMultiplierAsync((float)(sfxLevel / 100.0));
+                await AudioManager.SetVoiceVolumeMultiplierAsync((float)(voiceLevel / 100.0));
+
+                // Clear global mute and restore background music playback if any
                 await AudioManager.SetAllMutedAsync(false);
                 await AudioManager.SetBackgroundMusicVolumeAsync(originalMusicVolume);
                 await AudioManager.ResumeBackgroundMusicIfAnyAsync(originalMusicVolume);
-                
-                Console.WriteLine("[Act1Multiplayer] All audio unmuted - restored music volume");
+
+                Console.WriteLine("[Act1Multiplayer] All audio unmuted - sliders restored to last non-zero values");
             }
         }
         catch (Exception ex)

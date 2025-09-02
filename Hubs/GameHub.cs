@@ -741,7 +741,9 @@ public class GameHub : Hub
             {
                 var playerView = game.GetPlayerView(connectionId);
                 var roleName = playerView.Role.ToLower();
-                var playerName = playerView.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : playerView.DisplayName;
 
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=10&transition=FromNavigationMaze";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
@@ -923,6 +925,25 @@ public class GameHub : Hub
         }
     }
 
+    public async Task SetCauldronContents(string roomId, string[] ingredientIds)
+    {
+        if (_alchemyGames.TryGetValue(roomId, out var game))
+        {
+            var result = game.SetCauldronContents(Context.ConnectionId, ingredientIds);
+            if (result.Success)
+            {
+                foreach (var player in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(player).SendAsync("AlchemyPlayerViewUpdated", game.GetPlayerView(player));
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AlchemyInvalidAction", result.Message);
+            }
+        }
+    }
+
     public async Task ContinueStoryAfterAlchemyLab(string roomId)
     {
         try
@@ -949,7 +970,9 @@ public class GameHub : Hub
             {
                 var view = game.GetPlayerView(connectionId);
                 var roleName = view.Role.ToLower();
-                var playerName = view.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : view.DisplayName;
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=12&transition=FromAlchemyLab";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
@@ -1144,7 +1167,9 @@ public class GameHub : Hub
             {
                 var view = game.GetPlayerView(connectionId);
                 var roleName = view.Role.ToLower();
-                var playerName = view.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : view.DisplayName;
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=17&transition=FromRuneProtocol";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
@@ -1594,7 +1619,9 @@ public class GameHub : Hub
             {
                 var view = game.GetPlayerView(connectionId);
                 var roleName = view.Role.ToLower();
-                var playerName = view.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : view.DisplayName;
                 // After WordForge, continue at Scene 14 -> 15 path: redirect to Scene 14's follow-up (Scene 15 comes next in VN). Start at gauntlets_complete (index 19)
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=19&transition=FromWordForge";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
@@ -2031,13 +2058,22 @@ public class GameHub : Hub
                 // Create new player only if not reconnecting
                 var playerId = Context.ConnectionId;
                 
+                // Normalize role values (e.g., "zaunite" → "zaun") to keep engine lookups consistent
+                var normalizedRole = (role ?? "").ToLower() switch
+                {
+                    "zaunite" => "zaun",
+                    "zaun" => "zaun",
+                    "piltover" => "piltover",
+                    _ => (role ?? "piltover").ToLower()
+                };
+
                 var player = new Act1Player
                 {
                     PlayerId = playerId,
                     PlayerName = playerName,
                     OriginalSquadName = originalSquadName,
                     SquadName = roomId, // Full room ID with modifiers
-                    PlayerRole = role,
+                    PlayerRole = normalizedRole,
                     PlayerAvatar = avatar,
                     IsConnected = true,
                     JoinedAt = DateTime.UtcNow
@@ -3101,7 +3137,9 @@ public class GameHub : Hub
             {
                 var playerView = game.GetPlayerView(connectionId);
                 var roleName = playerView.Role.ToLower();
-                var playerName = playerView.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : playerView.DisplayName;
                 
                 // Use the SAME uniqueRoomId for both players
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=7&transition=FromCodeCracker";
@@ -3153,7 +3191,9 @@ public class GameHub : Hub
             {
                 var playerView = game.GetPlayerView(connectionId);
                 var roleName = playerView.Role.ToLower();
-                var playerName = playerView.DisplayName;
+                var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
+                    ? originalName
+                    : playerView.DisplayName;
                 
                 // Extract original squad name from room ID (remove transition suffix if present)
                 var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
@@ -3491,6 +3531,46 @@ public class AlchemyGame
         return (true, $"{ingredient.Name} added to cauldron");
     }
     
+    public (bool Success, string Message) SetCauldronContents(string connectionId, string[] ingredientIds)
+    {
+        if (!Players.ContainsKey(connectionId))
+            return (false, "You are not in this game");
+
+        if (Players[connectionId] != PlayerRole.Zaunite)
+            return (false, "Only the Zaunite player can manage the cauldron");
+
+        // Reset all current cauldron items back to available (not used)
+        foreach (var ing in CauldronContents)
+        {
+            var back = AvailableIngredients.FirstOrDefault(i => i.Id == ing.Id);
+            if (back != null)
+            {
+                back.IsUsed = false;
+            }
+        }
+        CauldronContents.Clear();
+
+        // Rebuild cauldron contents from ids in order, validating availability
+        foreach (var id in ingredientIds)
+        {
+            var ingredient = AvailableIngredients.FirstOrDefault(i => i.Id == id && !i.IsUsed);
+            if (ingredient == null)
+            {
+                return (false, $"Ingredient {id} not available");
+            }
+            // Only allow raw in cauldron for Vial of Tears; other raw items stay allowed visually but will fail on submit
+            if (ingredient.Id != "vial_of_tears" && ingredient.State == IngredientState.Raw)
+            {
+                return (false, $"{ingredient.Name} must be processed before adding to the cauldron");
+            }
+
+            ingredient.IsUsed = true;
+            CauldronContents.Add(ingredient);
+        }
+
+        return (true, "Cauldron updated");
+    }
+
     public (bool Success, string Message) SubmitPotion(string connectionId)
     {
         if (!Players.ContainsKey(connectionId))
@@ -3588,8 +3668,35 @@ public class AlchemyGame
     
     private string GetProcessedImagePath(string ingredientId, IngredientState state)
     {
-        var stateSuffix = state.ToString().ToLower();
-        return $"images/Alchemy/{ingredientId}_{stateSuffix}.png";
+        // Map to actual existing assets; fall back gracefully if a specific processed image is missing
+        // Known base images in wwwroot/images/Alchemy/:
+        //  - shimmer_crystal_raw.png
+        //  - hex_berries_raw.png
+        //  - zaun_grey_raw.png
+        //  - vial_of_tears_raw.png
+        //  - shimmer_essence_raw.png (combined ingredient)
+
+        // For combined/processed visual states we currently reuse the base/raw art to avoid 404s
+        // and keep UI stable. If dedicated processed sprites are added later, extend this mapping.
+
+        // Special cases first
+        if (ingredientId == "shimmer_essence")
+        {
+            // If heated/mixed variants do not exist, reuse the essence raw image
+            return "images/Alchemy/shimmer_essence_raw.png";
+        }
+
+        // Default mapping: reuse the known raw asset for any processed state if a specific sprite is absent
+        return ingredientId switch
+        {
+            "shimmer_crystal" => "images/Alchemy/shimmer_crystal_raw.png",
+            "hex_berries" => "images/Alchemy/hex_berries_raw.png",
+            "zaun_grey" => state == IngredientState.Chopped
+                ? "images/Alchemy/zaun_grey_raw.png" // no chopped art yet; reuse raw
+                : "images/Alchemy/zaun_grey_raw.png",
+            "vial_of_tears" => "images/Alchemy/vial_of_tears_raw.png",
+            _ => $"images/Alchemy/{ingredientId}_raw.png"
+        };
     }
     
     public AlchemyPlayerView GetPlayerView(string connectionId)
@@ -3690,6 +3797,8 @@ public class TicTacToeGame
         PlayerNames[connectionId] = playerName;
         return symbol;
     }
+
+    // (no alchemy methods here)
 
     public bool RemovePlayer(string connectionId)
     {

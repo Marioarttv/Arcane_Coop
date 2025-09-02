@@ -73,12 +73,14 @@ The Visual Novel engine powers a synchronized, two-player story intro for Act 1 
 - Server emits `Act1SceneTransition` and per-player `Act1RedirectToNextGame(/picture-explanation?...params...)`
 - Client has a 4s local fallback to navigate if a redirect is missed
 - Parameters include: `role`, `avatar`, `name`, `squad`, `story=true` for role preservation
+- Volume propagation: `musicVol`, `sfxVol`, `voiceVol` (float 0.0–1.0) are appended so master volumes persist across components
 
 **Puzzle to Scene Transitions:**
 - New hub methods: `JoinAct1GameAtScene(roomId, playerName, originalSquadName, role, avatar, sceneIndex)`
 - Scene index support: `?sceneIndex=2` allows direct navigation to specific scenes
 - URL parameter handling: Both `roomId` and `squad` parameters for consistency
 - Bidirectional role preservation throughout the entire story flow
+ - Volume parameters forwarded by puzzles on redirect: `musicVol`, `sfxVol`, `voiceVol`
 
 **Story Progression Control:**
 ```csharp
@@ -1704,6 +1706,7 @@ This logging helps identify parameter parsing issues, URL construction problems,
 - **Scene 3 Implementation**: Database Revelation scene with 29 dialogue lines and character expressions
 - **Debug Infrastructure**: Comprehensive logging for transition troubleshooting
 - **Parameter Consistency**: Proper `roomId`/`squad` parameter handling for multiplayer sync
+ - **Volume Persistence**: Added master volume propagation via URL params `musicVol`, `sfxVol`, `voiceVol` so slider settings persist across Scene ↔ Puzzle ↔ Scene
 
 ### 🔄 2025 Update: Complete Signal Decoder Integration
 - **Fixed Scene 3 to Signal Decoder Transition**: Scene 3 (Database Revelation) now correctly transitions to Signal Decoder instead of Picture Explanation

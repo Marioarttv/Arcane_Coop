@@ -265,7 +265,7 @@
                             <!-- Right: Cauldron -->
                             <div class="lab-panel cauldron-panel">
                                 <h4>🍯 Brewing Cauldron</h4>
-                                <Dropzone Items="@cauldronItems" Class="cauldron-dropzone" MaxItems="3" OnItemDrop="@((AlchemyIngredient item) => OnCauldronDrop(item))" Accepts="@((ingredient, targetZone) => cauldronItems.Count < 3 && CanAddToCauldron(ingredient))">
+                                <Dropzone Items="@cauldronItems" Class="cauldron-dropzone" MaxItems="3" OnItemDrop="@((AlchemyIngredient item) => OnCauldronDropVisual(item))" Accepts="@((ingredient, targetZone) => true)">
                                     @if (context != null)
                                     {
                                         <div class="cauldron-ingredient"><img src="@context.ImagePath" alt="@context.Name" /><span>@context.Name (@GetStateDisplayName(context.State))</span></div>
@@ -275,10 +275,10 @@
                                         <div class="cauldron-placeholder"><span>🍯</span><p>Drop processed ingredients here</p><small>(Max 3 ingredients - only processed ingredients allowed)</small></div>
                                     }
                                 </Dropzone>
-                                @if (cauldronItems.Count > 0)
-                                {
-                                    <button class="arcane-btn arcane-btn-success submit-potion-btn" @onclick="SubmitPotion">✨ Brew Potion (@cauldronItems.Count/3)</button>
-                                }
+                                <div class="cauldron-actions">
+                                    <button class="arcane-btn arcane-btn-success submit-potion-btn" @onclick="SubmitPotion" disabled="@(cauldronItems.Count == 0)">✨ Brew Potion (@cauldronItems.Count/3)</button>
+                                    <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="ResetCauldronVisual">↩️ Remove All</button>
+                                </div>
                                 <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">🔄 Reset Game</button>
                             </div>
                         </div>
@@ -361,6 +361,7 @@
     private List<AlchemyIngredient> heatingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> cuttingItems = new List<AlchemyIngredient>();
     private List<AlchemyIngredient> cauldronItems = new List<AlchemyIngredient>();
+    private bool pendingCauldronServerSync = false;
     
     protected override async Task OnInitializedAsync()
     {
@@ -405,6 +406,15 @@
         {
             inGame = true;
             playerView = view;
+            // Initialize client-side lists immutably to avoid mutation during rendering
+            if (view.AvailableIngredients != null)
+            {
+                ingredientPoolItems = view.AvailableIngredients.Where(i => !i.IsUsed).ToList();
+            }
+            if (view.CauldronContents != null)
+            {
+                cauldronItems = view.CauldronContents.ToList();
+            }
             ShowStatus($"Joined as {view.DisplayName}", "success");
             InvokeAsync(StateHasChanged);
         });
@@ -418,30 +428,40 @@
         hubConnection.On<AlchemyPlayerView>("AlchemyPlayerViewUpdated", (newView) =>
         {
             playerView = newView;
-            
-            // Update client-side ingredient pool from server state
+
+            // Build a set of IDs currently placed outside the pool (stations or cauldron)
+            var nonPoolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var list in new[] { mixingItems, mortarItems, heatingItems, cuttingItems, cauldronItems })
+            {
+                foreach (var ing in list)
+                {
+                    if (!string.IsNullOrEmpty(ing?.Id)) nonPoolIds.Add(ing.Id);
+                }
+            }
+
+            // Rebuild the pool from server-available items but keep out anything currently placed elsewhere visually
             if (newView.AvailableIngredients != null)
             {
-                ingredientPoolItems.Clear();
-                ingredientPoolItems.AddRange(newView.AvailableIngredients.Where(i => !i.IsUsed));
+                ingredientPoolItems = newView.AvailableIngredients
+                    .Where(i => !i.IsUsed && (i?.Id != null) && !nonPoolIds.Contains(i.Id))
+                    .ToList();
             }
-            
+            else
+            {
+                ingredientPoolItems = new List<AlchemyIngredient>();
+            }
+
+            // Only replace cauldron with server state when we explicitly asked to sync it
+            if (pendingCauldronServerSync && newView.CauldronContents != null)
+            {
+                cauldronItems = newView.CauldronContents.ToList();
+                pendingCauldronServerSync = false;
+            }
+
             InvokeAsync(StateHasChanged);
         });
         
-        hubConnection.On<string, AlchemyPlayerView>("AlchemyGameJoined", (role, view) =>
-        {
-            playerView = view;
-            
-            // Initialize client-side ingredient pool
-            if (view.AvailableIngredients != null)
-            {
-                ingredientPoolItems.Clear();
-                ingredientPoolItems.AddRange(view.AvailableIngredients.Where(i => !i.IsUsed));
-            }
-            
-            InvokeAsync(StateHasChanged);
-        });
+        // (Removed duplicate AlchemyGameJoined handler)
 
         hubConnection.On<string, int>("AlchemyGameCompleted", (message, score) =>
         {
@@ -632,23 +652,10 @@
         };
     }
 
-    // Cauldron drop handler - sync with SignalR backend
-    private async void OnCauldronDrop(AlchemyIngredient ingredient)
+    // Visual-only cauldron drop: allow free movement; reconcile with server on actions
+    private void OnCauldronDropVisual(AlchemyIngredient ingredient)
     {
-        // Allow raw only for Vial of Tears (catalyst). Block other raw items.
-        if (ingredient.State == IngredientState.Raw && ingredient.Id != "vial_of_tears")
-        {
-            ShowStatus("Only processed ingredients (or Vial of Tears) can be added to the cauldron!", "warning");
-            return;
-        }
-
-        // Optimistically remove from local ingredient pool to avoid temporary duplication
-        if (ingredientPoolItems.Contains(ingredient))
-        {
-            ingredientPoolItems.Remove(ingredient);
-        }
-        // Add ingredient to cauldron via SignalR so server marks it used and syncs state
-        await AddToCauldronViaSignalR(ingredient);
+        // Let the Dropzone move items visually. We do not call server here.
         StateHasChanged();
     }
     
@@ -662,8 +669,8 @@
         {
             var ingredient = mortarItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "MortarPestle");
+            // Keep the visual item in the station until server re-broadcasts; then we'll reconstruct the pool
             mortarItems.Clear();
-            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -674,7 +681,6 @@
             var ingredient = heatingItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "HeatingStation");
             heatingItems.Clear();
-            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -685,7 +691,6 @@
             var ingredient = cuttingItems.First();
             await hubConnection.SendAsync("ProcessIngredient", roomId, ingredient.Id, "CuttingBoard");
             cuttingItems.Clear();
-            // Processed ingredient will be returned to pool via server update
         }
     }
     
@@ -697,7 +702,6 @@
             var ingredient2 = mixingItems[1];
             await hubConnection.SendAsync("CombineIngredients", roomId, ingredient1.Id, ingredient2.Id);
             mixingItems.Clear();
-            // Combined ingredient will be added to pool via server update
         }
     }
     
@@ -728,6 +732,14 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
+            // Send current visual cauldron composition to server first
+            var ids = cauldronItems.Select(i => i.Id).ToArray();
+            var ok = await SetCauldronContentsOnServer(ids);
+            if (!ok)
+            {
+                return;
+            }
+            pendingCauldronServerSync = true;
             await hubConnection.SendAsync("SubmitPotion", roomId);
         }
     }
@@ -741,13 +753,32 @@
     }
     
     // Add ingredients to cauldron via SignalR
-    private async Task AddToCauldronViaSignalR(AlchemyIngredient ingredient)
+    private async Task<bool> SetCauldronContentsOnServer(string[] ingredientIds)
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
-            var position = playerView?.CauldronContents?.Length ?? 0;
-            await hubConnection.SendAsync("AddToCauldron", roomId, ingredient.Id, position);
+            try
+            {
+                await hubConnection.SendAsync("SetCauldronContents", roomId, ingredientIds);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SetCauldronContents failed: {ex.Message}");
+            }
         }
+        return false;
+    }
+
+    private void ResetCauldronVisual()
+    {
+        // Move everything back to ingredient pool visually
+        foreach (var ing in cauldronItems.ToList())
+        {
+            ingredientPoolItems.Add(ing);
+        }
+        cauldronItems.Clear();
+        StateHasChanged();
     }
     
 
@@ -882,7 +913,7 @@
     display: grid;
     grid-template-columns: 22% 52% 26%;
     gap: 0.5rem;
-    min-height: 48vh;
+    min-height: 70vh;
 }
 
 .ingredients-pool, .processing-stations, .cauldron-section { overflow: hidden; }

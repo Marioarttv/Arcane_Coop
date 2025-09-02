@@ -19,6 +19,7 @@ The Visual Novel Audio System is a comprehensive audio management solution that 
 - **Voice Lines** - Character dialogue voiceovers
 - **Browser Compatibility** - Handles modern browser autoplay policies
 - **Multiple Layers** - Play music, SFX, and voices simultaneously
+ - **Master Volume Sliders (2025)** - In-game sliders for Music, SFX, and Voice that override per-line volumes and persist across scenes/puzzles
 
 ### Key Features
 ✅ Automatic browser audio unlock handling  
@@ -27,6 +28,9 @@ The Visual Novel Audio System is a comprehensive audio management solution that 
 ✅ Fade in/out transitions  
 ✅ Audio preloading support  
 ✅ Memory-efficient cleanup  
+✅ Per-channel master volume multipliers (Music/SFX/Voice)  
+✅ URL-based propagation of volumes across Scene ↔ Puzzle transitions  
+✅ Mute/slider synchronization (0% = muted; mute restores last non‑zero on unmute)
 
 ---
 
@@ -52,6 +56,7 @@ Audio System
 - **Blazor Server** - Real-time UI updates
 - **JavaScript Interop** - Bridge between C# and JS
 - **Web Audio API** - Modern browser audio (with HTML5 fallback)
+ - **Persistent Volume Storage** - Per-channel multipliers saved in localStorage
 
 ---
 
@@ -102,6 +107,11 @@ builder.Services.AddScoped<IAudioManager, AudioManager>();
 app.UseStaticFiles(); // Important for serving audio files
 app.MapStaticAssets();
 ```
+
+### 5. Per-channel Volume Persistence
+- The system persists master volume multipliers in localStorage:
+  - `audioVolume_music`, `audioVolume_sfx`, `audioVolume_voice` (values: 0.0–1.0)
+- These multipliers are applied to all plays and override per-line volumes.
 
 ### 4. Add Audio Properties to Models
 Update your `DialogueLine` model:
@@ -249,6 +259,12 @@ new DialogueLine
 }
 ```
 
+### Master Volume Sliders (Visual Novel UI)
+- The Visual Novel and Act 1 VN pages include three sliders (Music, SFX, Voice) in the top-left UI.
+- Sliders set per-channel multipliers (0–100%) that override per-line `BackgroundMusicVolume`, `SoundEffectVolume`, and `VoiceLineVolume`.
+- Setting a slider to 0% automatically mutes that channel (button turns red). Pressing a mute button sets its slider to 0%. Unmuting restores the last non‑zero slider value.
+- Multipliers persist in localStorage and are also propagated via URL parameters across Scene ↔ Puzzle transitions.
+
 ### Handling Browser Autoplay Policies
 
 Modern browsers block audio until user interaction. The system handles this automatically, but you can also manually unlock:
@@ -296,6 +312,9 @@ Modern browsers block audio until user interaction. The system handles this auto
 | `ResumeAllAsync()` | Resume all audio | None |
 | `PreloadAsync()` | Preload audio files | `string[] urls` |
 | `DisposeAsync()` | Clean up resources | None |
+| `SetMusicVolumeMultiplierAsync(multiplier)` | Set Music master multiplier (persists) | `multiplier` (0.0 - 1.0) |
+| `SetSfxVolumeMultiplierAsync(multiplier)` | Set SFX master multiplier (persists) | `multiplier` (0.0 - 1.0) |
+| `SetVoiceVolumeMultiplierAsync(multiplier)` | Set Voice master multiplier (persists) | `multiplier` (0.0 - 1.0) |
 
 ### JavaScript audioManager API
 
@@ -313,6 +332,9 @@ Modern browsers block audio until user interaction. The system handles this auto
 | `setAllMuted(muted)` | Persistently mute/unmute all audio; also calls Howler.mute |
 | `getStatus()` | Get audio system status |
 | `manualUnlock()` | Manually unlock audio context |
+| `setMusicVolumeMultiplier(multiplier)` | Set Music master multiplier (persists; updates live) |
+| `setSfxVolumeMultiplier(multiplier)` | Set SFX master multiplier (persists; updates live) |
+| `setVoiceVolumeMultiplier(multiplier)` | Set Voice master multiplier (persists; updates live) |
 
 ---
 
@@ -351,6 +373,18 @@ Modern browsers block audio until user interaction. The system handles this auto
 #### 4. Audio Delays or Stuttering
 **Problem**: Audio playback is choppy or delayed.
 - If muted audio resumes unexpectedly after tab focus or user interaction, ensure you call the persistent mute APIs (`SetMusicMutedAsync`, `SetSfxMutedAsync`, `SetVoiceMutedAsync`, or `SetAllMutedAsync`). The JS layer now gates queued and resume behaviors by these flags.
+
+#### 5. Volumes Reset After Transition
+**Problem**: After returning from a puzzle to the visual novel, volumes reset to 1.00.
+
+**Cause**: The puzzle page wasn’t forwarding `musicVol`, `sfxVol`, `voiceVol` to the redirect URL.
+
+**Solution**:
+- Ensure puzzle pages forward current query params in redirects, e.g. copy `musicVol`, `sfxVol`, `voiceVol` from the current URL to the outgoing redirect URL.
+- VisualNovel pages parse and apply these on first render.
+
+**Parameters**:
+- `musicVol`, `sfxVol`, `voiceVol` (float 0.0–1.0)
 
 **Solution**:
 - Use smaller file sizes (compress audio)
