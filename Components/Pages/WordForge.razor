@@ -369,9 +369,14 @@
             }
             else
             {
-                <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
-                    🔄 Reset Workshop
-                </button>
+                <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+                    <button class="arcane-btn arcane-btn-warning reset-btn" @onclick="RestartGame">
+                        🔄 Reset Workshop
+                    </button>
+                    <button class="arcane-btn arcane-btn-primary reset-btn" @onclick="ClearAnvil">
+                        🧹 Clear Anvil
+                    </button>
+                </div>
             }
         </div>
     }
@@ -636,6 +641,14 @@
         if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
         {
             await hubConnection.SendAsync("ForgeWordCombination", roomId);
+        }
+    }
+
+    private async Task ClearAnvil()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(roomId))
+        {
+            await hubConnection.SendAsync("ClearWordForgeAnvil", roomId);
         }
     }
     private async Task ContinueStory()

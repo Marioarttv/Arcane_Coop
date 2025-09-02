@@ -740,11 +740,12 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var playerView = game.GetPlayerView(connectionId);
-                var roleName = playerView.Role.ToLower();
+                var roleLower = (playerView.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
                     ? originalName
                     : playerView.DisplayName;
-
+                
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=10&transition=FromNavigationMaze";
                 redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
             }
@@ -969,7 +970,8 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var view = game.GetPlayerView(connectionId);
-                var roleName = view.Role.ToLower();
+                var roleLower = (view.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
                     ? originalName
                     : view.DisplayName;
@@ -1572,6 +1574,12 @@ public class GameHub : Hub
             }
             else
             {
+                // Failed attempt: anvil was cleared in the game logic. Broadcast updated views/state
+                foreach (var playerId in game.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+                }
+                await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
                 await Clients.Group(roomId).SendAsync("WordForgeCombinationFailed", result.ResultMessage);
             }
         }
@@ -1589,6 +1597,21 @@ public class GameHub : Hub
                 await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
             }
             
+            await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
+        }
+    }
+
+    public async Task ClearWordForgeAnvil(string roomId)
+    {
+        if (_wordForgeGames.TryGetValue(roomId, out var game))
+        {
+            game.ClearAnvil();
+
+            // Update all players with cleared anvil
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("WordForgePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
             await Clients.Group(roomId).SendAsync("WordForgeGameStateUpdated", game.GetGameState());
         }
     }
@@ -1618,13 +1641,17 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var view = game.GetPlayerView(connectionId);
-                var roleName = view.Role.ToLower();
+                // Normalize role to expected VN values ("piltover" | "zaun")
+                var roleLower = (view.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
                     ? originalName
                     : view.DisplayName;
                 // After WordForge, continue at Scene 14 -> 15 path: redirect to Scene 14's follow-up (Scene 15 comes next in VN). Start at gauntlets_complete (index 19)
                 var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=19&transition=FromWordForge";
-                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+                var url = $"/act1-multiplayer?{parameters}";
+                redirectUrls[connectionId] = url;
+                Console.WriteLine($"[GameHub] WordForge redirect for {connectionId} → {url}");
             }
 
             var tasks = new List<Task>();
@@ -3076,7 +3103,8 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var playerView = game.GetPlayerView(connectionId);
-                var roleName = playerView.Role.ToLower();
+                var roleLower = (playerView.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = playerView.DisplayName;
                 
                 // Use the SAME uniqueRoomId for both players
@@ -3136,7 +3164,8 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var playerView = game.GetPlayerView(connectionId);
-                var roleName = playerView.Role.ToLower();
+                var roleLower = (playerView.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
                     ? originalName
                     : playerView.DisplayName;
@@ -3190,7 +3219,8 @@ public class GameHub : Hub
             foreach (var connectionId in connectedPlayers)
             {
                 var playerView = game.GetPlayerView(connectionId);
-                var roleName = playerView.Role.ToLower();
+                var roleLower = (playerView.Role ?? string.Empty).ToLowerInvariant();
+                var roleName = roleLower == "zaunite" ? "zaun" : roleLower == "piltover" ? "piltover" : "piltover";
                 var playerName = game.PlayerNames.TryGetValue(connectionId, out var originalName)
                     ? originalName
                     : playerView.DisplayName;
@@ -6051,9 +6081,8 @@ public class WordForgeGame
             targetCombo.IsCompleted = true;
             CompletedCombinations.Add(targetCombo);
 
-            // Clear anvil
-            CurrentAnvil.RootElement = null;
-            CurrentAnvil.AffixElement = null;
+            // Clear anvil completely
+            CurrentAnvil = new AnvilSlot();
 
             if (CompletedCombinations.Count >= GameTargetCombinations.Length)
             {
@@ -6071,9 +6100,14 @@ public class WordForgeGame
         }
         else
         {
-            // Failed attempt - return elements to pools
-            CurrentAnvil.RootElement = null;
-            CurrentAnvil.AffixElement = null;
+            // Failed attempt - return elements to pools and clear their used state
+            if (CurrentAnvil.RootElement != null)
+                CurrentAnvil.RootElement.IsUsed = false;
+            if (CurrentAnvil.AffixElement != null)
+                CurrentAnvil.AffixElement.IsUsed = false;
+            
+            // Reset the anvil completely
+            CurrentAnvil = new AnvilSlot();
 
             return new ForgeAttempt 
             { 
@@ -6106,7 +6140,11 @@ public class WordForgeGame
                 ? "Drag root words to the anvil to forge new vocabulary!"
                 : "Drag affixes to the anvil to combine with roots!",
             AvailableElements = GetPlayerElements(role).Where(e => !e.IsUsed).ToArray(),
-            AnvilState = CurrentAnvil,
+            AnvilState = new AnvilSlot 
+            { 
+                RootElement = CurrentAnvil.RootElement,
+                AffixElement = CurrentAnvil.AffixElement
+            },
             TargetCombinations = Mode == GameMode.Assisted ? GameTargetCombinations : Array.Empty<WordCombination>(),
             CompletedCombinations = CompletedCombinations.ToArray(),
             ElementsRemaining = GetPlayerElements(role).Count(e => !e.IsUsed),
@@ -6171,6 +6209,20 @@ public class WordForgeGame
         {
             combo.IsCompleted = false;
         }
+    }
+
+    public void ClearAnvil()
+    {
+        // Return any placed elements to available (not used) and clear slots
+        if (CurrentAnvil.RootElement != null)
+        {
+            CurrentAnvil.RootElement.IsUsed = false;
+        }
+        if (CurrentAnvil.AffixElement != null)
+        {
+            CurrentAnvil.AffixElement.IsUsed = false;
+        }
+        CurrentAnvil = new AnvilSlot();
     }
 }
 
