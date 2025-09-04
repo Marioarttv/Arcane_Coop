@@ -410,52 +410,15 @@
     {
         ParseUrlParameters();
         
+        // Parse volume params from URL first, before any other initialization
+        ParseVolumeParametersFromUrl();
+        
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/gamehub"))
             .Build();
 
         SetupSignalRHandlers();
         await hubConnection.StartAsync();
-        
-        // Initialize slider values from JS status if available
-        try
-        {
-            var status = await JSRuntime.InvokeAsync<object>("audioManager.getStatus");
-            if (status is not null)
-            {
-                // Using JS interop dynamic would require dynamic binder; instead query localStorage directly
-                var music = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_music");
-                var sfx = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_sfx");
-                var voice = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "audioVolume_voice");
-                if (double.TryParse(music, out var m)) musicLevel = Math.Clamp(m * 100.0, 0, 100);
-                if (double.TryParse(sfx, out var s)) sfxLevel = Math.Clamp(s * 100.0, 0, 100);
-                if (double.TryParse(voice, out var v)) voiceLevel = Math.Clamp(v * 100.0, 0, 100);
-            }
-        }
-        catch { }
-
-        // If URL carries explicit volume params, override and apply them
-        try
-        {
-            var uri = new Uri(NavigationManager.Uri);
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            if (double.TryParse(query["musicVol"], out var mv))
-            {
-                musicLevel = Math.Clamp(mv * 100.0, 0, 100);
-                await AudioManager.SetMusicVolumeMultiplierAsync((float)mv);
-            }
-            if (double.TryParse(query["sfxVol"], out var sv))
-            {
-                sfxLevel = Math.Clamp(sv * 100.0, 0, 100);
-                await AudioManager.SetSfxVolumeMultiplierAsync((float)sv);
-            }
-            if (double.TryParse(query["voiceVol"], out var vv))
-            {
-                voiceLevel = Math.Clamp(vv * 100.0, 0, 100);
-                await AudioManager.SetVoiceVolumeMultiplierAsync((float)vv);
-            }
-        }
-        catch { }
 
         // Auto-join the game room
         if (!string.IsNullOrEmpty(currentRoomId))

@@ -2092,8 +2092,11 @@ new DialogueLine
             {
                 Id = "code_decoded",
                 Name = "After Decoding the Message",
-                Layout = SceneLayout.DualCharacters,
-                Theme = NovelTheme.Zaun
+                Layout = SceneLayout.FiveCharacters,
+                Theme = NovelTheme.Zaun,
+                BackgroundImage = "/images/Backgrounds/graffitiRoom.png",
+               
+                
             };
 
             // Characters - reusing existing character definitions
@@ -2110,15 +2113,15 @@ new DialogueLine
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Vi/vi_neutral.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Vi/vi_serious.png" },
                         { CharacterExpression.Angry, "/images/Characters/Vi/vi_angry.png" },
                         { CharacterExpression.Determined, "/images/Characters/Vi/vi_determined.png" },
                         { CharacterExpression.Worried, "/images/Characters/Vi/vi_worried.png" },
                         { CharacterExpression.Surprised, "/images/Characters/Vi/vi_surprised.png" },
-                        { CharacterExpression.Sad, "/images/Characters/Vi/vi_neutral.png" },
+                        { CharacterExpression.Sad, "/images/Characters/Vi/vi_sad.png" },
                         { CharacterExpression.Happy, "/images/Characters/Vi/vi_happy.png" },
-                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_neutral.png" },
-                        { CharacterExpression.Smug, "/images/Characters/Vi/vi_neutral.png" }
+                        { CharacterExpression.Confused, "/images/Characters/Vi/vi_confused.png" },
+                        { CharacterExpression.Smug, "/images/Characters/Vi/vi_smug.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2187,12 +2190,12 @@ new DialogueLine
                     ExpressionPaths = new Dictionary<CharacterExpression, string>
                     {
                         { CharacterExpression.Default, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Confused, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Surprised, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Sad, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Serious, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Worried, "/images/Characters/Kira/kira_default.png" },
-                        { CharacterExpression.Determined, "/images/Characters/Kira/kira_default.png" }
+                        { CharacterExpression.Confused, "/images/Characters/Kira/kira_confused.png" },
+                        { CharacterExpression.Surprised, "/images/Characters/Kira/kira_surprised.png" },
+                        { CharacterExpression.Sad, "/images/Characters/Kira/kira_sad.png" },
+                        { CharacterExpression.Serious, "/images/Characters/Kira/kira_serious.png" },
+                        { CharacterExpression.Worried, "/images/Characters/Kira/kira_worried.png" },
+                        { CharacterExpression.Determined, "/images/Characters/Kira/kira_determined.png" }
                     }
                 },
                 new VisualNovelCharacter
@@ -2233,7 +2236,10 @@ new DialogueLine
                     Text = "SHIMMER... FACTORY... LEVEL... THREE. That's the message!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Serious
+                    SpeakerExpression = CharacterExpression.Serious,
+                     BackgroundMusic = "/audio/music/Cursed_Locket_LONG_LOOP_78BPM.wav",
+                     BackgroundMusicLoop = true,
+                    
                 },
                 new DialogueLine
                 {
@@ -2425,7 +2431,8 @@ new DialogueLine
                     Text = "The factory's not far! I know a shortcut through the old industrial district!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
-                    SpeakerExpression = CharacterExpression.Determined
+                    SpeakerExpression = CharacterExpression.Determined,
+                    BackgroundImage = "/images/Backgrounds/WayToFactory.png",
                 },
                 new DialogueLine
                 {
@@ -2478,7 +2485,7 @@ new DialogueLine
                 new DialogueLine
                 {
                     CharacterId = "playerB",
-                    Text = "There! The factory! I can see smoke!",
+                    Text = "There is the entry!",
                     AnimationType = TextAnimationType.Typewriter,
                     TypewriterSpeed = 40,
                     SpeakerExpression = CharacterExpression.Determined
@@ -2515,7 +2522,8 @@ new DialogueLine
                 Id = "shimmer_factory_entrance",
                 Name = "The Shimmer Factory",
                 Layout = SceneLayout.FourCharacters,
-                Theme = NovelTheme.Zaun
+                Theme = NovelTheme.Zaun,
+                BackgroundImage = "/images/Backgrounds/ShimmerFactory.png"
             };
 
             scene.Characters.AddRange(new[]
@@ -2601,32 +2609,31 @@ new DialogueLine
 
             scene.DialogueLines.AddRange(new[]
             {
-                new DialogueLine { CharacterId = "narrator", Text = "Act 2: The Shimmer Factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-                new DialogueLine { CharacterId = "narrator", Text = "Arriving at the Factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "Arriving at the Factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30, BackgroundMusic =  "wwwroot/audio/music/Derelict_100bpm.wav"},
                 new DialogueLine { CharacterId = "vi", Text = "The explosion came from the upper levels. But the structure's still standing.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
                 new DialogueLine { CharacterId = "caitlyn", Text = "For now. This whole place could come down.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
-                new DialogueLine { CharacterId = "playerB", Text = "Purple smoke everywhere. That's shimmer residue. We shouldn't breathe too much of it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
+                new DialogueLine { CharacterId = "playerB", Text = "Dark smoke everywhere. We shouldn't breathe too much of it.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
                 new DialogueLine { CharacterId = "playerA", Text = "Look! Over there by the entrance!", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
-                new DialogueLine { CharacterId = "narrator", Text = "They rush over to find a hand-drawn map weighted down by a rock", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+                new DialogueLine { CharacterId = "narrator", Text = "They rush over to find a bunch of handdrawn notes of the factory", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
                 new DialogueLine { CharacterId = "caitlyn", Text = "It's hand-drawn. Recently too - the ink's still fresh in places.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
                 new DialogueLine { CharacterId = "vi", Text = "This is Renni's handwriting. She mapped the place out.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
                 new DialogueLine { CharacterId = "playerB", Text = "She marked locations... 'Main processing,' 'Storage tanks,' and... 'Holding cells - Level 3.'", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
                 new DialogueLine { CharacterId = "playerA", Text = "Holding cells. That's where she thought the scientists were.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
-                new DialogueLine { CharacterId = "narrator", Text = "Planning the Approach", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
+              
                 new DialogueLine { CharacterId = "vi", Text = "Then that's where we go.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
                 new DialogueLine { CharacterId = "caitlyn", Text = "Wait. We can't all go barging in. The place is probably full of Silco's goons.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
                 new DialogueLine { CharacterId = "playerA", Text = "According to this, there are multiple routes through the factory. Maintenance tunnels, catwalks...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
                 new DialogueLine { CharacterId = "playerB", Text = "I could scout ahead, but I don't know the layout.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
-                new DialogueLine { CharacterId = "vi", Text = $"{zaunPlayerName}, you go in first. You're quicker, quieter. {piltoverPlayerName}, you guide them using Renni's map.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+                new DialogueLine { CharacterId = "vi", Text = $"{zaunPlayerName}, you go in first. You're quicker, quieter. {piltoverPlayerName}, you guide them using Renni's notes.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
                 new DialogueLine { CharacterId = "caitlyn", Text = "Vi and I will create a distraction if needed. Draw any guards away.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
-                new DialogueLine { CharacterId = "narrator", Text = "Setting Up Navigation", AnimationType = TextAnimationType.FadeIn, TypewriterSpeed = 30 },
-                new DialogueLine { CharacterId = "playerA", Text = "Okay, I've got the map. There's an entrance through a maintenance hatch about twenty meters to your left.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
-                new DialogueLine { CharacterId = "playerB", Text = "I see it. Looks clear.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
+
+                new DialogueLine { CharacterId = "playerA", Text = "Okay, I've got the notes. There's an entrance through the sewers it seems.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious, BackgroundImage =  "/images/NavigationMaze/Area1Nav.png"},
+                new DialogueLine { CharacterId = "playerB", Text = "I see it. Lets go then!.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
                 new DialogueLine { CharacterId = "vi", Text = "Be careful in there. And if you see Jinx...", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried },
                 new DialogueLine { CharacterId = "playerB", Text = "I'll signal you. I won't engage alone.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Determined },
                 new DialogueLine { CharacterId = "caitlyn", Text = "Guide them carefully. One wrong turn in there and they could walk right into a patrol.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
-                new DialogueLine { CharacterId = "playerA", Text = "According to the map, once you're inside, there should be a corridor straight ahead.", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Serious },
-                new DialogueLine { CharacterId = "playerB", Text = "I'm in. It's dark. Pipes everywhere. Which way?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried }
+                
+                new DialogueLine { CharacterId = "playerB", Text = "I'm in. It's dark. Which way?", AnimationType = TextAnimationType.Typewriter, TypewriterSpeed = 40, SpeakerExpression = CharacterExpression.Worried }
             });
 
             scene.MainContentEndIndex = scene.DialogueLines.Count - 1;

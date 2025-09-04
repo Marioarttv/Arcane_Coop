@@ -1900,9 +1900,8 @@
         try
         {
             var sep = existing.Contains("&") || existing.Contains("?") ? "&" : "&";
-            // Read multipliers from localStorage if set by sliders elsewhere
-            // We cannot await here; pass-through defaults if not available
-            return existing + sep + "musicVol=1.00&sfxVol=1.00&voiceVol=1.00";
+            // Always send 50% volume for all sound types
+            return existing + sep + "musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
         }
         catch { return existing; }
     }

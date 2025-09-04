@@ -147,14 +147,14 @@ public class GameHub : Hub
                 var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
                 var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
                 var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
-                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}";
+                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
                 await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
             }
             return;
         }
 
         // Fallback: broadcast using caller's params (legacy behavior)
-        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}";
+        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
         await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{fallback}");
     }
     
@@ -201,13 +201,13 @@ public class GameHub : Hub
                 var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
                 var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
                 var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
-                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}";
+                var parameters = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
                 await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{parameters}");
             }
             return;
         }
 
-        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}";
+        var fallback = $"roomId={Uri.EscapeDataString(storyLobbyName)}&role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(originalRoomId)}&sceneIndex={sceneIndex}&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
         await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/act1-multiplayer?{fallback}");
     }
     
@@ -254,13 +254,13 @@ public class GameHub : Hub
                 var finalRole = p.ConnectionId == assignedPiltoverConn ? "piltover" : "zaun";
                 var effectiveAvatar = string.IsNullOrWhiteSpace(p.Info.Avatar) ? avatar : p.Info.Avatar;
                 var effectiveName = string.IsNullOrWhiteSpace(p.Info.Name) ? playerName : p.Info.Name;
-                var parameters = $"role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true";
+                var parameters = $"role={finalRole}&avatar={effectiveAvatar}&name={Uri.EscapeDataString(effectiveName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
                 await Clients.Client(p.ConnectionId).SendAsync("RedirectToAct1", $"/{puzzleName}?{parameters}");
             }
             return;
         }
 
-        var fallback = $"role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true";
+        var fallback = $"role={role}&avatar={avatar}&name={Uri.EscapeDataString(playerName)}&squad={Uri.EscapeDataString(puzzleRoomName)}&story=true&musicVol=0.50&sfxVol=0.50&voiceVol=0.50";
         await Clients.Group(originalRoomId).SendAsync("RedirectToAct1", $"/{puzzleName}?{fallback}");
     }
 
