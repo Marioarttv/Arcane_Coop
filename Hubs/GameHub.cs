@@ -5432,13 +5432,22 @@ public class PictureExplanationGame
     private static List<string> GetTailoredDistractorsForRound(int roundNumber, string correctImageUrl)
     {
         var basePath = $"/images/PictureDescriptionImages/Round{roundNumber}/";
-        // Simply return the 3 distractor images for this round
-        return new List<string>
+        // Return the 3 unique distractor images for this round
+        var distractors = new List<string>
         {
             $"{basePath}choice1.png",
             $"{basePath}choice2.png",
             $"{basePath}choice3.png"
         };
+        
+        // Log the distractors being returned for debugging
+        Console.WriteLine($"[GetTailoredDistractorsForRound] Round {roundNumber} distractors:");
+        for (int i = 0; i < distractors.Count; i++)
+        {
+            Console.WriteLine($"  Distractor {i}: {distractors[i]}");
+        }
+        
+        return distractors;
     }
 
     private readonly ConcurrentDictionary<string, PlayerRole> Players = new();
@@ -5587,7 +5596,15 @@ public class PictureExplanationGame
             
             // Create choices (correct + 3 distractors)
             CurrentChoices = new List<string> { CurrentPicture.ImageUrl };
-            CurrentChoices.AddRange(freshDistractors);
+            
+            // Add distractors, ensuring they're not duplicates of the correct answer
+            foreach (var distractor in freshDistractors)
+            {
+                if (!CurrentChoices.Contains(distractor, StringComparer.OrdinalIgnoreCase))
+                {
+                    CurrentChoices.Add(distractor);
+                }
+            }
             
             // Log the choices for debugging
             Console.WriteLine($"[PictureExplanationGame] Round {CurrentRound} initial choices:");
@@ -5598,10 +5615,10 @@ public class PictureExplanationGame
             
             // Validate that all choices are unique
             var uniqueChoices = CurrentChoices.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            if (uniqueChoices.Count != CurrentChoices.Count)
+            if (uniqueChoices.Count != CurrentChoices.Count || CurrentChoices.Count != 4)
             {
-                Console.WriteLine($"[PictureExplanationGame] Warning: Duplicate images detected in round {CurrentRound}!");
-                Console.WriteLine($"  Expected 4 unique images, but got {uniqueChoices.Count}");
+                Console.WriteLine($"[PictureExplanationGame] Warning: Issue with choices in round {CurrentRound}!");
+                Console.WriteLine($"  Expected 4 unique images, but got {uniqueChoices.Count} unique out of {CurrentChoices.Count} total");
                 
                 // Log which images are duplicated
                 var duplicates = CurrentChoices.GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
@@ -5612,7 +5629,7 @@ public class PictureExplanationGame
                     Console.WriteLine($"  Duplicate found: {dup}");
                 }
                 
-                // Fix by using unique choices only, then add fallbacks if needed
+                // Fix by using unique choices only
                 CurrentChoices = uniqueChoices;
                 
                 // If we need more choices, add fallback distractors
@@ -5629,14 +5646,23 @@ public class PictureExplanationGame
                     }
                     
                     // Find a distractor that's not already in our choices
+                    bool foundFallback = false;
                     foreach (var fallback in fallbackPool)
                     {
                         if (!CurrentChoices.Any(c => c.Equals(fallback, StringComparison.OrdinalIgnoreCase)))
                         {
                             CurrentChoices.Add(fallback);
                             Console.WriteLine($"  Added fallback: {fallback}");
+                            foundFallback = true;
                             break;
                         }
+                    }
+                    
+                    // Safety check: if we couldn't find any unique fallback, log error and break
+                    if (!foundFallback)
+                    {
+                        Console.WriteLine($"[PictureExplanationGame] ERROR: Unable to find enough unique fallback images!");
+                        break;
                     }
                 }
                 
@@ -5649,6 +5675,17 @@ public class PictureExplanationGame
             {
                 int j = random.Next(i + 1);
                 (CurrentChoices[i], CurrentChoices[j]) = (CurrentChoices[j], CurrentChoices[i]);
+            }
+            
+            // Final validation - ensure we have exactly 4 choices
+            if (CurrentChoices.Count != 4)
+            {
+                Console.WriteLine($"[PictureExplanationGame] ERROR: Round {CurrentRound} has {CurrentChoices.Count} choices instead of 4!");
+                // Emergency fallback - ensure we have 4 items even if they might not all be perfect
+                while (CurrentChoices.Count < 4)
+                {
+                    CurrentChoices.Add($"/images/PictureDescriptionImages/Round{CurrentRound}/choice{CurrentChoices.Count}.png");
+                }
             }
             
             // Log final shuffled choices

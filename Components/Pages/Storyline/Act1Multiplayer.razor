@@ -406,6 +406,8 @@
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
+    private bool volumesApplied = false;
+
     protected override async Task OnInitializedAsync()
     {
         ParseUrlParameters();
@@ -424,6 +426,28 @@
         if (!string.IsNullOrEmpty(currentRoomId))
         {
             await JoinGameRoom();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !volumesApplied)
+        {
+            volumesApplied = true;
+            
+            // Apply the volume settings to the audio manager after render
+            var musicMultiplier = (float)(musicLevel / 100.0);
+            var sfxMultiplier = (float)(sfxLevel / 100.0);
+            var voiceMultiplier = (float)(voiceLevel / 100.0);
+            
+            Console.WriteLine($"[Act1Multiplayer] OnAfterRender - Applying volumes: Music={musicMultiplier}, SFX={sfxMultiplier}, Voice={voiceMultiplier}");
+            
+            await AudioManager.SetMusicVolumeMultiplierAsync(musicMultiplier);
+            await AudioManager.SetSfxVolumeMultiplierAsync(sfxMultiplier);
+            await AudioManager.SetVoiceVolumeMultiplierAsync(voiceMultiplier);
+            
+            // Force UI update
+            StateHasChanged();
         }
     }
 
@@ -454,6 +478,43 @@
             var errorMsg = $"Error parsing URL parameters: {ex.Message}";
             Console.WriteLine($"[Act1Multiplayer] {errorMsg}");
             statusMessage = "Invalid parameters. Please start from the character lobby.";
+        }
+    }
+
+    private void ParseVolumeParametersFromUrl()
+    {
+        try
+        {
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            Console.WriteLine($"[Act1Multiplayer] Checking for volume params in URL");
+            
+            // Parse volume parameters and set slider values
+            if (double.TryParse(query["musicVol"], out var mv))
+            {
+                musicLevel = Math.Clamp(mv * 100.0, 0, 100);
+                if (musicLevel > 0) lastNonZeroMusicLevel = musicLevel;
+                Console.WriteLine($"[Act1Multiplayer] Parsed musicLevel to {musicLevel} from URL param {mv}");
+            }
+            
+            if (double.TryParse(query["sfxVol"], out var sv))
+            {
+                sfxLevel = Math.Clamp(sv * 100.0, 0, 100);
+                if (sfxLevel > 0) lastNonZeroSfxLevel = sfxLevel;
+                Console.WriteLine($"[Act1Multiplayer] Parsed sfxLevel to {sfxLevel} from URL param {sv}");
+            }
+            
+            if (double.TryParse(query["voiceVol"], out var vv))
+            {
+                voiceLevel = Math.Clamp(vv * 100.0, 0, 100);
+                if (voiceLevel > 0) lastNonZeroVoiceLevel = voiceLevel;
+                Console.WriteLine($"[Act1Multiplayer] Parsed voiceLevel to {voiceLevel} from URL param {vv}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Act1Multiplayer] Error parsing volume params: {ex.Message}");
         }
     }
 

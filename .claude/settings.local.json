@@ -26,7 +26,15 @@
       "Bash(dir)",
       "Bash(dir:*)",
       "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Components\\Pages/**)",
-      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Models/**)"
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Models/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)",
+      "Read(/C:\\Users\\mario\\Desktop\\GitHub\\Arcane_Coop\\Hubs/**)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
