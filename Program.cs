@@ -22,8 +22,6 @@ builder.Services.AddScoped<IVisualNovelService, VisualNovelService>();
 builder.Services.AddSingleton<IAct1StoryEngine, Act1StoryEngine>();
 // Add Audio Manager Service
 builder.Services.AddScoped<IAudioManager, AudioManager>();
-// Add Debate AI Service for Final Puzzle
-builder.Services.AddSingleton<IDebateAIService, DebateAIService>();
 
 var app = builder.Build();
 

@@ -2,1533 +2,319 @@
 @page "/finalpuzzle/{*parameters}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
-@using Arcane_Coop.Models
 @using Arcane_Coop.Hubs
-@using Arcane_Coop.Services
-@using System.Text
-@using KristofferStrube.Blazor.MediaCaptureStreams
-@using KristofferStrube.Blazor.MediaStreamRecording
-@using KristofferStrube.Blazor.FileAPI
-@using KristofferStrube.Blazor.DOM
-@inject IJSRuntime JSRuntime
-@inject IMediaDevicesService MediaDevicesService
-@inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
-<PageTitle>The Final Debate - Arcane Coop</PageTitle>
+<PageTitle>Truth Echo - Final Transition</PageTitle>
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<style>
+    .page-container {
+        min-height: 100vh;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: #e6e6e6;
+    }
 
-<div class="final-puzzle-container @GetThemeClass()">
-    @if (!IsConnected)
-    {
-        <!-- Connection Screen -->
-        <div class="connection-screen">
-            <div class="connection-content">
-                <h1>The Final Debate</h1>
-                <div class="loading-spinner"></div>
-                <p>Connecting to debate chamber...</p>
-                @if (!string.IsNullOrEmpty(statusMessage))
-                {
-                    <div class="status-message">@statusMessage</div>
-                }
+    .title-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .title-header h1 {
+        font-size: 2.25rem;
+        background: linear-gradient(45deg, #00d4ff, #ff00ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.25rem;
+        text-shadow: 0 0 30px rgba(0, 212, 255, 0.35);
+    }
+
+    .subtitle {
+        color: #a0a0a0;
+        font-size: 1rem;
+    }
+
+    .status-card {
+        background: rgba(20, 20, 40, 0.85);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        width: 100%;
+        max-width: 720px;
+    }
+
+    .row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .row > div { flex: 1; min-width: 220px; }
+
+    .label { color: #7bdff6; font-weight: 600; }
+    .value { color: #e6e6e6; }
+
+    .actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .continue-story-button {
+        background: linear-gradient(135deg, #00d4ff, #ff00ff);
+        color: white;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
+        box-shadow: 0 5px 18px rgba(0, 212, 255, 0.35);
+    }
+
+    .continue-story-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(0, 212, 255, 0.45);
+    }
+
+    .continue-story-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .connecting {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #a0a0a0;
+    }
+
+    .spinner {
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(0, 212, 255, 0.25);
+        border-top: 3px solid #00d4ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
+<div class="page-container">
+    <div class="title-header">
+        <h1>Truth Echo</h1>
+        <div class="subtitle">Final transition back to the story</div>
+    </div>
+
+    <div class="status-card">
+        <div class="row">
+            <div>
+                <div class="label">Connection</div>
+                <div class="value">
+                    @if (isConnected)
+                    {
+                        <span>Connected</span>
+                    }
+                    else
+                    {
+                        <span class="connecting"><span class="spinner"></span> Connecting...</span>
+                    }
+                </div>
+            </div>
+            <div>
+                <div class="label">Room</div>
+                <div class="value">@(!string.IsNullOrEmpty(gameCode) ? gameCode : "-")</div>
+            </div>
+            <div>
+                <div class="label">Role</div>
+                <div class="value">@(!string.IsNullOrEmpty(playerRole) ? playerRole : preservedRole)</div>
             </div>
         </div>
-    }
-    else if (playerView == null || playerView.GameStatus == FinalPuzzleGameStatus.WaitingForPlayers)
-    {
-        <!-- Waiting for Players -->
-        <div class="waiting-screen @GetThemeClass()">
-            <div class="waiting-content">
-                <h1>Assembling the Council</h1>
-                <div class="sync-animation">
-                    <div class="loading-spinner"></div>
-                    <div class="sync-indicators">
-                        <div class="sync-indicator @(playerView?.ConnectedPlayers?.Count >= 1 ? "connected" : "waiting")">Player 1</div>
-                        <div class="sync-indicator @(playerView?.ConnectedPlayers?.Count >= 2 ? "connected" : "waiting")">Player 2</div>
-                    </div>
-                </div>
-                <p>@(statusMessage ?? "Waiting for both debaters...")</p>
-                @if (playerView?.ConnectedPlayers != null && playerView.ConnectedPlayers.Any())
-                {
-                    <div class="connected-players">
-                        <h3>Present:</h3>
-                        @foreach (var player in playerView.ConnectedPlayers)
-                        {
-                            <div class="player-tag">@player</div>
-                        }
-                    </div>
-                }
-                @if (isFromStory)
-                {
-                    <div class="squad-info">
-                        <p><strong>Squad:</strong> @squadName</p>
-                        <p><strong>Mission:</strong> Final Debate Protocol</p>
-                    </div>
-                }
-            </div>
+
+        <div class="actions">
+            <button class="continue-story-button" @onclick="ContinueStory">
+                Continue Story
+            </button>
         </div>
-    }
-    else if (playerView?.GameStatus == FinalPuzzleGameStatus.Introduction)
-    {
-        <!-- Introduction Scene -->
-        <div class="intro-screen">
-            <div class="intro-content">
-                <h1 class="animate__animated animate__fadeInDown">The Council Chamber</h1>
-                <p class="animate__animated animate__fadeInUp animate__delay-1s">
-                    A critical debate is about to begin...
-                </p>
-                <div class="intro-text animate__animated animate__fadeIn animate__delay-2s">
-                    @foreach (var dialogue in playerView.ConversationHistory.Where(d => d.Speaker == DebateSpeaker.Narrator))
-                    {
-                        <p>@dialogue.Text</p>
-                    }
-                </div>
-            </div>
-        </div>
-    }
-    else if (playerView != null)
-    {
-        <!-- Main Debate Scene -->
-        <div class="debate-scene">
-            <!-- Background -->
-            <div class="scene-background">
-                <img src="/images/council-chamber.jpg" alt="Council Chamber" class="background-image" />
-                <div class="background-overlay"></div>
-            </div>
-
-            <!-- Character Layer -->
-            <div class="characters-layer">
-                @if (currentSpeaker == DebateSpeaker.Jinx || lastAISpeaker == DebateSpeaker.Jinx)
-                {
-                    <div class="character-container left-character @(currentSpeaker == DebateSpeaker.Jinx ? "active" : "")">
-                        <img src="@GetCharacterImage(DebateSpeaker.Jinx)" alt="Jinx" class="character-portrait" />
-                    </div>
-                }
-                @if (currentSpeaker == DebateSpeaker.Silco || lastAISpeaker == DebateSpeaker.Silco)
-                {
-                    <div class="character-container right-character @(currentSpeaker == DebateSpeaker.Silco ? "active" : "")">
-                        <img src="@GetCharacterImage(DebateSpeaker.Silco)" alt="Silco" class="character-portrait" />
-                    </div>
-                }
-            </div>
-
-            <!-- Multiplayer Status Bar -->
-            <div class="multiplayer-status">
-                <div class="player-role-indicator">
-                    @playerView.PlayerName (@playerView.PlayerRole)
-                </div>
-                <div class="turn-indicator">
-                    Turn: @playerView.TurnNumber
-                </div>
-                <div class="players-online">
-                    Players: @playerView.ConnectedPlayers.Count/2
-                </div>
-            </div>
-
-            <!-- Recording & Microphone Selection Section -->
-            @if (playerView.IsMyTurn && !playerView.IsProcessingAI)
-            {
-                <div class="vn-recording">
-                    <div class="recording-row">
-                        <button class="vn-button" @onclick="ToggleMicMenu">
-                            @((micMenuVisible ? "Hide Mic Selection" : "Select Microphone"))
-                        </button>
-
-                        @if (!recording && combinedRecordingBlob == null)
-                        {
-                            <button class="vn-button record-btn" @onclick="StartRecording" disabled="@isProcessing">
-                                <span class="record-icon">🎤</span> Record
-                            </button>
-                        }
-                        else if (recording)
-                        {
-                            <button class="vn-button stop-recording-btn" @onclick="StopRecording" disabled="@isStopping">
-                                <span class="recording-indicator"></span> @(isStopping ? "Stopping..." : "Stop")
-                            </button>
-                        }
-                        else if (combinedRecordingBlob != null && !isProcessing)
-                        {
-                            <button class="vn-button continue-btn" @onclick="ProcessRecording">
-                                <span>▶️</span> Continue
-                            </button>
-                        }
-                    </div>
-
-                    @if (micMenuVisible)
-                    {
-                        <div class="mic-menu">
-                            <label><strong>Microphone:</strong></label>
-                            @if (microphones.Count == 0)
-                            {
-                                <p style="color:red;">No microphones found or permission blocked.</p>
-                            }
-                            else
-                            {
-                                <select @bind="selectedDeviceId" class="mic-select">
-                                    @foreach (var mic in microphones)
-                                    {
-                                        <option value="@mic.deviceId">@mic.label</option>
-                                    }
-                                </select>
-                            }
-                        </div>
-                    }
-                    
-                    @if (!string.IsNullOrEmpty(errorMessage))
-                    {
-                        <div class="error-message">@errorMessage</div>
-                    }
-                    
-                    @if (!string.IsNullOrEmpty(recordedAudioUrl))
-                    {
-                        <div class="audio-playback">
-                            <small class="playback-label">Test playback:</small>
-                            <audio controls src="@recordedAudioUrl"></audio>
-                        </div>
-                    }
-                    
-                    @if (isProcessing)
-                    {
-                        <div class="processing-status">
-                            <div class="spinner-small"></div>
-                            <span>Processing audio...</span>
-                        </div>
-                    }
-                </div>
-            }
-            else if (playerView.IsProcessingAI)
-            {
-                <div class="processing-indicator">
-                    <div class="thinking-animation">
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                    </div>
-                    <p>Processing response...</p>
-                </div>
-            }
-            else if (!playerView.IsMyTurn)
-            {
-                <div class="waiting-turn">
-                    <p>@playerView.CurrentSpeaker's turn to speak...</p>
-                </div>
-            }
-
-            <!-- Dialogue Box -->
-            <div class="dialogue-section">
-                <div class="dialogue-box">
-                    @if (!string.IsNullOrEmpty(currentSpeakerName))
-                    {
-                        <div class="character-name-tag">
-                            <span class="character-name">@currentSpeakerName</span>
-                        </div>
-                    }
-                    <div class="dialogue-content">
-                        <div class="dialogue-text @GetTextAnimationClass()">
-                            @((MarkupString)displayedText.Replace("\n", "<br/>"))
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Conversation History (collapsible) -->
-            <div class="history-panel @(showHistory ? "expanded" : "collapsed")">
-                <button class="history-toggle" @onclick="ToggleHistory">
-                    @(showHistory ? "Hide" : "Show") History
-                </button>
-                @if (showHistory)
-                {
-                    <div class="history-content">
-                        @{
-                            var uniqueDialogues = playerView.ConversationHistory
-                                .GroupBy(d => new { d.Timestamp, d.Speaker, d.Text })
-                                .Select(g => g.First())
-                                .TakeLast(10)
-                                .ToList();
-                        }
-                        @foreach (var dialogue in uniqueDialogues)
-                        {
-                            <div class="history-entry @dialogue.Speaker.ToString().ToLower()">
-                                <strong>@GetSpeakerDisplayName(dialogue.Speaker):</strong> @dialogue.Text
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-
-            <!-- Hidden audio elements for playback -->
-            @if (!string.IsNullOrEmpty(currentAudioUrl))
-            {
-                <audio src="@currentAudioUrl" autoplay></audio>
-            }
-        </div>
-    }
-    else if (playerView?.GameStatus == FinalPuzzleGameStatus.Completed)
-    {
-        <!-- Completion Screen -->
-        <div class="completion-screen">
-            <div class="completion-content">
-                <h1>Debate Concluded</h1>
-                <p>The council has reached its decision...</p>
-                <div class="completion-actions">
-                    <button @onclick="ContinueStory" class="continue-btn">
-                        Continue Story
-                    </button>
-                    <button @onclick="RestartDebate" class="restart-btn">
-                        Retry Debate
-                    </button>
-                </div>
-            </div>
-        </div>
-    }
+    </div>
 </div>
 
 @code {
     [Parameter] public string? Parameters { get; set; }
-
     private HubConnection? hubConnection;
-    private FinalPuzzlePlayerView? playerView;
-    private string statusMessage = "";
-    private string currentRoomId = "";
-    private string playerName = "";
-    private string playerRole = "zaun";
-    private string playerAvatar = "1";
-    private string squadName = "";
-    private bool isFromStory = false;
-    private string transition = "";
-    private string errorMessage = "";
-    
-    // Audio recording - matching library scenario implementation
-    private bool recording = false;
-    private bool isProcessing = false;
-    private bool isStopping = false; // Prevents double-clicking stop
-    private MediaStream? mediaStream;
-    private MediaRecorder? mediaRecorder;
-    private EventListener<BlobEvent>? dataAvailableListener;
-    private EventListener<Event>? stopListener; // Listen for stop event
-    private List<Blob> recordedBlobs = new();
-    private Blob? combinedRecordingBlob; // Final combined blob from all chunks
-    private string? recordedAudioUrl; // URL for playback testing
-    
-    // Visual novel display
-    private string displayedText = "";
-    private string currentSpeakerName = "";
-    private DebateSpeaker currentSpeaker = DebateSpeaker.Narrator;
-    private DebateSpeaker lastAISpeaker = DebateSpeaker.Jinx;
-    private string? currentAudioUrl;
-    private CancellationTokenSource? typingCts;
-    private bool isTypewriting = false;
-    private bool showHistory = false;
-    
-    // Microphone management
-    private string? selectedDeviceId;
-    private bool microphonePermissionGranted = false;
-    private bool micMenuVisible = false;
-    private List<(string label, string deviceId)> microphones = new();
+    private bool isConnected = false;
 
-    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+    // URL/Join parameters
+    private string gameCode = "";              // Unique roomId for final puzzle (squad + transition)
+    private string preservedRole = "";         // role from URL (piltover/zaun or A/B)
+    private string playerRole = "";            // effective role after join (canonical: piltover/zaun)
+    private string squadName = "";
+    private string transitionSource = "";
+    private bool isStoryMode = false;
+    private string playerNameFromUrl = "";
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("[FinalPuzzle] OnInitializedAsync started");
+        await SetupSignalR();
         ParseUrlParameters();
-        
+        await AutoConnect();
+    }
+
+    private async Task SetupSignalR()
+    {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/gamehub"))
+            .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
 
-        SetupSignalRHandlers();
-        
-        Console.WriteLine("[FinalPuzzle] Starting SignalR connection...");
-        await hubConnection.StartAsync();
-        Console.WriteLine($"[FinalPuzzle] SignalR connected: {IsConnected}");
-        
-        // Auto-join for story mode
-        if (isFromStory && !string.IsNullOrEmpty(currentRoomId) && !string.IsNullOrEmpty(playerName))
+        // Minimal events: redirect + joined
+        hubConnection.On<string>("RedirectToNextScene", async (url) =>
         {
-            await AutoJoinDebate();
+            var finalUrl = AppendVolumeParams(url);
+            await InvokeAsync(() => Navigation.NavigateTo(finalUrl, forceLoad: true));
+        });
+
+        hubConnection.On<string>("RedirectToAct1", async (url) =>
+        {
+            var finalUrl = AppendVolumeParams(url);
+            await InvokeAsync(() => Navigation.NavigateTo(finalUrl, forceLoad: true));
+        });
+
+        hubConnection.On<string, string>("PlayerJoined", (role, name) =>
+        {
+            // If both players needed, server validates; here we just ensure join state is acknowledged
+        });
+
+        try
+        {
+            await hubConnection.StartAsync();
+            isConnected = true;
         }
-        
-        Console.WriteLine("[FinalPuzzle] OnInitializedAsync completed");
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FinalPuzzle] Hub start failed: {ex.Message}");
+        }
     }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+
+    private string AppendVolumeParams(string url)
     {
-        if (firstRender)
+        try
         {
-            // Setup microphone after first render to avoid JS interop issues
-            await SetupMicrophone();
-            StateHasChanged();
+            var sep = url.Contains("?") ? "&" : "?";
+            var current = new Uri(Navigation.Uri);
+            var q = System.Web.HttpUtility.ParseQueryString(current.Query);
+            var mv = q["musicVol"] ?? "1.00";
+            var sv = q["sfxVol"] ?? "1.00";
+            var vv = q["voiceVol"] ?? "1.00";
+            return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
         }
+        catch { return url; }
     }
 
     private void ParseUrlParameters()
     {
         try
         {
-            var uri = new Uri(NavigationManager.Uri);
+            var uri = new Uri(Navigation.Uri);
             var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            
-            // Parse parameters
-            var role = query["role"];
-            var avatar = query["avatar"];
+
+            var codeParam = query["code"]; // optional legacy/manual
+            preservedRole = query["role"] ?? preservedRole;
             var name = query["name"];
             var squad = query["squad"];
             var story = query["story"];
-            transition = query["transition"] ?? "";
-            
-            if (!string.IsNullOrEmpty(role)) playerRole = role.ToLower();
-            if (!string.IsNullOrEmpty(avatar)) playerAvatar = avatar;
-            if (!string.IsNullOrEmpty(name)) playerName = Uri.UnescapeDataString(name);
+            transitionSource = query["transition"] ?? transitionSource;
+
+            if (!string.IsNullOrEmpty(name)) playerNameFromUrl = Uri.UnescapeDataString(name);
             if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
-            if (story == "true") isFromStory = true;
-            
-            // Build room ID for final puzzle
-            if (!string.IsNullOrEmpty(squadName))
+            isStoryMode = story == "true";
+
+            // Prefer explicit room code if provided; otherwise build unique room id (squad + transition)
+            if (!string.IsNullOrEmpty(codeParam))
             {
-                currentRoomId = isFromStory && !string.IsNullOrEmpty(transition) 
-                    ? $"{squadName}_FinalDebate_{transition}" 
-                    : $"{squadName}_FinalDebate";
+                gameCode = codeParam;
             }
-            
-            Console.WriteLine($"[FinalPuzzle] Parsed - Room: {currentRoomId}, Player: {playerName}, Role: {playerRole}, Story: {isFromStory}, Transition: {transition}");
+            else if (isStoryMode && !string.IsNullOrEmpty(squadName))
+            {
+                gameCode = !string.IsNullOrEmpty(transitionSource) ? $"{squadName}_{transitionSource}" : squadName;
+            }
         }
         catch (Exception ex)
         {
-            statusMessage = "Invalid parameters. Please start from the story.";
             Console.WriteLine($"[FinalPuzzle] Error parsing URL: {ex.Message}");
         }
     }
 
-    private async Task SetupMicrophone()
+    private async Task AutoConnect()
     {
-        Console.WriteLine("[FinalPuzzle] Starting microphone setup...");
-        try
-        {
-            if (MediaDevicesService == null)
-            {
-                Console.WriteLine("[FinalPuzzle] ERROR: MediaDevicesService is null");
-                errorMessage = "Media devices service not available";
-                return;
-            }
-            
-            Console.WriteLine("[FinalPuzzle] Getting media devices manager...");
-            var devicesManager = await MediaDevicesService.GetMediaDevicesAsync();
-            
-            // Request microphone permission
-            Console.WriteLine("[FinalPuzzle] Requesting microphone permission...");
-            await using var tempStream = await devicesManager.GetUserMediaAsync(
-                new MediaStreamConstraints 
-                { 
-                    Audio = true, 
-                    Video = false 
-                });
-            
-            Console.WriteLine("[FinalPuzzle] Permission granted, stopping temp stream...");
-            var tempTracks = await tempStream.GetAudioTracksAsync();
-            foreach (var track in tempTracks)
-            {
-                await track.StopAsync();
-            }
-            await tempStream.DisposeAsync();
-            
-            // Get available microphones
-            Console.WriteLine("[FinalPuzzle] Enumerating audio devices...");
-            var deviceInfos = await devicesManager.EnumerateDevicesAsync();
-            microphones.Clear();
-            
-            foreach (var dev in deviceInfos)
-            {
-                if (await dev.GetKindAsync() == MediaDeviceKind.AudioInput)
-                {
-                    var label = await dev.GetLabelAsync();
-                    var id = await dev.GetDeviceIdAsync();
-                    microphones.Add((label, id));
-                    Console.WriteLine($"[FinalPuzzle] Found microphone: {label} (ID: {id})");
-                }
-                await dev.DisposeAsync();
-            }
-            
-            if (microphones.Count > 0)
-            {
-                selectedDeviceId = microphones[0].deviceId;
-                microphonePermissionGranted = true;
-                Console.WriteLine($"[FinalPuzzle] Selected default microphone: {microphones[0].label}");
-            }
-            else
-            {
-                Console.WriteLine("[FinalPuzzle] WARNING: No microphones found");
-                errorMessage = "No microphones found";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Microphone setup failed: {ex.Message}";
-            Console.WriteLine($"[FinalPuzzle] ERROR in SetupMicrophone: {ex.Message}\n{ex.StackTrace}");
-        }
-    }
+        if (!isConnected) return;
+        await Task.Delay(300);
+        if (string.IsNullOrEmpty(gameCode)) return;
 
-    private void ToggleMicMenu()
-    {
-        micMenuVisible = !micMenuVisible;
-    }
+        // Use room-based lobby like other puzzles; store role/name for personalized redirects
+        var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
+        var canonicalRole = CanonicalizeRole(preservedRole);
 
-    private void SetupSignalRHandlers()
-    {
-        if (hubConnection == null) return;
+        await hubConnection.SendAsync("JoinRoom", gameCode, displayName);
+        await hubConnection.SendAsync("UpdateLobbyPlayerInfo", gameCode, canonicalRole, "1", displayName);
 
-        hubConnection.On<FinalPuzzlePlayerView>("FinalPuzzleJoined", view =>
-        {
-            Console.WriteLine($"[FinalPuzzle] Successfully joined - Status: {view.GameStatus}, Turn: {view.IsMyTurn}");
-            playerView = view;
-            statusMessage = "";
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<FinalPuzzlePlayerView>("FinalPuzzleStateUpdated", view =>
-        {
-            playerView = view;
-            // Don't update dialogue here to avoid duplicates
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<string, string>("FinalPuzzleTranscription", async (speaker, text) =>
-        {
-            Console.WriteLine($"[FinalPuzzle] Received transcription from {speaker}: {text}");
-            currentSpeakerName = speaker;
-            currentSpeaker = speaker.Contains("Player") ? 
-                (speaker.Contains("A") ? DebateSpeaker.PlayerA : DebateSpeaker.PlayerB) : 
-                DebateSpeaker.Narrator;
-            
-            // Display the transcribed text immediately
-            await InvokeAsync(async () =>
-            {
-                displayedText = "";
-                await StartTypewriterAnimation(text);
-                StateHasChanged();
-            });
-        });
-
-        hubConnection.On("FinalPuzzleCompleted", () =>
-        {
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On("FinalPuzzleGameFull", () =>
-        {
-            statusMessage = "Game is full. Please try again.";
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<string>("FinalPuzzleError", error =>
-        {
-            Console.WriteLine($"[FinalPuzzle] Received error from server: {error}");
-            errorMessage = error;
-            isProcessing = false;
-            InvokeAsync(StateHasChanged);
-        });
-        
-        // Add handler for successful audio processing
-        hubConnection.On("FinalPuzzleAudioProcessed", () =>
-        {
-            Console.WriteLine("[FinalPuzzle] Audio processed successfully by server");
-            isProcessing = false;
-            errorMessage = "";
-            recordedAudioUrl = null;
-            combinedRecordingBlob = null;
-            InvokeAsync(StateHasChanged);
-        });
-        
-        // Add handler for AI response
-        hubConnection.On<string, string, string>("FinalPuzzleAIResponse", async (speaker, text, audioUrl) =>
-        {
-            Console.WriteLine($"[FinalPuzzle] Received AI response from {speaker}: {text}");
-            await InvokeAsync(async () =>
-            {
-                currentSpeakerName = speaker;
-                currentSpeaker = speaker == "Jinx" ? DebateSpeaker.Jinx : DebateSpeaker.Silco;
-                lastAISpeaker = currentSpeaker;
-                
-                // Set audio URL for AI speech
-                if (!string.IsNullOrEmpty(audioUrl))
-                {
-                    currentAudioUrl = audioUrl;
-                }
-                
-                // Display AI response with typewriter
-                displayedText = "";
-                await StartTypewriterAnimation(text);
-                StateHasChanged();
-            });
-        });
-
-        // Handle story mode navigation
-        hubConnection.On<string>("RedirectToNextScene", url =>
-        {
-            Console.WriteLine($"[FinalPuzzle] Redirecting to next scene: {url}");
-            
-            // Append volume parameters if coming from story
-            if (isFromStory)
-            {
-                var uri = new Uri(NavigationManager.Uri);
-                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                
-                var musicVol = query["musicVol"] ?? "1";
-                var sfxVol = query["sfxVol"] ?? "1";
-                var voiceVol = query["voiceVol"] ?? "1";
-                
-                var separator = url.Contains("?") ? "&" : "?";
-                url = $"{url}{separator}musicVol={musicVol}&sfxVol={sfxVol}&voiceVol={voiceVol}";
-            }
-            
-            NavigationManager.NavigateTo(url, forceLoad: true);
-        });
-    }
-
-    private async Task JoinDebate()
-    {
-        if (hubConnection != null && !string.IsNullOrEmpty(currentRoomId))
-        {
-            Console.WriteLine($"[FinalPuzzle] Joining debate - Room: {currentRoomId}, Player: {playerName}, Role: {playerRole}");
-            await hubConnection.SendAsync("JoinFinalPuzzle", currentRoomId, playerName, playerRole);
-        }
-        else
-        {
-            Console.WriteLine($"[FinalPuzzle] Cannot join - Hub: {hubConnection != null}, RoomId: '{currentRoomId}'");
-        }
-    }
-    
-    private async Task AutoJoinDebate()
-    {
-        try
-        {
-            Console.WriteLine("[FinalPuzzle] Starting auto-join sequence...");
-            
-            // Small delay to ensure connection is stable
-            await Task.Delay(200);
-            
-            if (IsConnected && !string.IsNullOrEmpty(currentRoomId) && !string.IsNullOrEmpty(playerName))
-            {
-                Console.WriteLine($"[FinalPuzzle] Auto-joining debate - Room: {currentRoomId}, Player: {playerName}, Role: {playerRole}");
-                await hubConnection.SendAsync("JoinFinalPuzzle", currentRoomId, playerName, playerRole);
-            }
-            else
-            {
-                Console.WriteLine($"[FinalPuzzle] Auto-join failed - Connected: {IsConnected}, Room: '{currentRoomId}', Name: '{playerName}'");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[FinalPuzzle] Error in auto-join: {ex.Message}");
-            statusMessage = $"Failed to join debate: {ex.Message}";
-        }
-    }
-
-    private async Task StartRecording()
-    {
-        Console.WriteLine("[FinalPuzzle] StartRecording called");
-        Console.WriteLine($"[FinalPuzzle] Permission: {microphonePermissionGranted}, DeviceId: {selectedDeviceId}");
-        
-        if (string.IsNullOrEmpty(selectedDeviceId))
-        {
-            errorMessage = "No microphone selected.";
-            Console.WriteLine("[FinalPuzzle] ERROR: No microphone selected");
-            return;
-        }
-
-        try
-        {
-            Console.WriteLine($"[FinalPuzzle] Using microphone ID: {selectedDeviceId}");
-            var devicesManager = await MediaDevicesService.GetMediaDevicesAsync();
-            
-            var constraints = new MediaStreamConstraints
-            {
-                Audio = new MediaTrackConstraints
-                {
-                    DeviceId = new ConstrainDomString(selectedDeviceId),
-                    EchoCancellation = true,
-                    NoiseSuppression = true,
-                    AutoGainControl = false
-                }
-            };
-
-            Console.WriteLine("[FinalPuzzle] Getting user media stream...");
-            mediaStream = await devicesManager.GetUserMediaAsync(constraints);
-            
-            Console.WriteLine("[FinalPuzzle] Creating MediaRecorder...");
-            mediaRecorder = await MediaRecorder.CreateAsync(JSRuntime, mediaStream);
-
-            Console.WriteLine("[FinalPuzzle] Setting up data available listener...");
-            dataAvailableListener = await EventListener<BlobEvent>.CreateAsync(JSRuntime, async e =>
-            {
-                var blob = await e.GetDataAsync();
-                recordedBlobs.Add(blob);
-                Console.WriteLine($"[FinalPuzzle] Received blob chunk #{recordedBlobs.Count}");
-            });
-            
-            await mediaRecorder.AddOnDataAvailableEventListenerAsync(dataAvailableListener);
-            
-            recordedBlobs.Clear();
-            combinedRecordingBlob = null;
-            recordedAudioUrl = null;
-            isStopping = false;
-            
-            Console.WriteLine("[FinalPuzzle] Starting MediaRecorder...");
-            await mediaRecorder.StartAsync();
-            
-            recording = true;
-            errorMessage = "";
-            Console.WriteLine("[FinalPuzzle] Recording started successfully");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Recording error: {ex.Message}";
-            Console.WriteLine($"[FinalPuzzle] ERROR in StartRecording: {ex.Message}\n{ex.StackTrace}");
-            recording = false;
-        }
-    }
-
-    private async Task StopRecording()
-    {
-        Console.WriteLine("[FinalPuzzle] StopRecording called");
-        
-        // Prevent multiple stop calls
-        if (isStopping)
-        {
-            Console.WriteLine("[FinalPuzzle] Already stopping, ignoring duplicate call");
-            return;
-        }
-        
-        if (mediaRecorder == null)
-        {
-            Console.WriteLine("[FinalPuzzle] WARNING: mediaRecorder is null");
-            return;
-        }
-
-        try
-        {
-            isStopping = true;
-            StateHasChanged();
-            
-            Console.WriteLine("[FinalPuzzle] Stopping MediaRecorder...");
-            
-            // Add a stop event listener to handle the final chunk
-            var stopCompletionSource = new TaskCompletionSource<bool>();
-            stopListener = await EventListener<Event>.CreateAsync(JSRuntime, async e =>
-            {
-                Console.WriteLine("[FinalPuzzle] Stop event fired");
-                stopCompletionSource.TrySetResult(true);
-            });
-            
-            await mediaRecorder.AddOnStopEventListenerAsync(stopListener);
-            await mediaRecorder.StopAsync();
-            
-            // Wait for stop event with timeout
-            var stopTask = stopCompletionSource.Task;
-            var timeoutTask = Task.Delay(2000); // 2 second timeout
-            var completedTask = await Task.WhenAny(stopTask, timeoutTask);
-            
-            if (completedTask == timeoutTask)
-            {
-                Console.WriteLine("[FinalPuzzle] WARNING: Stop event timeout, proceeding anyway");
-            }
-            
-            // Give time for final chunks to arrive
-            await Task.Delay(100);
-            
-            recording = false;
-            isStopping = false;
-
-            Console.WriteLine($"[FinalPuzzle] Recorded {recordedBlobs.Count} blob chunks");
-            
-            if (recordedBlobs.Count == 0)
-            {
-                errorMessage = "No audio data recorded";
-                Console.WriteLine("[FinalPuzzle] ERROR: No blob chunks recorded");
-                return;
-            }
-
-            // Combine recorded chunks
-            Console.WriteLine("[FinalPuzzle] Combining blob chunks...");
-            var blobParts = recordedBlobs.Select(b => new BlobPart(b)).ToList();
-            combinedRecordingBlob = await Blob.CreateAsync(JSRuntime, blobParts);
-
-            // Create object URL for testing playback
-            Console.WriteLine("[FinalPuzzle] Creating object URL for playback...");
-            recordedAudioUrl = await CreateObjectURL(combinedRecordingBlob);
-            Console.WriteLine($"[FinalPuzzle] Audio URL created: {recordedAudioUrl}");
-
-            // Clean up media stream
-            Console.WriteLine("[FinalPuzzle] Cleaning up media stream...");
-            if (mediaStream != null)
-            {
-                var tracks = await mediaStream.GetAudioTracksAsync();
-                foreach (var track in tracks)
-                {
-                    await track.StopAsync();
-                }
-                await mediaStream.DisposeAsync();
-                mediaStream = null;
-            }
-            
-            // Clean up stop listener
-            if (stopListener != null)
-            {
-                await stopListener.DisposeAsync();
-                stopListener = null;
-            }
-            
-            Console.WriteLine("[FinalPuzzle] StopRecording completed successfully - Ready for processing");
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error stopping recording: {ex.Message}";
-            isStopping = false;
-            recording = false;
-            Console.WriteLine($"[FinalPuzzle] ERROR in StopRecording: {ex.Message}\n{ex.StackTrace}");
-            StateHasChanged();
-        }
-    }
-    
-    private async Task ProcessRecording()
-    {
-        Console.WriteLine("[FinalPuzzle] ProcessRecording called");
-        
-        if (combinedRecordingBlob == null)
-        {
-            Console.WriteLine("[FinalPuzzle] ERROR: No recording blob available");
-            errorMessage = "No recording available to process";
-            return;
-        }
-        
-        try
-        {
-            isProcessing = true;
-            errorMessage = ""; // Clear any previous errors
-            
-            // Show processing message
-            currentSpeakerName = "Processing...";
-            displayedText = "Transcribing your audio...";
-            StateHasChanged();
-            
-            // Get blob data
-            Console.WriteLine("[FinalPuzzle] Getting blob data for server submission...");
-            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/blobHelpers.js");
-            var audioBytes = await module.InvokeAsync<byte[]>("getBlobData", combinedRecordingBlob.JSReference);
-            Console.WriteLine($"[FinalPuzzle] Audio data size: {audioBytes.Length} bytes");
-
-            // Send to server
-            if (hubConnection != null && audioBytes.Length > 0)
-            {
-                Console.WriteLine($"[FinalPuzzle] Sending audio to server (room: {currentRoomId})...");
-                await hubConnection.SendAsync("SubmitFinalPuzzleAudio", currentRoomId, audioBytes);
-                Console.WriteLine("[FinalPuzzle] Audio sent to server successfully");
-                
-                // Clear the recording data after sending
-                combinedRecordingBlob = null;
-                recordedAudioUrl = null;
-                recordedBlobs.Clear();
-            }
-            else
-            {
-                Console.WriteLine($"[FinalPuzzle] ERROR: Cannot send audio - hubConnection null: {hubConnection == null}, bytes: {audioBytes.Length}");
-                errorMessage = "Failed to send audio to server";
-                isProcessing = false;
-                displayedText = "";
-                currentSpeakerName = "";
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error processing recording: {ex.Message}";
-            isProcessing = false;
-            displayedText = "";
-            currentSpeakerName = "";
-            Console.WriteLine($"[FinalPuzzle] ERROR in ProcessRecording: {ex.Message}\n{ex.StackTrace}");
-            StateHasChanged();
-        }
-    }
-
-    private async Task<string> CreateObjectURL(Blob blob)
-    {
-        try
-        {
-            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/blobHelpers.js");
-            return await module.InvokeAsync<string>("createObjectURL", blob.JSReference);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[FinalPuzzle] ERROR creating object URL: {ex.Message}");
-            return "";
-        }
-    }
-
-    private void UpdateCurrentDialogue()
-    {
-        // This method is now only used for initial dialogue updates
-        // Real-time updates come through SignalR events
-        if (playerView?.ConversationHistory == null || !playerView.ConversationHistory.Any())
-            return;
-
-        var lastDialogue = playerView.ConversationHistory.Last();
-        currentSpeaker = lastDialogue.Speaker;
-        currentSpeakerName = GetSpeakerDisplayName(lastDialogue.Speaker);
-        
-        if (lastDialogue.Speaker == DebateSpeaker.Jinx || lastDialogue.Speaker == DebateSpeaker.Silco)
-        {
-            lastAISpeaker = lastDialogue.Speaker;
-            currentAudioUrl = lastDialogue.AudioUrl;
-        }
-    }
-
-    private async Task StartTypewriterAnimation(string text)
-    {
-        CancelTypewriter();
-        
-        typingCts = new CancellationTokenSource();
-        var token = typingCts.Token;
-        isTypewriting = true;
-        displayedText = "";
-        
-        try
-        {
-            foreach (char c in text)
-            {
-                if (token.IsCancellationRequested) break;
-                
-                displayedText += c;
-                await InvokeAsync(StateHasChanged);
-                
-                int delay = 30;
-                if (",.!?;:".Contains(c))
-                    delay += 100;
-                    
-                await Task.Delay(delay, token);
-            }
-        }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            isTypewriting = false;
-        }
-    }
-
-    private void CancelTypewriter()
-    {
-        typingCts?.Cancel();
-        typingCts?.Dispose();
-        typingCts = null;
-        isTypewriting = false;
-    }
-
-    private void ToggleHistory()
-    {
-        showHistory = !showHistory;
+        playerRole = canonicalRole;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ContinueStory()
     {
-        if (hubConnection != null)
+        if (hubConnection is null) return;
+        try
         {
-            await hubConnection.SendAsync("ContinueStoryFromFinalPuzzle", currentRoomId);
+            var originalRoomId = gameCode;
+            var originalSquad = string.IsNullOrEmpty(squadName)
+                ? (gameCode.Contains("_") ? gameCode.Substring(0, gameCode.IndexOf("_")) : gameCode)
+                : squadName;
+            var targetStoryLobby = $"{originalSquad}_FromFinalPuzzle";
+            var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
+            var canonicalRole = string.IsNullOrEmpty(playerRole) ? CanonicalizeRole(preservedRole) : playerRole;
+
+            // Scene 16 (truth_revealed) -> sceneIndex 22
+            await hubConnection.SendAsync(
+                "RedirectPlayersToAct1WithScene",
+                originalRoomId,
+                targetStoryLobby,
+                canonicalRole,
+                "1",
+                displayName,
+                22
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FinalPuzzle] ContinueStory error: {ex.Message}");
         }
     }
 
-    private async Task RestartDebate()
+    private static string CanonicalizeRole(string role)
     {
-        if (hubConnection != null)
+        return (role ?? string.Empty).Trim().ToLowerInvariant() switch
         {
-            await hubConnection.SendAsync("RestartFinalPuzzle", currentRoomId);
-        }
-    }
-
-    private string GetSpeakerDisplayName(DebateSpeaker speaker)
-    {
-        return speaker switch
-        {
-            DebateSpeaker.PlayerA => $"{playerView?.ConnectedPlayers.FirstOrDefault() ?? "Player 1"}",
-            DebateSpeaker.PlayerB => $"{playerView?.ConnectedPlayers.Skip(1).FirstOrDefault() ?? "Player 2"}",
-            _ => speaker.ToString()
+            "piltover" => "piltover",
+            "a" => "piltover",
+            "zaun" => "zaun",
+            "b" => "zaun",
+            _ => "piltover"
         };
     }
-
-    private string GetCharacterImage(DebateSpeaker speaker)
-    {
-        var emotion = playerView?.ConversationHistory
-            .LastOrDefault(d => d.Speaker == speaker)?.Emotion ?? CharacterEmotion.Neutral;
-            
-        return speaker switch
-        {
-            DebateSpeaker.Jinx => $"/images/jinx_{emotion.ToString().ToLower()}.jpg",
-            DebateSpeaker.Silco => $"/images/silco_{emotion.ToString().ToLower()}.jpg",
-            _ => ""
-        };
-    }
-
-    private string GetThemeClass() => playerRole == "piltover" ? "piltover" : "zaun";
-    private string GetTextAnimationClass() => isTypewriting ? "typewriter" : "";
 
     public async ValueTask DisposeAsync()
     {
-        CancelTypewriter();
-        
-        try
+        if (hubConnection is not null)
         {
-            if (mediaStream != null)
-                await mediaStream.DisposeAsync();
-            if (mediaRecorder != null)
-                await mediaRecorder.DisposeAsync();
-            if (dataAvailableListener != null)
-                await dataAvailableListener.DisposeAsync();
-            if (stopListener != null)
-                await stopListener.DisposeAsync();
-        }
-        catch { }
-        
-        if (hubConnection != null)
             await hubConnection.DisposeAsync();
+        }
     }
 }
-
-<style>
-/********************************************
- * Final Puzzle Debate Styles - Matching Act1Multiplayer Design
- ********************************************/
-.final-puzzle-container, .debate-scene {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    font-family: 'Rajdhani', sans-serif;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-    color: #fff;
-}
-
-/* Theme backgrounds */
-.final-puzzle-container.piltover {
-    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
-}
-
-.final-puzzle-container.zaun {
-    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
-}
-
-/* Connection and waiting screens */
-.connection-screen, .waiting-screen, .intro-screen, .completion-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100vh;
-}
-
-.connection-content, .waiting-content, .intro-content, .completion-content {
-    text-align: center;
-    padding: 2rem;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 12px;
-}
-
-h1 {
-    font-family: 'Arcane Nine', 'Cinzel', serif;
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
-}
-
-.final-puzzle-container.zaun h1 {
-    text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
-}
-
-/* Loading spinner */
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #c8aa6e;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 2rem auto;
-}
-
-.final-puzzle-container.zaun .loading-spinner {
-    border-top-color: #00d4aa;
-}
-
-/* Sync animation */
-.sync-animation {
-    margin: 2rem 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-
-.sync-indicators {
-    display: flex;
-    gap: 2rem;
-}
-
-.sync-indicator {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.sync-indicator.waiting {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.sync-indicator.connected {
-    background: rgba(40, 167, 69, 0.2);
-    border: 1px solid #28a745;
-    color: #28a745;
-    box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
-}
-
-.squad-info {
-    margin: 2rem 0;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-}
-
-.squad-info p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
-}
-
-@@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Main debate scene */
-.debate-scene {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-/* Background layer */
-.scene-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
-
-.background-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: brightness(0.6);
-}
-
-.background-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-}
-
-/* Characters layer */
-.characters-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-}
-
-.character-container {
-    position: absolute;
-    bottom: 10%;
-    transition: all 0.6s ease;
-    opacity: 0.7;
-}
-
-.character-container.active {
-    opacity: 1;
-    transform: scale(1.05);
-}
-
-.left-character {
-    left: 10%;
-}
-
-.right-character {
-    right: 10%;
-}
-
-.character-portrait {
-    height: 60vh;
-    object-fit: contain;
-}
-
-/********************************************
- * Multiplayer Status Bar - Matching Act1Multiplayer
- ********************************************/
-.multiplayer-status {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 100;
-    display: flex;
-    gap: 15px;
-    font-family: 'Orbitron', monospace;
-    font-size: 0.9rem;
-}
-
-.player-role-indicator, .turn-indicator, .players-online {
-    background: rgba(0, 0, 0, 0.8);
-    padding: 8px 16px;
-    border: 1px solid rgba(200, 170, 110, 0.5);
-    color: #fff;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-}
-
-.final-puzzle-container.zaun .player-role-indicator,
-.final-puzzle-container.zaun .turn-indicator,
-.final-puzzle-container.zaun .players-online {
-    border-color: rgba(0, 212, 170, 0.8);
-    color: rgba(0, 212, 170, 1);
-}
-
-/********************************************
- * Recording & Microphone Selection - Matching Library Scenario Style
- ********************************************/
-.vn-recording {
-    position: absolute;
-    left: 5%;
-    bottom: 30%;
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 10px 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 15px rgba(0,0,0,0.3);
-    max-width: 320px;
-}
-
-.recording-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.vn-button {
-    padding: 6px 12px;
-    background-color: #5b4070;
-    border: none;
-    border-radius: 4px;
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-}
-
-.vn-button:hover {
-    background-color: #4a3360;
-}
-
-.vn-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.mic-menu {
-    margin-top: 8px;
-}
-
-.mic-menu label {
-    color: #fff;
-    font-size: 0.9rem;
-}
-
-.mic-select {
-    width: 100%;
-    padding: 4px 6px;
-    margin-top: 5px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    font-size: 0.9rem;
-}
-
-.record-btn {
-    background-color: #d42f2f;
-}
-
-.record-btn:hover:not(:disabled) {
-    background-color: #bb2424;
-}
-
-.stop-recording-btn {
-    background-color: #555;
-}
-
-.stop-recording-btn:hover {
-    background-color: #333;
-}
-
-.recording-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: red;
-    border-radius: 50%;
-    animation: pulse 1s infinite;
-}
-
-.error-message {
-    color: #ff6b6b;
-    font-size: 0.9rem;
-    margin-top: 5px;
-}
-
-.audio-playback {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.audio-playback audio {
-    height: 28px;
-}
-
-.playback-label {
-    color: #fff;
-    font-size: 0.85rem;
-}
-
-.processing-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    color: #fff;
-    font-size: 0.9rem;
-}
-
-.spinner-small {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #00d4ff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-.vn-button.continue-btn {
-    background: linear-gradient(135deg, #00d4ff, #0099cc);
-    color: white;
-}
-
-.vn-button.continue-btn:hover {
-    background: linear-gradient(135deg, #00b8e6, #0088bb);
-}
-
-@@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* Processing and waiting indicators */
-.processing-indicator, .waiting-turn {
-    position: absolute;
-    bottom: 35%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 5;
-    text-align: center;
-}
-
-.thinking-animation {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.thinking-animation .dot {
-    width: 10px;
-    height: 10px;
-    background: #c8aa6e;
-    border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.thinking-animation .dot:nth-child(1) { animation-delay: -0.32s; }
-.thinking-animation .dot:nth-child(2) { animation-delay: -0.16s; }
-
-@@keyframes bounce {
-    0%, 80%, 100% {
-        transform: scale(0);
-    } 40% {
-        transform: scale(1);
-    }
-}
-
-/********************************************
- * Dialogue Box - Matching Act1Multiplayer Style
- ********************************************/
-.dialogue-section {
-    position: absolute;
-    bottom: 0;
-    left: 5%;
-    right: 5%;
-    z-index: 3;
-}
-
-.dialogue-box {
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    min-height: 25%;
-    max-height: 28%;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #888 #333;
-}
-
-.dialogue-box::-webkit-scrollbar {
-    width: 8px;
-}
-
-.dialogue-box::-webkit-scrollbar-track {
-    background: #333;
-    border-radius: 4px;
-}
-
-.dialogue-box::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.dialogue-box::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-.character-name-tag {
-    display: inline-block;
-    background: linear-gradient(to bottom right, #5b4070, #7e5d90);
-    padding: 5px 15px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
-}
-
-.character-name {
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.dialogue-text {
-    font-size: 1.2rem;
-    line-height: 1.6;
-    color: #fff;
-}
-
-/* History panel */
-.history-panel {
-    position: absolute;
-    top: 80px;
-    left: 20px;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid rgba(200, 170, 110, 0.3);
-    border-radius: 8px;
-    max-width: 400px;
-    transition: all 0.3s ease;
-}
-
-.history-panel.collapsed {
-    transform: translateX(-90%);
-}
-
-.history-toggle {
-    position: absolute;
-    right: -80px;
-    top: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(200, 170, 110, 0.3);
-    color: white;
-    padding: 0.5rem;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.history-content {
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 1rem;
-}
-
-.history-entry {
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-
-.history-entry.jinx { border-left: 3px solid #ff00ff; }
-.history-entry.silco { border-left: 3px solid #00ff00; }
-.history-entry.playera, .history-entry.playerb { border-left: 3px solid #00d4ff; }
-
-/* Completion actions */
-.completion-actions {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.continue-btn, .restart-btn {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.completion-screen .continue-btn {
-    background: linear-gradient(135deg, #00d4ff, #0099cc);
-    color: white;
-}
-
-.restart-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-}
-
-.continue-btn:hover, .restart-btn:hover {
-    transform: translateY(-2px);
-}
-</style>
