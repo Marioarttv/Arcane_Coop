@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the Arcane Coop esc
 
 ## Project Overview
 
-**Arcane Coop** is a sophisticated cooperative puzzle game platform built with ASP.NET Core Blazor Server (.NET 9.0). Set in the Arcane universe, it features 7 distinct puzzle systems where two players representing Zaun and Piltover must work together to solve challenges through real-time communication and collaboration.
+**Arcane Coop** is a sophisticated cooperative puzzle game platform built with ASP.NET Core Blazor Server (.NET 9.0). Set in the Arcane universe, it features 8 distinct puzzle systems where two players representing Zaun and Piltover must work together to solve challenges through real-time communication and collaboration.
 
 ## Development Commands
 
@@ -46,6 +46,9 @@ dotnet publish -c Release
 - **Rendering**: Interactive Server Components
 - **Styling**: Component-scoped CSS with extensive custom styling
 - **Fonts**: Custom "Arcane Nine" font and Google Fonts (Orbitron, Cinzel, Rajdhani)
+- **AI Integration**: OpenAI Whisper (speech-to-text), GPT-4-mini (text generation), ElevenLabs (text-to-speech)
+- **Audio Processing**: Browser MediaRecorder API, KristofferStrube.Blazor.MediaCaptureAndStreams package
+- **Real-time Communication**: SignalR for multiplayer synchronization and audio data transfer
 
 ### Service Layer (2025)
 - **Act1StoryEngine**: Server-side story engine for Act 1. Provides scene content, player view construction, and progression logic
@@ -53,9 +56,16 @@ dotnet publish -c Release
   - Interface: `IAct1StoryEngine`
   - Registered in `Program.cs` via DI: `AddSingleton<IAct1StoryEngine, Act1StoryEngine>()`
 
+- **DebateAIService**: AI integration service for Final Puzzle debate system. Handles OpenAI and ElevenLabs API interactions
+  - File: `Services/DebateAIService.cs`
+  - Interface: `IDebateAIService`
+  - Features: Speech-to-text transcription, AI character responses, text-to-speech synthesis
+  - APIs: OpenAI Whisper, GPT-4-mini, ElevenLabs TTS
+
 ### Core Features
-- **7 Cooperative Puzzle Systems** - Each with unique mechanics and educational focus
+- **8 Cooperative Puzzle Systems** - Each with unique mechanics and educational focus
 - **Real-time Multiplayer** - SignalR-powered synchronization between players
+- **AI Integration** - Advanced voice-based interaction with OpenAI Whisper, GPT-4-mini, and ElevenLabs TTS
 - **Dual-theme Arcane Design** - Zaun (teal/underground) vs Piltover (gold/clean) aesthetics
 - **Role-based Gameplay** - Players have different views and responsibilities
 - **Educational Focus** - Designed for ESL students and skill development
@@ -113,7 +123,7 @@ See individual puzzle documentation for implementation examples.
 
 ## Puzzle Systems Overview
 
-The project features 7 distinct cooperative puzzle systems, each designed for 2 players with asymmetric information and roles:
+The project features 8 distinct cooperative puzzle systems, each designed for 2 players with asymmetric information and roles:
 
 ### 1. CodeCracker (/code-cracker)
 **Purpose**: Vocabulary building and communication
@@ -182,6 +192,20 @@ The project features 7 distinct cooperative puzzle systems, each designed for 2 
 - **Dynamic Character Positioning**: Per-dialogue repositioning for dramatic scene choreography
 - **Character Visibility Control**: Hide/show characters with manual control and automatic first-line appearances
 - **Enhanced Expression System**: Complex emotion management across multiple characters with automatic behavior
+
+### 8. FinalPuzzle (/final-puzzle)
+**Purpose**: AI-powered collaborative debate and moral reasoning
+**Players**: Two players engage in structured debate with AI characters (Jinx and Silco)
+**Mechanics**: Voice input, speech transcription, AI-generated responses, text-to-speech output
+**Education**: Argumentation skills, critical thinking, oral communication, moral reasoning
+**Documentation**: [FinalPuzzle.md](./FinalPuzzle.md)
+
+**Technical Features:**
+- **Voice Recording**: Real-time microphone input with device selection
+- **Speech-to-Text**: OpenAI Whisper integration for transcription
+- **AI Characters**: GPT-4-mini with personality prompts for Jinx and Silco
+- **Text-to-Speech**: ElevenLabs integration with character-specific voices
+- **Visual Novel UI**: Dynamic character portraits with emotion states and typewriter effects
 
 ## Technical Architecture
 
@@ -1004,14 +1028,15 @@ The `GameHub.cs` file serves as the central multiplayer coordination hub for all
 - **RuneProtocol** (Lines 525-670): Complex logic puzzle with conditional rule systems
 - **PictureExplanation** (Lines 671-825): Voice chat visual communication challenges
 - **Word-Forge** (Lines 826-934): Advanced word formation and affix combinations
- - **Act 1 Story (thin)**: Delegates to `IAct1StoryEngine` for content and branching; hub focuses on joins, skips, continue, typing completion, choices, restarts, and broadcasting
+- **FinalPuzzle** (Lines 2925-3180): AI-powered debate system with voice input, speech transcription, and text-to-speech
+- **Act 1 Story (thin)**: Delegates to `IAct1StoryEngine` for content and branching; hub focuses on joins, skips, continue, typing completion, choices, restarts, and broadcasting
 
 **Connection Management (Lines 935-end)**: Player disconnection handling and cleanup
 
 ### Static Game Storage Architecture
 
 ```csharp
-// Each puzzle type maintains its own concurrent dictionary (Lines 10-18)
+// Each puzzle type maintains its own concurrent dictionary (Lines 10-30)
 private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
 private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
 private static readonly ConcurrentDictionary<string, SimpleSignalDecoderGame> _signalDecoderGames = new();
@@ -1020,6 +1045,7 @@ private static readonly ConcurrentDictionary<string, AlchemyGame> _alchemyGames 
 private static readonly ConcurrentDictionary<string, RuneProtocolGame> _runeProtocolGames = new();
 private static readonly ConcurrentDictionary<string, PictureExplanationGame> _pictureExplanationGames = new();
 private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
+private static readonly ConcurrentDictionary<string, FinalPuzzleGame> _finalPuzzleGames = new();
 private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
 ```
 
@@ -1027,8 +1053,8 @@ private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string
 
 Each puzzle section follows consistent patterns:
 
-#### 1. **Join Game Methods** (Lines 113, 192, 288, 383, 526, 672, 827)
-- Pattern: `JoinXXXGame(string roomId, string playerName)`
+#### 1. **Join Game Methods** (Lines 113, 192, 288, 383, 526, 672, 827, 2927)
+- Pattern: `JoinXXXGame(string roomId, string playerName)` or `JoinFinalPuzzle(string roomId, string playerName, string requestedRole)`
 - Adds player to SignalR group
 - Creates or retrieves game instance
 - Assigns player role (typically Piltover vs Zaunite)
@@ -1042,8 +1068,9 @@ Each puzzle section follows consistent patterns:
 - **RuneProtocol**: `ToggleRune()` (Line 557), `ToggleRuneProtocolValidationHints()` (Line 602)
 - **PictureExplanation**: `SubmitPictureChoice()` (Line 736), `NextPictureRound()` (Line 780)
 - **Word-Forge**: `ForgeWordCombination()` (Line 890)
+- **FinalPuzzle**: `SubmitFinalPuzzleAudio()` (Line 2998), `ContinueStoryFromFinalPuzzle()` (Line 3107)
 
-#### 3. **Restart/Reset Methods** (Lines 176, 243, 353, 510, 637, 810, 919)
+#### 3. **Restart/Reset Methods** (Lines 176, 243, 353, 510, 637, 810, 919, 3128)
 - Pattern: `RestartXXXGame(string roomId)`
 - Resets game state to initial conditions
 - Broadcasts updated state to all players
@@ -1088,6 +1115,14 @@ Each puzzle section follows consistent patterns:
 - **Affix System**: Complex word formation with prefixes and suffixes
 - **Game Modes**: Assisted vs Challenge difficulty levels
 - **Combination Tracking**: Progress monitoring for word formation goals
+
+#### **FinalPuzzle (Lines 2925-3180)**
+- **AI Character Integration**: Dynamic conversation with Jinx and Silco using GPT-4-mini
+- **Voice Processing Pipeline**: Microphone → Whisper transcription → AI response → ElevenLabs TTS
+- **Turn-Based Debate System**: Structured alternating gameplay with server-side validation
+- **Character Personality**: Unique AI prompts for authentic Arcane character responses
+- **Real-Time Audio**: Synchronized audio playback across all players with emotion states
+- **Story Integration**: Seamless transition from previous puzzles and back to visual novel
 
 ### SignalR Event Patterns
 

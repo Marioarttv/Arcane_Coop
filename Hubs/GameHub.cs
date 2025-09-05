@@ -10,10 +10,12 @@ namespace Arcane_Coop.Hubs;
 public class GameHub : Hub
 {
     private readonly IAct1StoryEngine _act1StoryEngine;
+    private readonly IDebateAIService _debateAIService;
 
-    public GameHub(IAct1StoryEngine act1StoryEngine)
+    public GameHub(IAct1StoryEngine act1StoryEngine, IDebateAIService debateAIService)
     {
         _act1StoryEngine = act1StoryEngine;
+        _debateAIService = debateAIService;
     }
     private static readonly ConcurrentDictionary<string, TicTacToeGame> _games = new();
     private static readonly ConcurrentDictionary<string, CodeCrackerGame> _codeCrackerGames = new();
@@ -25,6 +27,7 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
     private static readonly ConcurrentDictionary<string, VisualNovelMultiplayerGame> _visualNovelGames = new();
     private static readonly ConcurrentDictionary<string, Act1MultiplayerGame> _act1Games = new();
+    private static readonly ConcurrentDictionary<string, FinalPuzzleGame> _finalPuzzleGames = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
     // Track richer lobby player metadata per connection within a room (used for personalized redirects)
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, LobbyPlayerInfo>> _lobbyPlayers = new();
@@ -2919,9 +2922,262 @@ public class GameHub : Hub
 
     // Content moved to IAct1StoryEngine
 
-    // (Final Puzzle server-side game logic removed. Final page now uses room-based autojoin and direct story redirect.)
+    #region Final Puzzle - AI Debate Methods
 
-    // Content moved to IAct1StoryEngine
+    public async Task JoinFinalPuzzle(string roomId, string playerName, string requestedRole)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            game = new FinalPuzzleGame { RoomId = roomId };
+            _finalPuzzleGames[roomId] = game;
+        }
+
+        // Check if player with same name exists and kick them out
+        var existingPlayer = game.Players.Values.FirstOrDefault(p => p.PlayerName == playerName && p.ConnectionId != Context.ConnectionId);
+        if (existingPlayer != null)
+        {
+            game.RemovePlayer(existingPlayer.ConnectionId);
+            await Groups.RemoveFromGroupAsync(existingPlayer.ConnectionId, roomId);
+            await Clients.Client(existingPlayer.ConnectionId).SendAsync("FinalPuzzleError", "You have been disconnected - another player with the same name has joined");
+        }
+
+        if (game.AddPlayer(Context.ConnectionId, playerName, requestedRole))
+        {
+            var playerView = CreateFinalPuzzlePlayerView(game, Context.ConnectionId);
+            await Clients.Caller.SendAsync("FinalPuzzleJoined", playerView);
+
+            // If both players joined, start the introduction
+            if (game.Status == FinalPuzzleGameStatus.Introduction)
+            {
+                await StartFinalPuzzleIntroduction(roomId);
+            }
+
+            // Notify all players
+            await BroadcastFinalPuzzleState(roomId);
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleGameFull");
+        }
+    }
+
+    private async Task StartFinalPuzzleIntroduction(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        // Add hardcoded introduction dialogue
+        game.AddDialogue(DebateSpeaker.Narrator, 
+            "The council chamber echoes with tension. An enforcer has been captured, claiming to have crucial information about a conspiracy between Piltover and Zaun.");
+        
+        await Task.Delay(2000);
+        
+        game.AddDialogue(DebateSpeaker.Jinx, 
+            "Look what we have here! A little birdie from topside! Should we pluck its feathers and see what songs it sings? Or maybe just... BOOM! Problem solved!",
+            emotion: CharacterEmotion.Amused);
+        
+        await Task.Delay(2000);
+        
+        game.AddDialogue(DebateSpeaker.Silco, 
+            "Patience, Jinx. Information is more valuable than blood. This enforcer claims to know about shipments, about betrayals. We should... extract every last detail.",
+            emotion: CharacterEmotion.Thoughtful);
+
+        // Set first player's turn
+        var firstPlayer = game.Players.Values.FirstOrDefault(p => p.Role == "piltover");
+        if (firstPlayer != null)
+        {
+            game.CurrentSpeakingPlayerId = firstPlayer.ConnectionId;
+            game.Status = FinalPuzzleGameStatus.PlayerATurn;
+        }
+
+        await BroadcastFinalPuzzleState(roomId);
+    }
+
+    public async Task SubmitFinalPuzzleAudio(string roomId, byte[] audioData)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found");
+            return;
+        }
+
+        if (game.CurrentSpeakingPlayerId != Context.ConnectionId)
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "It's not your turn to speak");
+            return;
+        }
+
+        if (game.IsProcessingAI)
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Please wait for AI response");
+            return;
+        }
+
+        try
+        {
+            game.IsProcessingAI = true;
+            game.Status = FinalPuzzleGameStatus.ProcessingAI;
+            await BroadcastFinalPuzzleState(roomId);
+
+            // Transcribe the audio
+            var transcription = await _debateAIService.TranscribeAudioAsync(audioData);
+            
+            // Add player's dialogue to history
+            var currentPlayer = game.GetCurrentSpeaker();
+            var speakerType = currentPlayer?.Role == "piltover" ? DebateSpeaker.PlayerA : DebateSpeaker.PlayerB;
+            game.AddDialogue(speakerType, transcription);
+
+            // Broadcast transcription immediately
+            await Clients.Group(roomId).SendAsync("FinalPuzzleTranscription", speakerType.ToString(), transcription);
+
+            // Determine which AI character responds (alternate between Jinx and Silco)
+            var aiCharacter = game.TurnNumber % 2 == 0 ? DebateSpeaker.Jinx : DebateSpeaker.Silco;
+            
+            // Generate AI response
+            var (responseText, emotion) = await _debateAIService.GenerateAIResponseAsync(
+                aiCharacter,
+                game.ConversationHistory,
+                transcription,
+                game.DebateTopic
+            );
+
+            // Generate speech for the response
+            var speechAudio = await _debateAIService.GenerateSpeechAsync(responseText, aiCharacter);
+            
+            // Convert to base64 for client playback
+            var audioUrl = $"data:audio/mpeg;base64,{Convert.ToBase64String(speechAudio)}";
+            
+            // Add AI response to history
+            game.AddDialogue(aiCharacter, responseText, audioUrl, emotion);
+
+            // Check for debate conclusion
+            if (game.TurnNumber >= 8 || ShouldConcludeDebate(game.ConversationHistory))
+            {
+                game.Status = FinalPuzzleGameStatus.DebateConclusion;
+                await ConcludeFinalPuzzleDebate(roomId);
+            }
+            else
+            {
+                // Switch turns
+                game.NextTurn();
+            }
+
+            game.IsProcessingAI = false;
+            await BroadcastFinalPuzzleState(roomId);
+        }
+        catch (Exception ex)
+        {
+            game.IsProcessingAI = false;
+            await Clients.Caller.SendAsync("FinalPuzzleError", $"AI processing error: {ex.Message}");
+            await BroadcastFinalPuzzleState(roomId);
+        }
+    }
+
+    private bool ShouldConcludeDebate(List<DebateDialogue> history)
+    {
+        // Simple check - could be enhanced with AI analysis
+        return history.Count >= 12 || 
+               history.Any(d => d.Text.Contains("enough") || d.Text.Contains("conclude") || d.Text.Contains("decision"));
+    }
+
+    private async Task ConcludeFinalPuzzleDebate(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        game.AddDialogue(DebateSpeaker.Silco, 
+            "Enough! The decision is made. The enforcer's information proves useful. Zaun will act on this knowledge... in our own way.",
+            emotion: CharacterEmotion.Confident);
+        
+        await Task.Delay(2000);
+        
+        game.AddDialogue(DebateSpeaker.Jinx, 
+            "Aww, and here I was hoping for fireworks! But fine, information is power and all that boring stuff. Just remember who warned you when it all goes KABOOM!",
+            emotion: CharacterEmotion.Frustrated);
+
+        game.Status = FinalPuzzleGameStatus.Completed;
+        await BroadcastFinalPuzzleState(roomId);
+        
+        // Notify clients to show completion UI
+        await Clients.Group(roomId).SendAsync("FinalPuzzleCompleted");
+    }
+
+    public async Task ContinueStoryFromFinalPuzzle(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found");
+            return;
+        }
+
+        // Get player information for redirect
+        var players = game.GetConnectedPlayers();
+        foreach (var playerId in players)
+        {
+            if (game.Players.TryGetValue(playerId, out var player))
+            {
+                // Redirect to next Act1 scene (scene index 23 - truth_revealed)
+                var url = $"/act1-multiplayer?roomId={roomId}_finale&role={player.Role}&name={Uri.EscapeDataString(player.PlayerName)}&squad={Uri.EscapeDataString(roomId)}&sceneIndex=23";
+                await Clients.Client(playerId).SendAsync("RedirectToNextScene", url);
+            }
+        }
+    }
+
+    public async Task RestartFinalPuzzle(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found");
+            return;
+        }
+
+        // Reset game state
+        game.Status = FinalPuzzleGameStatus.Introduction;
+        game.ConversationHistory.Clear();
+        game.TurnNumber = 0;
+        game.CurrentSpeakingPlayerId = null;
+        game.IsProcessingAI = false;
+
+        // Restart introduction
+        await StartFinalPuzzleIntroduction(roomId);
+    }
+
+    private FinalPuzzlePlayerView CreateFinalPuzzlePlayerView(FinalPuzzleGame game, string playerId)
+    {
+        var player = game.Players.ContainsKey(playerId) ? game.Players[playerId] : null;
+        
+        return new FinalPuzzlePlayerView
+        {
+            PlayerId = playerId,
+            PlayerName = player?.PlayerName ?? "",
+            PlayerRole = player?.Role ?? "zaun",
+            GameStatus = game.Status,
+            ConversationHistory = game.ConversationHistory,
+            IsMyTurn = game.CurrentSpeakingPlayerId == playerId,
+            CanSpeak = game.CurrentSpeakingPlayerId == playerId && !game.IsProcessingAI,
+            CurrentSpeaker = game.GetCurrentSpeaker()?.PlayerName,
+            DebateTopic = game.DebateTopic,
+            TurnNumber = game.TurnNumber,
+            ConnectedPlayers = game.Players.Values.Select(p => p.PlayerName).ToList(),
+            IsProcessingAI = game.IsProcessingAI
+        };
+    }
+
+    private async Task BroadcastFinalPuzzleState(string roomId)
+    {
+        if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            return;
+
+        foreach (var playerId in game.GetConnectedPlayers())
+        {
+            var view = CreateFinalPuzzlePlayerView(game, playerId);
+            await Clients.Client(playerId).SendAsync("FinalPuzzleStateUpdated", view);
+        }
+    }
+
+    #endregion
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
@@ -3068,6 +3324,23 @@ public class GameHub : Hub
                     await Clients.Group(kvp.Key).SendAsync("Act1PlayerDisconnected", disconnectedPlayer.PlayerName);
                     await BroadcastAct1GameState(kvp.Key);
                 }
+            }
+        }
+        
+        // Remove player from Final Puzzle games
+        foreach (var kvp in _finalPuzzleGames)
+        {
+            var game = kvp.Value;
+            game.RemovePlayer(Context.ConnectionId);
+            
+            // Clean up empty games or notify remaining players
+            if (game.Players.Count == 0)
+            {
+                _finalPuzzleGames.TryRemove(kvp.Key, out _);
+            }
+            else
+            {
+                await BroadcastFinalPuzzleState(kvp.Key);
             }
         }
         
