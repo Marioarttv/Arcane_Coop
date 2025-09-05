@@ -1,6 +1,7 @@
 using Arcane_Coop.Components;
 using Arcane_Coop.Hubs;
 using Arcane_Coop.Services;
+using KristofferStrube.Blazor.MediaCaptureStreams;
 using Plk.Blazor.DragDrop;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddMediaDevicesService();
 // Add SignalR
 builder.Services.AddSignalR();
 
