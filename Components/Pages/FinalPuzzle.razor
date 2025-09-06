@@ -3,162 +3,292 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
 @using Arcane_Coop.Hubs
+@using Arcane_Coop.Models
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 
-<PageTitle>Truth Echo - Final Transition</PageTitle>
+<PageTitle>Truth Echo - The Final Confrontation</PageTitle>
 
-<style>
-    .page-container {
-        min-height: 100vh;
-        padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        color: #e6e6e6;
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+<div class="final-puzzle-container @GetThemeClass()">
+    @if (!isConnected)
+    {
+        <!-- Connection Screen -->
+        <div class="connection-screen @GetThemeClass()">
+            <div class="connection-content">
+                <h1>Truth Echo</h1>
+                <div class="connection-animation">
+                    <div class="loading-spinner @GetThemeClass()"></div>
+                </div>
+                <p>Connecting to final confrontation...</p>
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="status-message">@statusMessage</div>
+                }
+            </div>
+        </div>
     }
-
-    .title-header {
-        text-align: center;
-        margin-bottom: 1.5rem;
+    else if (gameState == GameState.WaitingForPlayers)
+    {
+        <!-- Waiting for Players -->
+        <div class="waiting-screen @GetThemeClass()">
+            <div class="waiting-content">
+                <h1>Awaiting Squad</h1>
+                <div class="sync-animation">
+                    <div class="loading-spinner @GetThemeClass()"></div>
+                    <div class="sync-indicators">
+                        <div class="sync-indicator @(connectedPlayersCount >= 1 ? "connected" : "waiting")">Player 1</div>
+                        <div class="sync-indicator @(connectedPlayersCount >= 2 ? "connected" : "waiting")">Player 2</div>
+                    </div>
+                </div>
+                <h2>Preparing for the final confrontation...</h2>
+                <div class="squad-info">
+                    <p><strong>Squad:</strong> @squadName</p>
+                    <p><strong>Mission:</strong> Truth Echo Protocol</p>
+                </div>
+            </div>
+        </div>
     }
+    else if (gameState == GameState.InDebate)
+    {
+        <!-- Debate Scene -->
+        <div class="debate-scene @GetThemeClass()">
+            <!-- Background -->
+            <div class="scene-background">
+                <img src="/images/backgrounds/jinx_hideout.jpg" alt="Jinx's Hideout" class="background-image" />
+                <div class="background-overlay"></div>
+                <div class="atmospheric-effects"></div>
+            </div>
 
-    .title-header h1 {
-        font-size: 2.25rem;
-        background: linear-gradient(45deg, #00d4ff, #ff00ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.25rem;
-        text-shadow: 0 0 30px rgba(0, 212, 255, 0.35);
-    }
+            <!-- Character Layer -->
+            <div class="characters-layer">
+                <!-- Jinx Character -->
+                <div class="character-container left-character @(currentSpeaker == "jinx" ? "active" : "inactive")">
+                    <div class="character-portrait">
+                        <img src="/images/characters/jinx_debate.png" alt="Jinx" class="portrait-image" />
+                        <div class="character-glow"></div>
+                    </div>
+                </div>
 
-    .subtitle {
-        color: #a0a0a0;
-        font-size: 1rem;
-    }
+                <!-- Silco Character -->
+                <div class="character-container right-character @(currentSpeaker == "silco" ? "active" : "inactive")">
+                    <div class="character-portrait">
+                        <img src="/images/characters/silco_debate.png" alt="Silco" class="portrait-image" />
+                        <div class="character-glow"></div>
+                    </div>
+                </div>
+            </div>
 
-    .status-card {
-        background: rgba(20, 20, 40, 0.85);
-        border: 1px solid rgba(0, 212, 255, 0.25);
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        margin-top: 1rem;
-        width: 100%;
-        max-width: 720px;
-    }
-
-    .row {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .row > div { flex: 1; min-width: 220px; }
-
-    .label { color: #7bdff6; font-weight: 600; }
-    .value { color: #e6e6e6; }
-
-    .actions {
-        margin-top: 1.5rem;
-        display: flex;
-        justify-content: center;
-    }
-
-    .continue-story-button {
-        background: linear-gradient(135deg, #00d4ff, #ff00ff);
-        color: white;
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.2s ease;
-        box-shadow: 0 5px 18px rgba(0, 212, 255, 0.35);
-    }
-
-    .continue-story-button:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 24px rgba(0, 212, 255, 0.45);
-    }
-
-    .continue-story-button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .connecting {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #a0a0a0;
-    }
-
-    .spinner {
-        width: 16px;
-        height: 16px;
-        border: 3px solid rgba(0, 212, 255, 0.25);
-        border-top: 3px solid #00d4ff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-
-<div class="page-container">
-    <div class="title-header">
-        <h1>Truth Echo</h1>
-        <div class="subtitle">Final transition back to the story</div>
-    </div>
-
-    <div class="status-card">
-        <div class="row">
-            <div>
-                <div class="label">Connection</div>
-                <div class="value">
-                    @if (isConnected)
+            <!-- Multiplayer Status Bar -->
+            <div class="multiplayer-status">
+                <div class="player-role-indicator @GetRoleClass()">
+                    Squad Member: @playerRole.ToUpper()
+                </div>
+                <div class="debate-turn">
+                    @if (isPlayerTurn)
                     {
-                        <span>Connected</span>
+                        <span class="turn-active">YOUR TURN</span>
                     }
                     else
                     {
-                        <span class="connecting"><span class="spinner"></span> Connecting...</span>
+                        <span class="turn-waiting">PARTNER'S TURN</span>
+                    }
+                </div>
+                <div class="players-online">
+                    Players: @connectedPlayersCount/2
+                </div>
+            </div>
+
+            <!-- Dialogue Box -->
+            <div class="dialogue-section">
+                <div class="dialogue-box @GetDialogueBoxClass()">
+                    <!-- Character Name -->
+                    @if (!string.IsNullOrEmpty(currentSpeakerName))
+                    {
+                        <div class="character-name-tag @GetNameTagClass()">
+                            <span class="character-name">@currentSpeakerName</span>
+                            <div class="name-tag-decoration"></div>
+                        </div>
+                    }
+
+                    <!-- Dialogue Text Container -->
+                    <div class="dialogue-content">
+                        <div class="dialogue-text-container">
+                            <div class="dialogue-text">
+                                @((MarkupString)displayedText.Replace("\n","<br/>"))
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Control Area -->
+                <div class="dialogue-controls-external">
+                    @if (showRecordingControls && isPlayerTurn)
+                    {
+                        <!-- Recording Control Center -->
+                        <div class="recording-control-center @GetThemeClass()">
+                            @if (!isRecording && !isProcessing)
+                            {
+                                <!-- Microphone Selection and Record Button -->
+                                <div class="mic-controls">
+                                    <select class="mic-select @GetThemeClass()" @bind="selectedMicrophone">
+                                        <option value="">Select Microphone</option>
+                                        @foreach (var mic in availableMicrophones)
+                                        {
+                                            <option value="@mic.Id">@mic.Name</option>
+                                        }
+                                    </select>
+                                    <button class="control-btn record-btn @GetControlButtonClass()" 
+                                            @onclick="StartRecording" 
+                                            disabled="@(string.IsNullOrEmpty(selectedMicrophone))">
+                                        <span class="btn-icon">🎤</span>
+                                        <span class="btn-text">Record</span>
+                                        <div class="btn-effect"></div>
+                                    </button>
+                                </div>
+                            }
+                            else if (isRecording)
+                            {
+                                <!-- Stop Recording Button -->
+                                <div class="recording-active">
+                                    <div class="recording-indicator"></div>
+                                    <button class="control-btn stop-btn @GetControlButtonClass()" @onclick="StopRecording">
+                                        <span class="btn-icon">⏹️</span>
+                                        <span class="btn-text">Stop</span>
+                                        <div class="btn-effect"></div>
+                                    </button>
+                                </div>
+                            }
+                            else if (isProcessing)
+                            {
+                                <!-- Processing Indicator -->
+                                <div class="processing-status">
+                                    <div class="loading-spinner @GetThemeClass()"></div>
+                                    <span>Transcribing your response...</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (showTextControls)
+                    {
+                        <!-- Skip/Continue Controls (after transcription or AI response) -->
+                        @if (isTextAnimating)
+                        {
+                            <button class="control-btn skip-btn @GetControlButtonClass()" @onclick="SkipText">
+                                <span class="btn-icon">⏭️</span>
+                                <span class="btn-text">Skip</span>
+                                <div class="btn-effect"></div>
+                            </button>
+                        }
+                        else if (canContinue)
+                        {
+                            <button class="control-btn continue-btn @GetControlButtonClass()" @onclick="ContinueDebate">
+                                <span class="btn-icon">▶️</span>
+                                <span class="btn-text">@(isPlayerTranscript ? "Send" : "Continue")</span>
+                                <div class="btn-effect"></div>
+                            </button>
+                        }
+                    }
+                    else if (!isPlayerTurn && !showTextControls)
+                    {
+                        <!-- Waiting for Partner -->
+                        <div class="waiting-for-partner @GetThemeClass()">
+                            <div class="waiting-spinner"></div>
+                            <p>Your partner is formulating their response...</p>
+                        </div>
                     }
                 </div>
             </div>
-            <div>
-                <div class="label">Room</div>
-                <div class="value">@(!string.IsNullOrEmpty(gameCode) ? gameCode : "-")</div>
-            </div>
-            <div>
-                <div class="label">Role</div>
-                <div class="value">@(!string.IsNullOrEmpty(playerRole) ? playerRole : preservedRole)</div>
+        </div>
+    }
+    else if (gameState == GameState.Completed)
+    {
+        <!-- Completion Screen -->
+        <div class="completion-screen @GetThemeClass()">
+            <div class="completion-content">
+                <h1>Debate Complete!</h1>
+                <p>The truth has been revealed. Your words have shaped the outcome.</p>
+                <div class="completion-actions">
+                    <button @onclick="ContinueStory" class="continue-story-button">
+                        Continue Story
+                    </button>
+                </div>
             </div>
         </div>
-
-        <div class="actions">
-            <button class="continue-story-button" @onclick="ContinueStory">
-                Continue Story
-            </button>
-        </div>
-    </div>
+    }
 </div>
 
 @code {
     [Parameter] public string? Parameters { get; set; }
+    
+    // Enums
+    private enum GameState 
+    { 
+        Connecting, 
+        WaitingForPlayers, 
+        InDebate, 
+        Completed 
+    }
+    
+    // SignalR Connection
     private HubConnection? hubConnection;
     private bool isConnected = false;
-
+    
+    // Game State
+    private GameState gameState = GameState.Connecting;
+    private string statusMessage = "";
+    private int connectedPlayersCount = 0;
+    
     // URL/Join parameters
-    private string gameCode = "";              // Unique roomId for final puzzle (squad + transition)
-    private string preservedRole = "";         // role from URL (piltover/zaun or A/B)
-    private string playerRole = "";            // effective role after join (canonical: piltover/zaun)
+    private string gameCode = "";
+    private string preservedRole = "";
+    private string playerRole = "";
     private string squadName = "";
     private string transitionSource = "";
     private bool isStoryMode = false;
     private string playerNameFromUrl = "";
+    
+    // Debate State
+    private bool isPlayerTurn = false;
+    private string currentSpeaker = "jinx"; // "jinx", "silco", or player name
+    private string currentSpeakerName = "Jinx";
+    private string displayedText = "";
+    private bool isTextAnimating = false;
+    private bool isTextFullyDisplayed = false;
+    private bool canContinue = false;
+    private bool isPlayerTranscript = false; // true when showing player's transcribed text
+    
+    // Typewriter animation state
+    private CancellationTokenSource? typingCts;
+    private bool isTypewriting = false;
+    private int currentTextIndex = 0;
+    private int? lastAnimatedDialogueIndex = null;
+    private string? lastAnimatedText = null;
+    private string fullText = ""; // The complete text to be animated
+    private bool isDisposed = false;
+    
+    // Recording State
+    private bool showRecordingControls = false;
+    private bool showTextControls = false;
+    private bool isRecording = false;
+    private bool isProcessing = false;
+    private string selectedMicrophone = "";
+    
+    // Mock Microphone Data Structure
+    private class MicrophoneDevice
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
+    
+    private List<MicrophoneDevice> availableMicrophones = new List<MicrophoneDevice>
+    {
+        new MicrophoneDevice { Id = "default", Name = "Default Microphone" },
+        new MicrophoneDevice { Id = "headset", Name = "Headset Microphone" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -173,7 +303,7 @@
             .WithUrl(Navigation.ToAbsoluteUri("/gamehub"))
             .Build();
 
-        // Minimal events: redirect + joined
+        // Connection events
         hubConnection.On<string>("RedirectToNextScene", async (url) =>
         {
             var finalUrl = AppendVolumeParams(url);
@@ -185,36 +315,97 @@
             var finalUrl = AppendVolumeParams(url);
             await InvokeAsync(() => Navigation.NavigateTo(finalUrl, forceLoad: true));
         });
-
-        hubConnection.On<string, string>("PlayerJoined", (role, name) =>
+        
+        // Handler for continuing story after Final Puzzle completion
+        hubConnection.On<string>("RedirectToStoryFromFinalPuzzle", async (url) =>
         {
-            // If both players needed, server validates; here we just ensure join state is acknowledged
+            Console.WriteLine($"[FinalPuzzle] Received redirect to next story scene: {url}");
+            await InvokeAsync(async () =>
+            {
+                // Small delay to ensure both players navigate together
+                await Task.Delay(500);
+                var finalUrl = AppendVolumeParams(url);
+                Console.WriteLine($"[FinalPuzzle] Now navigating to: {finalUrl}");
+                Navigation.NavigateTo(finalUrl, forceLoad: true);
+            });
+        });
+
+        // Final Puzzle specific events
+        hubConnection.On<FinalPuzzlePlayerView>("FinalPuzzleGameJoined", async (playerView) =>
+        {
+            await InvokeAsync(() =>
+            {
+                UpdatePlayerView(playerView);
+                // Reset typewriter state for new game
+                displayedText = "";
+                lastAnimatedDialogueIndex = null;
+                lastAnimatedText = null;
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<FinalPuzzleGameStateData>("FinalPuzzleGameStateUpdated", async (gameState) =>
+        {
+            await InvokeAsync(() =>
+            {
+                UpdateGameState(gameState);
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<FinalPuzzlePlayerView>("FinalPuzzlePlayerViewUpdated", async (playerView) =>
+        {
+            await InvokeAsync(() =>
+            {
+                UpdatePlayerView(playerView);
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("FinalPuzzleGameCompleted", async (message) =>
+        {
+            await InvokeAsync(() =>
+            {
+                gameState = GameState.Completed;
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("FinalPuzzleError", async (error) =>
+        {
+            await InvokeAsync(() =>
+            {
+                statusMessage = error;
+                StateHasChanged();
+            });
+        });
+        
+        // Handle when text is skipped (by any player)
+        hubConnection.On("FinalPuzzleTextSkipped", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                CancelTypewriter();
+                // Show the full text immediately when someone skips
+                if (!string.IsNullOrEmpty(fullText))
+                {
+                    displayedText = fullText;
+                    StateHasChanged();
+                }
+            });
         });
 
         try
         {
             await hubConnection.StartAsync();
             isConnected = true;
+            gameState = GameState.WaitingForPlayers;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[FinalPuzzle] Hub start failed: {ex.Message}");
+            statusMessage = "Failed to connect to server";
         }
-    }
-
-    private string AppendVolumeParams(string url)
-    {
-        try
-        {
-            var sep = url.Contains("?") ? "&" : "?";
-            var current = new Uri(Navigation.Uri);
-            var q = System.Web.HttpUtility.ParseQueryString(current.Query);
-            var mv = q["musicVol"] ?? "1.00";
-            var sv = q["sfxVol"] ?? "1.00";
-            var vv = q["voiceVol"] ?? "1.00";
-            return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
-        }
-        catch { return url; }
     }
 
     private void ParseUrlParameters()
@@ -224,7 +415,7 @@
             var uri = new Uri(Navigation.Uri);
             var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
 
-            var codeParam = query["code"]; // optional legacy/manual
+            var codeParam = query["code"];
             preservedRole = query["role"] ?? preservedRole;
             var name = query["name"];
             var squad = query["squad"];
@@ -235,7 +426,6 @@
             if (!string.IsNullOrEmpty(squad)) squadName = Uri.UnescapeDataString(squad);
             isStoryMode = story == "true";
 
-            // Prefer explicit room code if provided; otherwise build unique room id (squad + transition)
             if (!string.IsNullOrEmpty(codeParam))
             {
                 gameCode = codeParam;
@@ -257,45 +447,243 @@
         await Task.Delay(300);
         if (string.IsNullOrEmpty(gameCode)) return;
 
-        // Use room-based lobby like other puzzles; store role/name for personalized redirects
         var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
         var canonicalRole = CanonicalizeRole(preservedRole);
 
-        await hubConnection.SendAsync("JoinRoom", gameCode, displayName);
-        await hubConnection.SendAsync("UpdateLobbyPlayerInfo", gameCode, canonicalRole, "1", displayName);
+        // Use the new Final Puzzle join method
+        if (isStoryMode && !string.IsNullOrEmpty(preservedRole))
+        {
+            await hubConnection.SendAsync("JoinFinalPuzzleGameWithRole", gameCode, displayName, canonicalRole);
+        }
+        else
+        {
+            await hubConnection.SendAsync("JoinFinalPuzzleGame", gameCode, displayName);
+        }
 
         playerRole = canonicalRole;
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task ContinueStory()
+    private void UpdatePlayerView(FinalPuzzlePlayerView playerView)
     {
-        if (hubConnection is null) return;
+        playerRole = playerView.PlayerRole;
+        isPlayerTurn = playerView.IsPlayerTurn;
+        showRecordingControls = playerView.ShowRecordingControls;
+        showTextControls = playerView.ShowTextControls;
+        canContinue = playerView.CanContinue;
+        isTextAnimating = playerView.CanSkip;
+    }
+
+    private void UpdateGameState(FinalPuzzleGameStateData gameState)
+    {
+        connectedPlayersCount = gameState.ConnectedPlayersCount;
+        currentSpeaker = gameState.CurrentSpeaker;
+        currentSpeakerName = gameState.CurrentSpeakerName;
+        fullText = gameState.DisplayedText; // Store the full text to animate
+        isTextAnimating = gameState.IsTextAnimating;
+        isTextFullyDisplayed = gameState.IsTextFullyDisplayed;
+        isProcessing = gameState.IsProcessingResponse;
+        
+        // Update game state enum
+        this.gameState = gameState.State switch
+        {
+            FinalPuzzleGameState.WaitingForPlayers => GameState.WaitingForPlayers,
+            FinalPuzzleGameState.InDebate => GameState.InDebate,
+            FinalPuzzleGameState.Completed => GameState.Completed,
+            _ => GameState.WaitingForPlayers
+        };
+        
+        // Start typewriter animation if text is animating and we have new text
+        if (isTextAnimating && !string.IsNullOrEmpty(fullText))
+        {
+            var currentIdx = gameState.CurrentDialogueIndex;
+            // Only start animation if we have a new dialogue index or nothing is displayed yet
+            if (currentIdx != lastAnimatedDialogueIndex || string.IsNullOrEmpty(displayedText))
+            {
+                _ = StartTypewriterAnimation();
+            }
+        }
+        else if (isTextFullyDisplayed && !isTextAnimating)
+        {
+            // Text should be fully displayed immediately (e.g., after skip)
+            displayedText = fullText;
+        }
+    }
+
+    private void StartDebate()
+    {
+        // This method is now handled by the server
+        // The server will send game state updates that trigger the debate
+    }
+
+    private async Task StartTypewriterAnimation()
+    {
+        if (isDisposed || string.IsNullOrEmpty(fullText))
+            return;
+
+        var currentIdx = lastAnimatedDialogueIndex ?? -1;
+        
+        // If we're already animating this exact text, do nothing
+        if (isTypewriting && lastAnimatedText == fullText)
+        {
+            return;
+        }
+
+        CancelTypewriter();
+
+        typingCts = new CancellationTokenSource();
+        var token = typingCts.Token;
+        isTypewriting = true;
+        lastAnimatedDialogueIndex = currentIdx;
+        lastAnimatedText = null;
+        currentTextIndex = 0;
+        displayedText = "";
+        StateHasChanged();
+        await Task.Delay(20);
+
+        var speed = 30; // Speed in milliseconds per character
+
+        var completedNaturally = false;
         try
         {
-            var originalRoomId = gameCode;
-            var originalSquad = string.IsNullOrEmpty(squadName)
-                ? (gameCode.Contains("_") ? gameCode.Substring(0, gameCode.IndexOf("_")) : gameCode)
-                : squadName;
-            var targetStoryLobby = $"{originalSquad}_FromFinalPuzzle";
-            var displayName = string.IsNullOrEmpty(playerNameFromUrl) ? "Player" : playerNameFromUrl;
-            var canonicalRole = string.IsNullOrEmpty(playerRole) ? CanonicalizeRole(preservedRole) : playerRole;
+            while (!isDisposed && !token.IsCancellationRequested && currentTextIndex < fullText.Length)
+            {
+                await InvokeAsync(() =>
+                {
+                    if (!token.IsCancellationRequested && currentTextIndex < fullText.Length)
+                    {
+                        displayedText += fullText[currentTextIndex];
+                        currentTextIndex++;
+                        StateHasChanged();
+                    }
+                });
 
-            // Scene 16 (truth_revealed) -> sceneIndex 22
-            await hubConnection.SendAsync(
-                "RedirectPlayersToAct1WithScene",
-                originalRoomId,
-                targetStoryLobby,
-                canonicalRole,
-                "1",
-                displayName,
-                22
-            );
+                if (!token.IsCancellationRequested)
+                {
+                    await Task.Delay(speed, token);
+                }
+            }
+            if (!isDisposed && !token.IsCancellationRequested && currentTextIndex >= fullText.Length)
+            {
+                completedNaturally = true;
+            }
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            Console.WriteLine($"[FinalPuzzle] ContinueStory error: {ex.Message}");
+            // Expected when skipping or transitioning
         }
+        finally
+        {
+            isTypewriting = false;
+            // When typing completes naturally, inform the server so CanSkip/CanContinue are updated for both players
+            if (completedNaturally && !isDisposed)
+            {
+                if (hubConnection != null && !string.IsNullOrEmpty(gameCode))
+                {
+                    try { await hubConnection.SendAsync("FinalPuzzleTypingCompleted", gameCode); } catch { }
+                }
+            }
+            // Record what we showed last for idempotency
+            if (!isDisposed)
+            {
+                lastAnimatedText = displayedText;
+            }
+        }
+    }
+
+    private void CancelTypewriter()
+    {
+        try
+        {
+            if (typingCts != null)
+            {
+                typingCts.Cancel();
+                typingCts.Dispose();
+            }
+        }
+        catch { }
+        finally
+        {
+            typingCts = null;
+            isTypewriting = false;
+        }
+    }
+
+    private async Task StartRecording()
+    {
+        isRecording = true;
+        showRecordingControls = true;
+        StateHasChanged();
+    }
+
+    private async Task StopRecording()
+    {
+        isRecording = false;
+        isProcessing = true;
+        StateHasChanged();
+        
+        // Simulate transcription process
+        await Task.Delay(2000);
+        
+        // Submit the transcribed text to the server
+        if (hubConnection != null && !string.IsNullOrEmpty(gameCode))
+        {
+            var transcript = "This is where the player's transcribed speech will appear..."; // TODO: Replace with actual transcription
+            await hubConnection.SendAsync("SubmitPlayerResponse", gameCode, transcript);
+        }
+    }
+
+    private async Task SkipText()
+    {
+        // First, cancel the typewriter animation and show full text locally
+        CancelTypewriter();
+        displayedText = fullText;
+        StateHasChanged();
+        
+        // Then notify the server
+        if (hubConnection != null && !string.IsNullOrEmpty(gameCode))
+        {
+            await hubConnection.SendAsync("SkipFinalPuzzleText", gameCode);
+        }
+    }
+
+    private async Task ContinueDebate()
+    {
+        if (hubConnection != null && !string.IsNullOrEmpty(gameCode))
+        {
+            await hubConnection.SendAsync("ContinueFinalPuzzle", gameCode);
+        }
+    }
+
+    private async Task ContinueStory()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(gameCode))
+        {
+            try
+            {
+                Console.WriteLine($"[FinalPuzzle] Continuing story - preparing next scene...");
+                await hubConnection.SendAsync("ContinueStoryFromFinalPuzzle", gameCode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FinalPuzzle] Error continuing story: {ex.Message}");
+            }
+        }
+    }
+
+    private string AppendVolumeParams(string url)
+    {
+        try
+        {
+            var sep = url.Contains("?") ? "&" : "?";
+            var current = new Uri(Navigation.Uri);
+            var q = System.Web.HttpUtility.ParseQueryString(current.Query);
+            var mv = q["musicVol"] ?? "1.00";
+            var sv = q["sfxVol"] ?? "1.00";
+            var vv = q["voiceVol"] ?? "1.00";
+            return $"{url}{sep}musicVol={Uri.EscapeDataString(mv)}&sfxVol={Uri.EscapeDataString(sv)}&voiceVol={Uri.EscapeDataString(vv)}";
+        }
+        catch { return url; }
     }
 
     private static string CanonicalizeRole(string role)
@@ -310,11 +698,767 @@
         };
     }
 
+    // CSS Helper Methods
+    private string GetThemeClass() => string.IsNullOrWhiteSpace(playerRole) ? "zaun" : playerRole.ToLower();
+    private string GetRoleClass() => $"role-{playerRole}";
+    private string GetDialogueBoxClass() => $"dialogue-{GetThemeClass()}";
+    private string GetNameTagClass() => $"name-tag-{GetThemeClass()}";
+    private string GetControlButtonClass() => $"control-{GetThemeClass()}";
+
     public async ValueTask DisposeAsync()
     {
+        isDisposed = true;
+        CancelTypewriter();
+        
         if (hubConnection is not null)
         {
             await hubConnection.DisposeAsync();
         }
     }
 }
+
+<style>
+/* Final Puzzle Debate Styles - Based on Act1Multiplayer.razor */
+/********************************************
+ * Container & Base Styling
+ ********************************************/
+.final-puzzle-container, .debate-scene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Rajdhani', sans-serif;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.debate-scene {
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+/********************************************
+ * Connection and Setup Screens
+ ********************************************/
+.connection-screen, .waiting-screen, .completion-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.connection-screen.piltover, .waiting-screen.piltover, .completion-screen.piltover {
+    background: linear-gradient(135deg, #2c1810 0%, #5a4a3a 30%, #c8aa6e 100%);
+}
+
+.connection-screen.zaun, .waiting-screen.zaun, .completion-screen.zaun {
+    background: linear-gradient(135deg, #0a1e16 0%, #1a3a2e 30%, #00d4aa 100%);
+}
+
+.connection-content, .waiting-content, .completion-content {
+    text-align: center;
+    color: #fff;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.connection-content h1, .waiting-content h1, .completion-content h1 {
+    font-family: 'Arcane Nine', 'Cinzel', serif;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+}
+
+.zaun h1 {
+    text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
+}
+
+.connection-animation, .sync-animation {
+    margin: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sync-indicators {
+    display: flex;
+    gap: 2rem;
+}
+
+.sync-indicator {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.sync-indicator.waiting {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sync-indicator.connected {
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid #28a745;
+    color: #28a745;
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.squad-info {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.squad-info p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.status-message {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    color: #fff;
+}
+
+/********************************************
+ * Loading Spinner
+ ********************************************/
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    animation: spin 1.2s linear infinite;
+}
+
+.loading-spinner.piltover {
+    border-top-color: #c8aa6e;
+    border-right-color: rgba(200, 170, 110, 0.3);
+}
+
+.loading-spinner.zaun {
+    border-top-color: #00d4aa;
+    border-right-color: rgba(0, 212, 170, 0.3);
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/********************************************
+ * Scene Background
+ ********************************************/
+.scene-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.atmospheric-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(circle at 20% 50%, rgba(200, 170, 110, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.06) 0%, transparent 55%);
+}
+
+/********************************************
+ * Character Layer
+ ********************************************/
+.characters-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 0 5%;
+}
+
+.character-container {
+    position: relative;
+    bottom: 25%;
+    transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: scale(0.95) translateY(10px);
+}
+
+.character-container.active {
+    transform: scale(1.05) translateY(0px);
+    z-index: 5;
+}
+
+.character-container.inactive {
+    transform: scale(0.88) translateY(15px);
+}
+
+.character-portrait {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.portrait-image {
+    max-height: 70vh;
+    max-width: 400px;
+    object-fit: contain;
+    transition: all 0.4s ease-in-out;
+    transform-origin: center bottom;
+}
+
+.character-container.active .portrait-image {
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.45))
+            drop-shadow(0 10px 44px rgba(0, 0, 0, 0.72))
+            drop-shadow(0 0 44px rgba(200, 170, 110, 0.18));
+}
+
+.character-container.inactive .portrait-image {
+    filter: drop-shadow(0 5px 22px rgba(0, 0, 0, 0.62));
+    opacity: 0.9;
+}
+
+.character-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(-50%, -50%) scale(0.8);
+    z-index: -1;
+    background: radial-gradient(ellipse at center, 
+        rgba(200, 170, 110, 0.2) 0%, 
+        rgba(200, 170, 110, 0.1) 30%, 
+        transparent 70%);
+    filter: blur(48px);
+}
+
+.character-container.active .character-glow {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.left-character {
+    align-self: flex-end;
+}
+
+.right-character {
+    align-self: flex-end;
+}
+
+/********************************************
+ * Multiplayer Status Bar
+ ********************************************/
+.multiplayer-status {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 15px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+}
+
+.player-role-indicator, .debate-turn, .players-online {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 16px;
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    color: #fff;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.role-piltover {
+    border-color: rgba(200, 170, 110, 0.8);
+    color: rgba(200, 170, 110, 1);
+}
+
+.role-zaun {
+    border-color: rgba(0, 212, 170, 0.8);
+    color: rgba(0, 212, 170, 1);
+}
+
+.turn-active {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.turn-waiting {
+    color: #ffc107;
+    opacity: 0.8;
+}
+
+/********************************************
+ * Dialogue Section
+ ********************************************/
+.dialogue-section {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    max-width: 900px;
+    z-index: 6;
+}
+
+.dialogue-box {
+    position: relative;
+    min-height: 200px;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.92) 0%, 
+        rgba(15, 10, 25, 0.88) 50%,
+        rgba(0, 0, 0, 0.92) 100%);
+    padding: 2.5rem 3rem 2rem 3rem;
+    border: none;
+    overflow: visible;
+    animation: dialogueBoxEntrance 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(200, 170, 110, 0.4),
+        inset 0 0 20px rgba(200, 170, 110, 0.1),
+        0 0 50px rgba(0, 0, 0, 0.8),
+        0 0 80px rgba(200, 170, 110, 0.15);
+    clip-path: polygon(
+        0 15px, 15px 0,
+        calc(100% - 15px) 0, 100% 15px,
+        100% calc(100% - 15px), calc(100% - 15px) 100%,
+        15px 100%, 0 calc(100% - 15px)
+    );
+}
+
+@@keyframes dialogueBoxEntrance {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.dialogue-piltover {
+    background: linear-gradient(135deg, 
+        rgba(10, 5, 0, 0.95) 0%, 
+        rgba(25, 15, 5, 0.9) 50%,
+        rgba(10, 5, 0, 0.95) 100%);
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(255, 215, 0, 0.5),
+        inset 0 0 30px rgba(255, 215, 0, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(200, 170, 110, 0.2);
+}
+
+.dialogue-zaun {
+    background: linear-gradient(135deg, 
+        rgba(0, 10, 8, 0.95) 0%, 
+        rgba(5, 20, 15, 0.9) 50%,
+        rgba(0, 10, 8, 0.95) 100%);
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.9),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 4px rgba(0, 255, 200, 0.5),
+        inset 0 0 30px rgba(0, 255, 200, 0.1),
+        0 0 60px rgba(0, 0, 0, 0.8),
+        0 0 100px rgba(0, 212, 170, 0.2);
+}
+
+.dialogue-content {
+    color: #fff;
+}
+
+.dialogue-text-container {
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+.dialogue-text {
+    color: #fff;
+}
+
+/********************************************
+ * Character Name Tag
+ ********************************************/
+.character-name-tag {
+    display: inline-block;
+    margin-bottom: 1rem;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 20, 0.6) 100%);
+    border: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    position: relative;
+    overflow: hidden;
+    animation: nameTagEntrance 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.6),
+        0 0 15px rgba(200, 170, 110, 0.3);
+}
+
+@@keyframes nameTagEntrance {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.name-tag-piltover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.8),
+        0 0 20px rgba(200, 170, 110, 0.4);
+    color: rgba(200, 170, 110, 1);
+}
+
+.name-tag-zaun {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.8),
+        0 0 20px rgba(0, 212, 170, 0.4);
+    color: rgba(0, 212, 170, 1);
+}
+
+/********************************************
+ * Dialogue Controls & Recording Center
+ ********************************************/
+.dialogue-controls-external {
+    position: absolute;
+    top: -80px;
+    right: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 100;
+}
+
+.control-btn {
+    padding: 10px 18px;
+    border: none;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(30, 30, 30, 0.8) 100%);
+    color: #fff;
+    font-size: 1rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    animation: buttonEntrance 0.6s ease-out;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.5),
+        0 0 12px rgba(200, 170, 110, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@@keyframes buttonEntrance {
+    from {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.control-btn:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5),
+        0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-btn:active {
+    transform: translateY(0);
+    transition: all 0.1s ease;
+}
+
+.control-piltover {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.6),
+        0 0 15px rgba(200, 170, 110, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.control-piltover:hover:not(:disabled) {
+    box-shadow: 
+        inset 0 0 0 1px rgba(200, 170, 110, 0.9),
+        0 0 25px rgba(200, 170, 110, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.control-zaun {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.6),
+        0 0 15px rgba(0, 212, 170, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.control-zaun:hover:not(:disabled) {
+    box-shadow: 
+        inset 0 0 0 1px rgba(0, 212, 170, 0.9),
+        0 0 25px rgba(0, 212, 170, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.btn-icon {
+    margin-right: 5px;
+}
+
+.btn-text {
+    display: inline-block;
+}
+
+.btn-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.control-btn:hover .btn-effect {
+    transform: translateX(100%);
+}
+
+/********************************************
+ * Recording Control Center
+ ********************************************/
+.recording-control-center {
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+}
+
+.recording-control-center.piltover {
+    border-color: rgba(200, 170, 110, 0.6);
+}
+
+.recording-control-center.zaun {
+    border-color: rgba(0, 212, 170, 0.6);
+}
+
+.mic-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.mic-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.mic-select.piltover {
+    border-color: rgba(200, 170, 110, 0.6);
+}
+
+.mic-select.zaun {
+    border-color: rgba(0, 212, 170, 0.6);
+}
+
+.mic-select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.record-btn {
+    background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
+}
+
+.record-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #a52a2a 0%, #ff1744 100%);
+}
+
+.stop-btn {
+    background: linear-gradient(135deg, #444 0%, #666 100%);
+}
+
+.stop-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #555 0%, #777 100%);
+}
+
+.recording-active {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.recording-indicator {
+    width: 20px;
+    height: 20px;
+    background: #dc143c;
+    border-radius: 50%;
+    animation: recordingPulse 1.5s ease-in-out infinite;
+}
+
+@@keyframes recordingPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 20, 60, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(220, 20, 60, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 20, 60, 0);
+    }
+}
+
+.processing-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+}
+
+.processing-status .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/********************************************
+ * Waiting States
+ ********************************************/
+.waiting-for-partner {
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(200, 170, 110, 0.5);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.waiting-for-partner.piltover {
+    border-color: rgba(200, 170, 110, 0.6);
+}
+
+.waiting-for-partner.zaun {
+    border-color: rgba(0, 212, 170, 0.6);
+}
+
+.waiting-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top-color: #c8aa6e;
+    border-right-color: rgba(200, 170, 110, 0.3);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.waiting-for-partner p {
+    margin: 0;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+/********************************************
+ * Continue Story Button
+ ********************************************/
+.continue-story-button {
+    background: linear-gradient(135deg, #00d4ff, #ff00ff);
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    box-shadow: 0 5px 18px rgba(0, 212, 255, 0.35);
+}
+
+.continue-story-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.45);
+}
+
+.continue-story-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.completion-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+</style>

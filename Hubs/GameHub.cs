@@ -25,6 +25,7 @@ public class GameHub : Hub
     private static readonly ConcurrentDictionary<string, WordForgeGame> _wordForgeGames = new();
     private static readonly ConcurrentDictionary<string, VisualNovelMultiplayerGame> _visualNovelGames = new();
     private static readonly ConcurrentDictionary<string, Act1MultiplayerGame> _act1Games = new();
+    private static readonly ConcurrentDictionary<string, FinalPuzzleGame> _finalPuzzleGames = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _roomPlayers = new();
     // Track richer lobby player metadata per connection within a room (used for personalized redirects)
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, LobbyPlayerInfo>> _lobbyPlayers = new();
@@ -2919,7 +2920,432 @@ public class GameHub : Hub
 
     // Content moved to IAct1StoryEngine
 
-    // (Final Puzzle server-side game logic removed. Final page now uses room-based autojoin and direct story redirect.)
+    // ========================================
+    // FINAL PUZZLE - DEBATE SYSTEM
+    // ========================================
+
+    public async Task JoinFinalPuzzleGame(string roomId, string playerName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _finalPuzzleGames.GetOrAdd(roomId, _ => new FinalPuzzleGame { RoomId = roomId });
+        
+        // Auto-assign roles: first player = Piltover, second = Zaunite
+        var role = game.Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite;
+        var avatar = "1"; // Default avatar
+        
+        var result = game.AddPlayer(Context.ConnectionId, playerName, avatar, role);
+        
+        if (result.Success)
+        {
+            Console.WriteLine($"[GameHub] FinalPuzzle player joined - Room: {roomId}, Player: {playerName}, Role: {role}");
+            
+            // Send player view to the joining player
+            await Clients.Caller.SendAsync("FinalPuzzleGameJoined", game.GetPlayerView(Context.ConnectionId));
+            
+            // Update all players with game state
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            // If this is the second player, start the debate
+            if (game.Players.Count == 2)
+            {
+                await StartFinalPuzzleDebate(roomId, game);
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", result.Message);
+        }
+    }
+
+    public async Task JoinFinalPuzzleGameWithRole(string roomId, string playerName, string requestedRole)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        
+        var game = _finalPuzzleGames.GetOrAdd(roomId, _ => new FinalPuzzleGame { RoomId = roomId });
+        
+        // Parse requested role
+        var role = requestedRole?.ToLowerInvariant() switch
+        {
+            "piltover" => PlayerRole.Piltover,
+            "zaun" => PlayerRole.Zaunite,
+            "a" => PlayerRole.Piltover,
+            "b" => PlayerRole.Zaunite,
+            _ => game.Players.Count == 0 ? PlayerRole.Piltover : PlayerRole.Zaunite
+        };
+        
+        var avatar = "1"; // Default avatar
+        
+        var result = game.AddPlayer(Context.ConnectionId, playerName, avatar, role);
+        
+        if (result.Success)
+        {
+            Console.WriteLine($"[GameHub] FinalPuzzle player joined with role - Room: {roomId}, Player: {playerName}, Role: {role}");
+            
+            // Send player view to the joining player
+            await Clients.Caller.SendAsync("FinalPuzzleGameJoined", game.GetPlayerView(Context.ConnectionId));
+            
+            // Update all players with game state
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            // If this is the second player, start the debate
+            if (game.Players.Count == 2)
+            {
+                await StartFinalPuzzleDebate(roomId, game);
+            }
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("FinalPuzzleError", result.Message);
+        }
+    }
+
+    private async Task StartFinalPuzzleDebate(string roomId, FinalPuzzleGame game)
+    {
+        // Initialize debate dialogue
+        game.DialogueLines = CreateDebateDialogue();
+        game.CurrentDialogueIndex = 0;
+        game.CurrentTurn = DebateTurn.Jinx;
+        game.CurrentSpeaker = "jinx";
+        game.CurrentSpeakerName = "Jinx";
+        
+        // Start with first dialogue
+        var firstDialogue = game.DialogueLines[0];
+        game.DisplayedText = firstDialogue.Text;
+        game.IsTextAnimating = true;
+        game.IsTextFullyDisplayed = false;
+        
+        // Update all players
+        await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+        
+        foreach (var playerId in game.GetConnectedPlayers())
+        {
+            await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+        }
+        
+        Console.WriteLine($"[GameHub] FinalPuzzle debate started - Room: {roomId}");
+    }
+
+    public async Task SkipFinalPuzzleText(string roomId)
+    {
+        if (_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            game.IsTextAnimating = false;
+            game.IsTextFullyDisplayed = true;
+            
+            // Notify all clients that text was skipped
+            await Clients.Group(roomId).SendAsync("FinalPuzzleTextSkipped");
+            
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+        }
+    }
+    
+    public async Task FinalPuzzleTypingCompleted(string roomId)
+    {
+        if (_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            game.IsTextAnimating = false;
+            game.IsTextFullyDisplayed = true;
+            
+            // Update all players that typing is complete
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+        }
+    }
+
+    public async Task ContinueFinalPuzzle(string roomId)
+    {
+        if (_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            if (game.IsTextAnimating || !game.IsTextFullyDisplayed)
+                return;
+                
+            // Clear any previous player transcript when continuing
+            game.PlayerTranscript = null;
+            
+            // Move to next dialogue
+            game.CurrentDialogueIndex++;
+            
+            if (game.CurrentDialogueIndex >= game.DialogueLines.Count)
+            {
+                // Debate complete
+                game.IsCompleted = true;
+                game.State = FinalPuzzleGameState.Completed;
+                
+                await Clients.Group(roomId).SendAsync("FinalPuzzleGameCompleted", "The debate has concluded. The truth has been revealed.");
+                return;
+            }
+            
+            var nextDialogue = game.DialogueLines[game.CurrentDialogueIndex];
+            
+            // Check if this is a player response turn
+            if (nextDialogue.IsPlayerResponse && nextDialogue.RequiredPlayerRole.HasValue)
+            {
+                // Find the player with the required role
+                var targetPlayer = game.Players.FirstOrDefault(p => p.Value == nextDialogue.RequiredPlayerRole.Value);
+                
+                if (!string.IsNullOrEmpty(targetPlayer.Key))
+                {
+                    game.IsWaitingForPlayerResponse = true;
+                    game.WaitingForPlayerId = targetPlayer.Key;
+                    game.CurrentSpeaker = $"player_{nextDialogue.RequiredPlayerRole.Value.ToString().ToLower()}";
+                    game.CurrentSpeakerName = game.GetPlayerName(targetPlayer.Key) ?? "Player";
+                    game.DisplayedText = $"It's your turn to respond, {game.CurrentSpeakerName}. What do you say?";
+                    game.IsTextAnimating = false;
+                    game.IsTextFullyDisplayed = true;
+                }
+            }
+            else
+            {
+                // AI character dialogue
+                game.CurrentSpeaker = nextDialogue.Speaker;
+                game.CurrentSpeakerName = nextDialogue.SpeakerName;
+                game.DisplayedText = nextDialogue.Text;
+                game.IsTextAnimating = true;
+                game.IsTextFullyDisplayed = false;
+                game.IsWaitingForPlayerResponse = false;
+                game.WaitingForPlayerId = null;
+            }
+            
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+        }
+    }
+
+    public async Task SubmitPlayerResponse(string roomId, string transcript)
+    {
+        if (_finalPuzzleGames.TryGetValue(roomId, out var game))
+        {
+            if (!game.CanPlayerAct(Context.ConnectionId))
+            {
+                await Clients.Caller.SendAsync("FinalPuzzleError", "It's not your turn to respond.");
+                return;
+            }
+            
+            // Store the player's response
+            game.PlayerTranscript = transcript;
+            game.IsProcessingResponse = false; // Set to false immediately so Continue button works
+            game.IsWaitingForPlayerResponse = false;
+            game.WaitingForPlayerId = null;
+            
+            // Show the player's response
+            game.CurrentSpeaker = $"player_{game.GetPlayerRole(Context.ConnectionId)?.ToString().ToLower()}";
+            game.CurrentSpeakerName = game.GetPlayerName(Context.ConnectionId) ?? "Player";
+            game.DisplayedText = transcript;
+            game.IsTextAnimating = false;
+            game.IsTextFullyDisplayed = true;
+            
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+            
+            // Don't automatically trigger AI response - let players press Continue to advance
+        }
+    }
+
+    private async Task SimulateAIResponse(string roomId, FinalPuzzleGame game)
+    {
+        await Task.Delay(2000); // Simulate processing time
+        
+        if (_finalPuzzleGames.TryGetValue(roomId, out var currentGame) && currentGame == game)
+        {
+            game.IsProcessingResponse = false;
+            
+            // Simulate AI response (Jinx or Silco)
+            var aiResponses = new[]
+            {
+                "Oh, how touching! You think you understand what's going on here?",
+                "Interesting perspective. But you're missing the bigger picture.",
+                "That's exactly what I expected you to say. Predictable.",
+                "You're getting closer to the truth, but not quite there yet.",
+                "Very well. Let me show you what you've been missing."
+            };
+            
+            var randomResponse = aiResponses[new Random().Next(aiResponses.Length)];
+            var aiSpeaker = game.CurrentDialogueIndex % 2 == 0 ? "jinx" : "silco";
+            var aiSpeakerName = aiSpeaker == "jinx" ? "Jinx" : "Silco";
+            
+            game.CurrentSpeaker = aiSpeaker;
+            game.CurrentSpeakerName = aiSpeakerName;
+            game.DisplayedText = randomResponse;
+            game.IsTextAnimating = true;
+            game.IsTextFullyDisplayed = false;
+            game.PlayerTranscript = null;
+            
+            await Clients.Group(roomId).SendAsync("FinalPuzzleGameStateUpdated", game.GetGameState());
+            
+            foreach (var playerId in game.GetConnectedPlayers())
+            {
+                await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", game.GetPlayerView(playerId));
+            }
+        }
+    }
+
+    private List<DebateDialogue> CreateDebateDialogue()
+    {
+        return new List<DebateDialogue>
+        {
+            new DebateDialogue
+            {
+                Id = 0,
+                Speaker = "jinx",
+                SpeakerName = "Jinx",
+                Text = "Well, well, well... Look who finally made it to my little party! Did you enjoy the breadcrumbs I left for you?",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 50
+            },
+            new DebateDialogue
+            {
+                Id = 1,
+                Speaker = "silco",
+                SpeakerName = "Silco",
+                Text = "Jinx, enough theatrics. These two have proven themselves resourceful. Let's see if they can handle the truth.",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 45
+            },
+            new DebateDialogue
+            {
+                Id = 2,
+                Speaker = "jinx",
+                SpeakerName = "Jinx",
+                Text = "Oh, but where's the fun in that? I want to hear what they think they know first.",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 50
+            },
+            new DebateDialogue
+            {
+                Id = 3,
+                Speaker = "player_a",
+                SpeakerName = "Player",
+                Text = "",
+                IsPlayerResponse = true,
+                RequiredPlayerRole = PlayerRole.Piltover,
+                TypewriterSpeed = 50
+            },
+            new DebateDialogue
+            {
+                Id = 4,
+                Speaker = "silco",
+                SpeakerName = "Silco",
+                Text = "Interesting. And what about you, Zaunite? What's your take on all this?",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 45
+            },
+            new DebateDialogue
+            {
+                Id = 5,
+                Speaker = "player_b",
+                SpeakerName = "Player",
+                Text = "",
+                IsPlayerResponse = true,
+                RequiredPlayerRole = PlayerRole.Zaunite,
+                TypewriterSpeed = 50
+            },
+            new DebateDialogue
+            {
+                Id = 6,
+                Speaker = "jinx",
+                SpeakerName = "Jinx",
+                Text = "Now THIS is getting interesting! You two are smarter than I gave you credit for. But do you really understand what you've uncovered?",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 50
+            },
+            new DebateDialogue
+            {
+                Id = 7,
+                Speaker = "silco",
+                SpeakerName = "Silco",
+                Text = "The truth is rarely what it seems. You've seen the surface, but the depths run much deeper than you imagine.",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 45
+            },
+            new DebateDialogue
+            {
+                Id = 8,
+                Speaker = "jinx",
+                SpeakerName = "Jinx",
+                Text = "So here's the real question: now that you know what you know, what are you going to do about it?",
+                IsPlayerResponse = false,
+                TypewriterSpeed = 50,
+                IsFinalDialogue = true
+            }
+        };
+    }
+    
+    public async Task ContinueStoryFromFinalPuzzle(string roomId)
+    {
+        try
+        {
+            // Get players from Final Puzzle game
+            if (!_finalPuzzleGames.TryGetValue(roomId, out var game))
+            {
+                await Clients.Caller.SendAsync("FinalPuzzleError", "Game not found for story continuation");
+                return;
+            }
+
+            var connectedPlayers = game.GetConnectedPlayers();
+            if (connectedPlayers.Count != 2)
+            {
+                await Clients.Caller.SendAsync("FinalPuzzleError", "Both players needed for story continuation");
+                return;
+            }
+            
+            // Extract original squad name from room ID (remove transition suffix if present)
+            var originalSquadName = roomId.Contains("_") ? roomId.Substring(0, roomId.IndexOf("_")) : roomId;
+            var uniqueRoomId = $"{originalSquadName}_FromFinalPuzzle";
+            
+            Console.WriteLine($"[GameHub] ContinueStoryFromFinalPuzzle - Original room: {roomId}, Original squad: {originalSquadName}, New unique room: {uniqueRoomId}");
+            
+            // Build redirect URLs for Act1 - Scene after Final Puzzle (scene index 22 = truth_revealed)
+            var redirectUrls = new Dictionary<string, string>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                var playerRole = game.GetPlayerRole(connectionId);
+                var playerName = game.GetPlayerName(connectionId) ?? "Player";
+                var roleName = playerRole == PlayerRole.Zaunite ? "zaun" : "piltover";
+                
+                // Use the SAME uniqueRoomId for both players, scene 22 is after final_puzzle_transition
+                var parameters = $"role={roleName}&avatar=1&name={Uri.EscapeDataString(playerName)}&roomId={Uri.EscapeDataString(uniqueRoomId)}&squad={Uri.EscapeDataString(originalSquadName)}&sceneIndex=22&transition=FromFinalPuzzle";
+                redirectUrls[connectionId] = $"/act1-multiplayer?{parameters}";
+                
+                Console.WriteLine($"[GameHub] Redirect URL for {playerName} ({roleName}): {redirectUrls[connectionId]}");
+            }
+
+            // Send redirect to all players simultaneously
+            var redirectTasks = new List<Task>();
+            foreach (var connectionId in connectedPlayers)
+            {
+                if (redirectUrls.TryGetValue(connectionId, out var url))
+                {
+                    redirectTasks.Add(Clients.Client(connectionId).SendAsync("RedirectToStoryFromFinalPuzzle", url));
+                }
+            }
+
+            await Task.WhenAll(redirectTasks);
+            Console.WriteLine($"[GameHub] Successfully sent redirect commands to all players in room {roomId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameHub] Error in ContinueStoryFromFinalPuzzle: {ex.Message}");
+            await Clients.Caller.SendAsync("FinalPuzzleError", $"Failed to continue story: {ex.Message}");
+        }
+    }
 
     // Content moved to IAct1StoryEngine
 
@@ -3015,7 +3441,20 @@ public class GameHub : Hub
             }
         }
         
-        // Final puzzle server-side state removed; no cleanup needed
+        // Remove player from final puzzle games
+        foreach (var kvp in _finalPuzzleGames)
+        {
+            if (kvp.Value.Players.ContainsKey(Context.ConnectionId))
+            {
+                kvp.Value.RemovePlayer(Context.ConnectionId);
+                await Clients.Group(kvp.Key).SendAsync("FinalPuzzleGameStateUpdated", kvp.Value.GetGameState());
+                
+                foreach (var playerId in kvp.Value.GetConnectedPlayers())
+                {
+                    await Clients.Client(playerId).SendAsync("FinalPuzzlePlayerViewUpdated", kvp.Value.GetPlayerView(playerId));
+                }
+            }
+        }
         
         // Remove player from visual novel games
         foreach (var kvp in _visualNovelGames)
